@@ -4,8 +4,9 @@ import { addWeeks, format, getISOWeeksInYear, startOfYear } from "date-fns";
 
 export const generateWeeks = () => {
   const startDate = startOfYear(new Date());
+  const adjustedDate = startDate.getDay() > 1 ? startDate.getDate() - startDate.getDay() : startDate;
   const weeks = [];
-  let currentMonth = format(startDate, "MMMM");
+  let currentMonth = format(adjustedDate, "MMMM");
   let weekOfMonth = 1;
 
   for (let i = 0; i < getISOWeeksInYear(new Date()); i++) {

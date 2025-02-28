@@ -148,7 +148,9 @@ export function CompanyProvider({ children }: ProviderProps) {
     const setup = async () => {
       const companyList = await getCompanies();
       const salesUnitSummary = await getSalesUnitSummary();
-      setSalesGroupCompanies(salesUnitSummary);
+      if (Array.isArray(salesUnitSummary)) {
+        setSalesGroupCompanies(salesUnitSummary);
+      }
       setCompanies(companyList);
     };
 

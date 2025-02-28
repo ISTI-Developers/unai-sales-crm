@@ -60,7 +60,7 @@ export function MultiComboBox({
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0.8, opacity: 0 }}
                         transition={{ type: "spring", duration: 0.5 }}
-                        className="px-2 rounded-full bg-green-300 flex items-center gap-1"
+                        className="px-2 rounded-full bg-green-300 flex items-center gap-1 capitalize"
                       >
                         {val.label}
                         <button
@@ -92,6 +92,7 @@ export function MultiComboBox({
                 <CommandItem
                   key={item.id}
                   value={item.value}
+                  className="capitalize"
                   onSelect={() => {
                     setValue(item.id);
                   }}

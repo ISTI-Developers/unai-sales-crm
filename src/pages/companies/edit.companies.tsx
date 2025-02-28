@@ -14,7 +14,7 @@ import {
   CircleX,
 } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { v4 } from "uuid";
 import { ComboBox } from "@/components/combobox";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -29,7 +29,7 @@ const EditCompany = () => {
   const ID = localStorage.getItem("company");
   const { companies, updateCompany, salesGroupCompanies } = useCompany();
   const { toast } = useToast();
-  const { getResponseFromUserParamType } = useUser();
+  const { getResponseFromUserParamType, users } = useUser();
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState<string>("");
   const [code, setCode] = useState<string>("");
@@ -215,57 +215,92 @@ const EditCompany = () => {
   // }, []);
 
   useEffect(() => {
-    if (!companies || !ID || !salesGroupCompanies) return;
+    if (!companies || !ID || !users) return;
 
     const current = companies.find((company) => company.ID === Number(ID));
+    const suheads = users.filter((user) => user.role.role_id === 4);
+    const aes = users.filter((user) => user.role.role_id === 5);
+
+    let tempAvailableUnits: List[] = [];
 
     if (current) {
       setCode(current.code);
       setName(current.name);
-      const currentCompanySales = salesGroupCompanies.filter(
-        (unit) => unit.company_id === Number(ID)
-      );
-      const currentSalesUnits: SalesUnit[] = currentCompanySales.map((unit) => {
+
+      const aeList: List[] = aes.map((ae) => {
         return {
-          temp_id: unit.sales_unit_id,
-          unit_name: unit.sales_unit_name,
-          unit_head: {
-            id: unit.sales_unit_head?.user_id,
-            name: unit.sales_unit_head?.full_name,
-          },
-          unit_members: unit.sales_unit_members.map((member) => {
+          id: String(ae.ID),
+          label: ae.first_name + " " + ae.last_name,
+          value: ae.first_name + " " + ae.last_name,
+          role: ae.role.role_id,
+        };
+      });
+      const suHeadList: List[] = suheads.map((su) => {
+        return {
+          id: String(su.ID),
+          label: su.first_name + " " + su.last_name,
+          value: su.first_name + " " + su.last_name,
+          role: su.role.role_id,
+        };
+      });
+      tempAvailableUnits = [...aeList, ...suHeadList];
+
+      if (salesGroupCompanies) {
+        const currentCompanySales = salesGroupCompanies.filter(
+          (unit) => unit.company_id === Number(ID)
+        );
+        const currentSalesUnits: SalesUnit[] = currentCompanySales.map(
+          (unit) => {
             return {
-              id: member.user_id,
+              temp_id: unit.sales_unit_id,
+              unit_name: unit.sales_unit_name,
+              unit_head: {
+                id: unit.sales_unit_head?.user_id,
+                name: unit.sales_unit_head?.full_name,
+              },
+              unit_members: unit.sales_unit_members.map((member) => {
+                return {
+                  id: member.user_id,
+                  value: member.full_name,
+                  label: member.full_name,
+                  role: 5,
+                };
+              }),
+            };
+          }
+        );
+        const salesHeads: List[] = currentCompanySales.map((unit) => {
+          return {
+            id: unit.sales_unit_head?.user_id,
+            label: unit.sales_unit_head?.full_name,
+            value: unit.sales_unit_head?.full_name,
+            role: 4,
+          };
+        });
+        const salesMembers: List[] = currentCompanySales.flatMap((unit) => {
+          const unit_members = unit.sales_unit_members;
+          return unit_members.map((member) => {
+            return {
+              id: String(member.user_id),
               value: member.full_name,
               label: member.full_name,
               role: 5,
             };
-          }),
-        };
-      });
-      const salesHeads: List[] = currentCompanySales.map((unit) => {
-        return {
-          id: unit.sales_unit_head?.user_id,
-          label: unit.sales_unit_head?.full_name,
-          value: unit.sales_unit_head?.full_name,
-          role: 4,
-        };
-      });
-      const salesMembers: List[] = currentCompanySales.flatMap((unit) => {
-        const unit_members = unit.sales_unit_members;
-        return unit_members.map((member) => {
-          return {
-            id: member.user_id,
-            value: member.full_name,
-            label: member.full_name,
-            role: 5,
-          };
+          });
         });
-      });
-      setAvailableSalesUnits([...salesHeads, ...salesMembers]);
-      setSalesUnits(currentSalesUnits);
+        tempAvailableUnits = [
+          ...tempAvailableUnits,
+          ...salesHeads,
+          ...salesMembers,
+        ];
+        setSalesUnits(currentSalesUnits);
+        
+      }
+      setAvailableSalesUnits(Array.from(
+        new Map(tempAvailableUnits.map((item) => [item.id, item])).values()
+      ));
     }
-  }, [ID, companies, salesGroupCompanies]);
+  }, [ID, companies, salesGroupCompanies, users]);
   return (
     <Page className="flex flex-col gap-4">
       <Helmet>

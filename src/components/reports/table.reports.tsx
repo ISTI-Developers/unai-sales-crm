@@ -24,7 +24,7 @@ import {
 } from "../ui/dropdown-menu";
 import { Button } from "../ui/button";
 import { generateWeeks } from "@/data/reports.columns";
-import { format, getWeekOfMonth } from "date-fns";
+import { format, getISOWeek, getWeekOfMonth } from "date-fns";
 interface DataTable<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
@@ -33,15 +33,15 @@ export function ReportsTable<TData, TValue>({
   columns,
   data,
 }: DataTable<TData, TValue>) {
+  const weeks = generateWeeks();
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
-    generateWeeks().reduce((acc, week) => {
-      const currentMonth = format(new Date(), "MMM");
-      const monthWeek = week.split(" ")[0];
-      const currentWeek = `${currentMonth} Wk${getWeekOfMonth(new Date())}`;
-      acc[week] = currentWeek === week;
+    weeks.reduce<Record<string, boolean>>((acc, week, index) => {
+      const weekIndex = getISOWeek(new Date()) - 1;
+      acc[week] = weekIndex === index; // Use `week` as the key
       return acc;
     }, {})
   );
+  
   const [dropdownVisible, setDropdownVisibility] = useState(false);
   //   const finalData = useMemo(() => {
   //     const dataWithCurrentWeekActivity = data.filter((item) => {
@@ -83,7 +83,7 @@ export function ReportsTable<TData, TValue>({
         >
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="ml-auto">
-              Weeks
+              Show Weeks
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent

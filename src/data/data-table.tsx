@@ -95,6 +95,7 @@ export function DataTable<TData, TValue>({
     onPaginationChange: setPaginationState,
   });
 
+  console.log(columnFilters, globalFilter);
   return (
     <div>
       <div className="flex items-center pb-4 gap-4">

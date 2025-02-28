@@ -1,13 +1,12 @@
 import { ReportsTable } from "@/components/reports/table.reports";
 import { Button } from "@/components/ui/button";
-import { DataTable } from "@/data/data-table";
 import { generateWeeks, weekColumns } from "@/data/reports.columns";
 import { ReportTable } from "@/interfaces/reports.interface";
 import Container from "@/misc/Container";
 import Page from "@/misc/Page";
 import AddReport from "@/pages/reports/add.reports";
 import { useReports } from "@/providers/reports.provider";
-import { format, getWeekOfMonth } from "date-fns";
+import { format, getISOWeek, getWeek, getWeekOfMonth } from "date-fns";
 import { AnimatePresence } from "framer-motion";
 import { CirclePlus } from "lucide-react";
 import { useEffect, useMemo } from "react";
@@ -54,10 +53,12 @@ const Main = () => {
 
     const groupedClients = reports.reduce((acc, item) => {
       const clientName = item.client;
-      const currentWeek = getWeekOfMonth(new Date(item.date_submitted));
+      // const weeks = generateWeeks();
+      const currentWeek = getISOWeek(new Date(item.date_submitted));
+
       const currentMonth = format(new Date(item.date_submitted), "MMM");
       const weekKey = `${currentMonth} Wk${currentWeek}`;
-
+console.log(currentWeek)
       if (!acc[clientName]) {
         acc[clientName] = {
           ...reportColumns, // Initialize with the weeks and empty strings
