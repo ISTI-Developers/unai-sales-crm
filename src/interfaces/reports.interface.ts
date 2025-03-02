@@ -2,7 +2,7 @@ import { DefaultResponse, ErrorResponse } from ".";
 
 export interface Report {
   ID: number;
-  user_id: number;
+  account_id: number;
   user: string;
   sales_unit_id: number;
   sales_unit: string;
@@ -23,7 +23,9 @@ export interface ReportsContext {
   reports: Report[] | null;
   insertReport: (
     client_id: number,
+    sales_unit_id: number,
+    user_id: number,
     date: string,
-    report: string
+    report: string,
   ) => Promise<DefaultResponse | string | ErrorResponse | undefined>;
 }
