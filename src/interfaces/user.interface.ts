@@ -65,6 +65,7 @@ export interface RoleTypes {
   manageRole: (role: Role, status: number) => Promise<DefaultResponse>;
   insertRole: (role: Role) => Promise<DefaultResponse>;
   updateRolePermissions: (role: Role) => Promise<DefaultResponse>;
+  getPermission: (module: string, permission:  'VIEW' | 'ADD' | 'EDIT' | 'DELETE') => number[];
 }
 
 export interface Modules {

@@ -178,6 +178,7 @@ export function ClientProvider({ children }: ProviderProps) {
       clientResponse = handleSessionExpiration(clientResponse);
 
       const optResponse = await getClientOptions();
+
       setData(clientResponse);
       setOptions(optResponse);
     };

@@ -234,6 +234,26 @@ export function RoleProvider({ children }: ProviderProps) {
     }
   };
 
+  const getPermission = (
+    module: string,
+    permission?: "VIEW" | "ADD" | "EDIT" | "DELETE"
+  ) => {
+    const permissions = ["VIEW", "ADD", "EDIT", "DELETE"];
+    if (currentUserRole) {
+      const access = currentUserRole.access.find(
+        (item) => item.name.toUpperCase() === module
+      );
+      if (access) {
+        if (permission) {
+          return access.permissions[permissions.indexOf(permission)] === 1;
+        } else {
+          return access.permissions;
+        }
+      }
+    }
+    return [];
+  };
+
   useEffect(() => {
     const fetchRolesAndModules = async () => {
       if (!location.pathname.match("login")) {
@@ -360,6 +380,7 @@ export function RoleProvider({ children }: ProviderProps) {
     toggleModule,
     manageRole,
     updateRolePermissions,
+    getPermission,
   };
 
   return (

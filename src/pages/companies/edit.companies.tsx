@@ -218,8 +218,9 @@ const EditCompany = () => {
     if (!companies || !ID || !users) return;
 
     const current = companies.find((company) => company.ID === Number(ID));
-    const suheads = users.filter((user) => user.role.role_id === 4);
-    const aes = users.filter((user) => user.role.role_id === 5);
+    const salesTeam = users.filter((user) =>
+      [3, 4, 5, 10].includes(user.role.role_id)
+    );
 
     let tempAvailableUnits: List[] = [];
 
@@ -227,7 +228,7 @@ const EditCompany = () => {
       setCode(current.code);
       setName(current.name);
 
-      const aeList: List[] = aes.map((ae) => {
+      const aeList: List[] = salesTeam.map((ae) => {
         return {
           id: String(ae.ID),
           label: ae.first_name + " " + ae.last_name,
@@ -235,15 +236,8 @@ const EditCompany = () => {
           role: ae.role.role_id,
         };
       });
-      const suHeadList: List[] = suheads.map((su) => {
-        return {
-          id: String(su.ID),
-          label: su.first_name + " " + su.last_name,
-          value: su.first_name + " " + su.last_name,
-          role: su.role.role_id,
-        };
-      });
-      tempAvailableUnits = [...aeList, ...suHeadList];
+
+      tempAvailableUnits = [...aeList];
 
       if (salesGroupCompanies) {
         const currentCompanySales = salesGroupCompanies.filter(
@@ -271,7 +265,7 @@ const EditCompany = () => {
         );
         const salesHeads: List[] = currentCompanySales.map((unit) => {
           return {
-            id: unit.sales_unit_head?.user_id,
+            id: String(unit.sales_unit_head?.user_id),
             label: unit.sales_unit_head?.full_name,
             value: unit.sales_unit_head?.full_name,
             role: 4,
@@ -293,12 +287,18 @@ const EditCompany = () => {
           ...salesHeads,
           ...salesMembers,
         ];
+        console.log(
+          Array.from(
+            new Map(tempAvailableUnits.map((item) => [item.id, item])).values()
+          )
+        );
         setSalesUnits(currentSalesUnits);
-        
       }
-      setAvailableSalesUnits(Array.from(
-        new Map(tempAvailableUnits.map((item) => [item.id, item])).values()
-      ));
+      setAvailableSalesUnits(
+        Array.from(
+          new Map(tempAvailableUnits.map((item) => [item.id, item])).values()
+        )
+      );
     }
   }, [ID, companies, salesGroupCompanies, users]);
   return (
@@ -470,7 +470,7 @@ const EditCompany = () => {
                               title="head"
                               list={availableSalesUnits.filter(
                                 (unit) =>
-                                  Number(unit.role) === 4 &&
+                                  [4, 10].includes(Number(unit.role)) &&
                                   !salesUnits.some(
                                     (salesUnit) =>
                                       salesUnit.unit_head.id === unit.id
@@ -493,7 +493,7 @@ const EditCompany = () => {
                               title="members"
                               list={availableSalesUnits.filter(
                                 (unit) =>
-                                  Number(unit.role) === 5 &&
+                                  [5, 10].includes(Number(unit.role)) &&
                                   !salesUnits.some((salesUnit) =>
                                     salesUnit.unit_members.some(
                                       (member) => member.id === unit.id

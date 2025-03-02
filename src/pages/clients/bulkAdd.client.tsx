@@ -46,6 +46,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import classNames from "classnames";
+import { useMedium } from "@/providers/mediums.provider";
 
 interface UserAccount {
   [key: string]: string;
@@ -67,7 +68,8 @@ const BulkAddClient = () => {
     null
   );
 
-  const { clientOptions, mediums, insertBatchClients } = useClient();
+  const { mediums } = useMedium();
+  const { clientOptions, insertBatchClients } = useClient();
   const { users } = useUser();
   const { salesGroupCompanies, companies } = useCompany();
 
@@ -138,12 +140,15 @@ const BulkAddClient = () => {
         if (item.mediums.length === 0) return false;
 
         const itemMediums = item.mediums.split(",");
-
+        
         return itemMediums.some(
-          (itemMedium) => itemMedium.trim() === medium.name
+          (itemMedium) => {
+            return medium.name.toUpperCase().match(itemMedium.trim().toUpperCase());
+          }
         );
       });
-
+      console.log(matchMediums);
+      
       item.sales_unit = salesUnit?.sales_unit_id ?? "";
       item.company = matchCompany?.ID ?? "";
       item.industry = matchedOptions.industry;
@@ -383,10 +388,6 @@ const BulkAddClient = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      {/* <Dialog>
-        <DialogTrigger>Meee</DialogTrigger>
-        <DialogContent>Hay</DialogContent>
-      </Dialog> */}
     </Page>
   );
 };

@@ -109,4 +109,5 @@ export interface UserClients {
   client_id: number;
   name: string;
   status: string;
+  has_report: string;
 }
