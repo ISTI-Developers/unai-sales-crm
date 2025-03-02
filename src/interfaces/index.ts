@@ -12,6 +12,7 @@ export interface List {
   id: string;
   value: string;
   label: string;
+  disabled?: boolean;
   role?: number;
 }
 
