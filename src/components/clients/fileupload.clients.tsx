@@ -39,7 +39,7 @@ const FileUpload = ({ setData, setLoading }: FileUpload) => {
     const workbook = read(data, { type: "binary" });
     const sheet = workbook.Sheets["Client Form"];
     const records: string[][] = utils.sheet_to_json(sheet, { header: 1 });
-
+    
     const headers: string[] = records[0];
     const formattedData: ClientUpload[] = records
       .slice(1)

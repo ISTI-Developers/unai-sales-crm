@@ -1,9 +1,19 @@
 /** @type {import('tailwindcss').Config} */
+import fluid, { extract, fontSize, screens } from "fluid-tailwind";
+
 export default {
   darkMode: ["class"],
-  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+  content: {
+    files: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+    extract,
+  },
   theme: {
+    screens,
+    fontSize,
     extend: {
+      // screens: {
+      //   "3xl": "2048px",
+      // },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
@@ -63,5 +73,9 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate"), require("tailwind-scrollbar")({ nocompatible: true })],
+  plugins: [
+    require("tailwindcss-animate"),
+    require("tailwind-scrollbar")({ nocompatible: true }),
+    fluid,
+  ],
 };

@@ -5,6 +5,7 @@ export interface Company {
   ID: number;
   code: string;
   name: string;
+  error?: boolean;
 }
 export interface CompanySalesGroup {
   company_id: number;

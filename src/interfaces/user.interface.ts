@@ -26,7 +26,12 @@ export interface User {
   image?: string;
   token?: string;
 }
-
+export interface OnlineUser {
+  ID: number;
+  first_name: string;
+  last_name: string;
+  last_online: string;
+}
 export interface UserTable {
   ID: number;
   user: string;
@@ -65,7 +70,10 @@ export interface RoleTypes {
   manageRole: (role: Role, status: number) => Promise<DefaultResponse>;
   insertRole: (role: Role) => Promise<DefaultResponse>;
   updateRolePermissions: (role: Role) => Promise<DefaultResponse>;
-  getPermission: (module: string, permission:  'VIEW' | 'ADD' | 'EDIT' | 'DELETE') => number[];
+  getPermission: (
+    module: string,
+    permission: "VIEW" | "ADD" | "EDIT" | "DELETE"
+  ) => number[];
 }
 
 export interface Modules {
@@ -152,4 +160,11 @@ export interface SalesUnitResponse {
   unit_name: string;
   company_id: number;
   unit_head_id: number;
+}
+
+export interface AvailableUnits {
+  user_id: number;
+  first_name: string;
+  last_name: string;
+  role_id: number;
 }

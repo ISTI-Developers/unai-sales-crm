@@ -8,13 +8,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
+import { useManageRole } from "@/hooks/useRoles";
 import { ClassList } from "@/interfaces";
 import { Role } from "@/interfaces/user.interface";
 import { capitalize } from "@/lib/utils";
 import DropdownWithDialog from "@/misc/DropdownWithDialog";
-import { useRole } from "@/providers/role.provider";
 import { ColumnDef, Row } from "@tanstack/react-table";
-import classNames from "classnames";
+import { cn } from "@/lib/utils";
 import { ArrowUpDown, LoaderCircle, MoreHorizontal } from "lucide-react";
 import { ReactNode, useState } from "react";
 import { Link } from "react-router-dom";
@@ -56,7 +56,7 @@ export const columns: ColumnDef<Role>[] = [
     cell: ({ row }) => {
       const name: string = row.getValue("name");
 
-      return <p className="capitalize text-center">{name}</p>;
+      return <p className="uppercase font-semibold text-center">{name}</p>;
     },
   },
   {
@@ -68,7 +68,7 @@ export const columns: ColumnDef<Role>[] = [
       const description: string = row.getValue("description");
 
       return (
-        <p className="text-center w-full max-w-[400px] mx-auto capitalize">
+        <p className="text-center w-full max-w-[400px] mx-auto">
           {description || "N/A"}
         </p>
       );
@@ -88,7 +88,7 @@ export const columns: ColumnDef<Role>[] = [
       const className =
         statusClasses[status] || "bg-green-100 text-green-700 border-green-300";
       return (
-        <Badge variant={null} className={classNames(className, "capitalize")}>
+        <Badge variant={null} className={cn(className, "capitalize")}>
           {status.replace(/_/g, " ")}
         </Badge>
       );
@@ -210,7 +210,7 @@ const CustomDropdown = ({
 };
 
 const ManageButton = ({ action, role }: { action: string; role: Role }) => {
-  const { manageRole, forceReload } = useRole();
+  const { mutate: manageRole } = useManageRole();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const onClick = async () => {
@@ -231,35 +231,42 @@ const ManageButton = ({ action, role }: { action: string; role: Role }) => {
         break;
     }
 
-    const response = await manageRole(role, statusID);
-    if (response.acknowledged) {
-      toast({
-        title: "Success",
-        description: `${capitalize(
-          role.name
-        )} has been ${action}d successfully.`,
-        variant: "success",
-      });
-      forceReload();
-    }
+    manageRole(
+      { role, status: statusID },
+      {
+        onSuccess: (response) => {
+          if (!response) return;
 
-    if (response.error) {
-      toast({
-        title: "Error",
-        description: `ERROR: ${
-          response.error ||
-          "An error has occured. Please contact the developer."
-        }`,
-        variant: "destructive",
-      });
-      setLoading((prev) => !prev);
-    }
+          if (response.acknowledged) {
+            toast({
+              title: "Success",
+              description: `${capitalize(
+                role.name
+              )} has been ${action}d successfully.`,
+              variant: "success",
+            });
+          }
+
+          if (response.error) {
+            toast({
+              title: "Error",
+              description: `ERROR: ${
+                response.error ||
+                "An error has occured. Please contact the developer."
+              }`,
+              variant: "destructive",
+            });
+            setLoading((prev) => !prev);
+          }
+        },
+      }
+    );
   };
   return (
     <Button
       disabled={loading}
       variant={action === "enable" ? "outline" : "destructive"}
-      className={classNames(
+      className={cn(
         "flex gap-2 capitalize",
         loading ? "pl-2" : "",
         action === "enable"

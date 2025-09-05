@@ -6,6 +6,7 @@
   ],
   "compilerOptions": {
     "forceConsistentCasingInFileNames": true,
+    "noEmitOnError": false,
     "strict": true,
     "baseUrl": ".",
     "paths": {

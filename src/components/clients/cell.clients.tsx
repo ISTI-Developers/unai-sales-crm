@@ -1,7 +1,4 @@
-import React, { useMemo } from "react";
 import { Input } from "../ui/input";
-import { useClient } from "@/providers/client.provider";
-import { List } from "@/interfaces";
 import { TableCell } from "../ui/table";
 import {
   Select,
@@ -10,6 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+import { useClientOptionList } from "@/hooks/useClientOptions";
 
 const Cell = ({
   index,
@@ -22,31 +20,10 @@ const Cell = ({
   header: string;
   onChange: (value: string, header: string, index: number) => void;
 }) => {
-  const { clientOptions } = useClient();
 
   const withOptions = ["industry", "status", "source", "type"];
 
-  const options: List[] | [] = useMemo(() => {
-    if (!clientOptions) return [];
-
-    const category = clientOptions.filter((option) =>
-      option.some((opt) => opt.category === header)
-    );
-
-    if (Array.isArray(category)) {
-      if (category.length > 0) {
-        return category[0]
-          .map(({ misc_id, name }) => {
-            return {
-              id: misc_id,
-              label: name,
-              value: name,
-            };
-          })
-          .sort((a, b) => a.label.localeCompare(b.label));
-      }
-    }
-  }, [clientOptions, header]);
+  const { options } = useClientOptionList(header);
 
   return (
     <TableCell className="whitespace-nowrap">

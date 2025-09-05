@@ -52,7 +52,7 @@ const Logs = () => {
   return (
     <Container title="System Logs" className="p-0 scrollbar-thin">
       <Helmet>
-        <title>System Logs | Sales CRM</title>
+        <title>System Logs | Sales Platform</title>
       </Helmet>
       <AnimatePresence>
         <Page>

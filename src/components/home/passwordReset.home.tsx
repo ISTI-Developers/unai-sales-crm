@@ -10,18 +10,18 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { FormEvent, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { useAuth } from "@/providers/auth.provider";
 import { useToast } from "@/hooks/use-toast";
 import { PasswordResetData } from "@/interfaces/auth.interface";
 import { LoaderCircle } from "lucide-react";
-import classNames from "classnames";
+import { cn } from "@/lib/utils";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "../ui/input-otp";
 import { REGEXP_ONLY_DIGITS } from "input-otp";
+import { useValidateCode, useValidateEmail } from "@/hooks/useAuth";
 
 const PasswordReset = () => {
-  const { validateEmailAddress, validateCode } = useAuth();
   const { toast } = useToast();
-
+  const { mutate: validateCode } = useValidateCode();
+  const { mutate: validateEmail } = useValidateEmail();
   const [currentStep, setCurrentStep] = useState(0);
   const [open, toggleOpen] = useState(false);
   const [emailAddress, setEmailAddress] = useState("");
@@ -38,26 +38,24 @@ const PasswordReset = () => {
     setLoading(true);
     //CHECK IF THE EMAIL EXISTS THEN IF TRUE, RETRIEVE THE CURRENT USER.
 
-    const response = await validateEmailAddress(emailAddress);
-    if (response.ID) {
-      toast({
-        variant: "success",
-        title: "Verification code sent!",
-        description:
-          "Please check your email address for the verification code.",
-      });
-      setUser(response);
-      setLoading(false);
-      setCurrentStep(currentStep + 1);
-    } else {
-      console.log(response);
-      setLoading(false);
-      toast({
-        variant: "destructive",
-        title: "An Error Occured",
-        description: response.error ?? "Please contact the IT team.",
-      });
-    }
+    validateEmail(emailAddress, {
+      onSuccess: (data) => {
+        if (!data) return;
+
+        if (data.local) {
+          // sessionStorage.setItem("id", data.ooh.user_id);
+          toast({
+            variant: "success",
+            title: "Verification code sent!",
+            description:
+              "Please check your email address for the verification code.",
+          });
+          setUser(data.local);
+          setLoading(false);
+          setCurrentStep(currentStep + 1);
+        }
+      },
+    });
   };
 
   const onCodeVerification = async (e: FormEvent<HTMLFormElement>) => {
@@ -66,25 +64,25 @@ const PasswordReset = () => {
     //VERIFY CODE AND SEND THE NEW TEMPORARY PASSWORD
     setLoading(true);
 
-    const response = await validateCode(otp, String(user.ID));
-    if (response.acknowledged) {
-      toast({
-        variant: "success",
-        title: "Email address verified!",
-        description:
-          "Please check your email address for your password recovery.",
-      });
-      setLoading(false);
-      setCurrentStep(currentStep + 1);
-    } else {
-      console.log(response);
-      setLoading(false);
-      toast({
-        variant: "destructive",
-        title: "An Error Occured",
-        description: response.error ?? "Please contact the IT team.",
-      });
-    }
+    validateCode(
+      { code: otp, ID: String(user.ID) },
+      {
+        onSuccess: (data) => {
+          if (!data) return;
+
+          if (data.local) {
+            toast({
+              variant: "success",
+              title: "Email address verified!",
+              description:
+                "Please check your email address for your password recovery.",
+            });
+            setLoading(false);
+            setCurrentStep(currentStep + 1);
+          }
+        },
+      }
+    );
   };
 
   const onOpenChange = (state: boolean) => {
@@ -132,7 +130,7 @@ const PasswordReset = () => {
                     <Button
                       type="submit"
                       disabled={loading}
-                      className={classNames("flex gap-4", loading && "pl-2.5")}
+                      className={cn("flex gap-4", loading && "pl-2.5")}
                     >
                       {loading && <LoaderCircle className="animate-spin" />}
                       Send
@@ -167,7 +165,7 @@ const PasswordReset = () => {
                     <Button
                       type="submit"
                       disabled={loading}
-                      className={classNames(
+                      className={cn(
                         "flex gap-4 ml-auto",
                         loading && "pl-2.5"
                       )}

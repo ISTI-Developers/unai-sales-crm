@@ -1,5 +1,6 @@
-import { DefaultResponse } from ".";
-import { UserTable } from "./user.interface";
+import { Dispatch, SetStateAction } from "react";
+import { User } from "./user.interface";
+import { AxiosProgressEvent } from "axios";
 
 export interface PasswordResetData {
   ID: number;
@@ -7,10 +8,18 @@ export interface PasswordResetData {
   error?: string;
 }
 export interface AuthTypes {
-  loginUser: (username: string, password: string) => Promise<DefaultResponse>;
-  generatePassword: () => string;
+  user: User | null;
+  setUser: Dispatch<SetStateAction<User | null>>;
   logoutUser: () => void;
-  resetPassword: (user: UserTable) => Promise<DefaultResponse>;
-  validateEmailAddress: (email_address: string) => Promise<PasswordResetData>;
-  validateCode: (code: string, ID: string) => Promise<DefaultResponse>;
+  advisory: Advisory | undefined;
+  setAdvisory: Dispatch<SetStateAction<Advisory | undefined>>;
+  progress: AxiosProgressEvent | null;
+  setProgress: Dispatch<SetStateAction<AxiosProgressEvent | null>>;
+}
+
+export interface Advisory {
+  receipient: string;
+  title: string;
+  content: string;
+  created_at?: string;
 }

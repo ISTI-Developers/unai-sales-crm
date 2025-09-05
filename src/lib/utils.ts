@@ -73,6 +73,53 @@ export const getLogTime = (date: string) => {
     }
   }
 };
+export function generatePassword(): string {
+  const uppercaseChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const lowercaseChars = "abcdefghijklmnopqrstuvwxyz";
+  const numbers = "0123456789";
+  const allChars = uppercaseChars + lowercaseChars + numbers;
+
+  let password = "";
+
+  // Ensure at least one uppercase letter, one lowercase letter, and one number
+  password += uppercaseChars[Math.floor(Math.random() * uppercaseChars.length)];
+  password += lowercaseChars[Math.floor(Math.random() * lowercaseChars.length)];
+  password += numbers[Math.floor(Math.random() * numbers.length)];
+
+  // Fill the remaining characters with random choices from all available characters
+  for (let i = 3; i < 8; i++) {
+    password += allChars[Math.floor(Math.random() * allChars.length)];
+  }
+
+  // Shuffle the password to ensure randomness
+  password = password
+    .split("")
+    .sort(() => Math.random() - 0.5)
+    .join("");
+
+  return password;
+}
+export interface Coordinate {
+  lat: number;
+  lng: number;
+}
+export const haversineDistance = (coords1: Coordinate, coords2: Coordinate) => {
+  const toRad = (x: number) => (x * Math.PI) / 180;
+
+  const R = 6371e3; // Earth's radius in meters
+  const dLat = toRad(coords2.lat - coords1.lat);
+  const dLng = toRad(coords2.lng - coords1.lng);
+  const lat1 = toRad(coords1.lat);
+  const lat2 = toRad(coords2.lat);
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.sin(dLng / 2) * Math.sin(dLng / 2) * Math.cos(lat1) * Math.cos(lat2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c;
+};
+export const customOrder = ["HOT", "ACTIVE", "ON/OFF", "FOR ELECTIONS", "POOL"];
 export const colors = [
   "#756f65",
   "#7cb613",

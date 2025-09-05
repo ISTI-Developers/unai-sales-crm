@@ -186,6 +186,7 @@ function TableFilters<TData>({ table, data, filters }: Filters<TData>) {
 
               const queries =
                 typeof query === "string" ? [query] : query.map((q) => q.value);
+
               table.getColumn(column)?.setFilterValue(queries);
             } else {
               // Revert the filter for the column when condition.query is empty
@@ -204,6 +205,21 @@ function TableFilters<TData>({ table, data, filters }: Filters<TData>) {
     };
     filterTable();
   }, [conditions, table]);
+
+  // useEffect(() => {
+  //   const updateLocalStorage = () => {
+  //     const columnFilters =
+  //       conditions.length > 0
+  //         ? conditions.map((cond) => ({
+  //             id: cond.column,
+  //             value: cond.query,
+  //           }))
+  //         : [];
+  //     localStorage.setItem("f", JSON.stringify(columnFilters));
+  //   };
+  //   updateLocalStorage();
+  // }, [conditions]);
+
 
   return (
     <Popover>
@@ -297,6 +313,7 @@ function TableFilters<TData>({ table, data, filters }: Filters<TData>) {
                               : column.id;
                             return (
                               ![
+                                "row",
                                 "user",
                                 "actions",
                                 "name",

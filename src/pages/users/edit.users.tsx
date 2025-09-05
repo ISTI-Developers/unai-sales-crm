@@ -2,22 +2,33 @@ import { ComboBox } from "@/components/combobox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useCompanies } from "@/hooks/useCompanies";
+import { useUpdateUser, useUser } from "@/hooks/useUsers";
 import { User } from "@/interfaces/user.interface";
 import Page from "@/misc/Page";
-import { useRole } from "@/providers/role.provider";
-import { useUser } from "@/providers/users.provider";
+import { useRoleProvider } from "@/providers/roles.provider";
 import { ChevronLeft, LoaderCircle } from "lucide-react";
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { Helmet } from "react-helmet";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { v4 } from "uuid";
 
 const EditUser = () => {
   const { id } = useParams();
+  const ID = localStorage.getItem("userID");
+  const { data: companies } = useCompanies();
+  const { mutate: updateUser } = useUpdateUser(ID);
+  const { data, isLoading } = useUser(ID);
   const navigate = useNavigate();
-  const { users, getResponseFromUserParamType, updateUser } = useUser();
-  const { roleOptions } = useRole();
+  const { roleOptions } = useRoleProvider();
 
   const { toast } = useToast();
   const [user, setUser] = useState<User>({
@@ -32,6 +43,7 @@ const EditUser = () => {
     role: {
       role_id: 4,
       name: "Account Executive",
+      access: [],
     },
   });
   const [loading, setLoading] = useState<boolean>(false);
@@ -57,28 +69,29 @@ const EditUser = () => {
       return;
     }
 
-    delete user.role.access;
-    const response = await updateUser(String(user.ID), user);
+    updateUser(user, {
+      onSuccess: (response) => {
+        if (!response) return;
 
-    console.log(response);
-
-    if (response.acknowledged) {
-      toast({
-        description: `Account update success! The user is advised to relogin for the changes to apply.`,
-        variant: "success",
-      });
-      navigate(`/users`);
-    } else {
-      toast({
-        title: "Account Creation Error",
-        description: `ERROR: ${
-          response.error ||
-          "An error has occured. Send a ticket to the developer."
-        }`,
-        variant: "destructive",
-      });
-      setLoading((prev) => !prev);
-    }
+        if (response.acknowledged) {
+          toast({
+            description: `Account update success! The user is advised to relogin for the changes to apply.`,
+            variant: "success",
+          });
+          navigate(`/users`);
+        } else {
+          toast({
+            title: "Account Creation Error",
+            description: `ERROR: ${
+              response.error ||
+              "An error has occured. Send a ticket to the developer."
+            }`,
+            variant: "destructive",
+          });
+          setLoading((prev) => !prev);
+        }
+      },
+    });
   };
 
   const isReady = useMemo(() => {
@@ -90,31 +103,17 @@ const EditUser = () => {
   }, [user]);
 
   useEffect(() => {
-    if (!id) {
-      navigate("/users");
+    if (!id || !data) {
       return;
     }
 
-    const setup = async () => {
-      if (users) {
-        const paramName = id.replace(/_/g, " ");
-        const viewedUser = users.find((u) => {
-          const full_name = [u.first_name, u.last_name].join(" ");
-          return paramName.toLowerCase() === full_name.toLowerCase();
-        });
+    setUser(data);
+  }, [id, data]);
 
-        if (viewedUser) {
-          setUser(viewedUser);
-        } else {
-          navigate("/users");
-          return;
-        }
-      }
-    };
-
-    console.log("refreshing");
-    setup();
-  }, [id, users]);
+  if (!id) {
+    return <Navigate to="/users" />;
+  }
+  if (isLoading) return <>fetching...</>;
   return (
     id && (
       <Page className="flex flex-col gap-4">
@@ -158,7 +157,7 @@ const EditUser = () => {
                         id={key}
                         type={key.includes("email") ? "email" : "text"}
                         name={key}
-                        value={user[key]}
+                        value={user[key] as string}
                         onChange={onInputChange}
                         required={key === "middle_name" ? false : true}
                         disabled={loading}
@@ -166,6 +165,46 @@ const EditUser = () => {
                     </div>
                   );
                 })}
+              <div className="grid grid-cols-[20%_80%] items-center">
+                <Label htmlFor="company" className="flex gap-1 items-center">
+                  <span>Company/Business Unit</span>
+                </Label>
+                <Select
+                  value={user.company?.name ?? ""}
+                  disabled={loading}
+                  required
+                  onValueChange={(value) => {
+                    if (!companies) return;
+
+                    const company = companies.find((c) => c.name === value);
+
+                    if (!company) return;
+
+                    console.log(company);
+                    setUser((prev) => ({
+                      ...prev,
+                      company: company,
+                    }));
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select company" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {companies ? (
+                      companies.map((company) => (
+                        <SelectItem key={company.ID} value={company.name}>
+                          {`${company.name} (${company.code})`}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="-" disabled>
+                        Loading options...
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </section>
           <section className="rounded-md border p-4">
@@ -200,6 +239,7 @@ const EditUser = () => {
                       return {
                         ...prev,
                         role: {
+                          ...prev.role,
                           role_id: Number(id),
                           name: value,
                         },

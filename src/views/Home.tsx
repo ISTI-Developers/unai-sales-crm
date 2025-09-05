@@ -1,33 +1,72 @@
 import Sidebar from "@/components/dashboard/sidebar.dashboard";
 import { Helmet } from "react-helmet";
 import { Navigate, Route, Routes } from "react-router-dom";
-import Dashboard from "./Dashboard";
-import Companies from "./Companies";
-import { CompanyProvider } from "@/providers/company.provider";
-import Users from "./Users";
 import InitialSetup from "@/components/home/initialSetup.home";
-import { AnimatePresence } from "framer-motion";
-import useStoredUser from "@/hooks/useStoredUser";
-import Roles from "./Roles";
+import { AnimatePresence, motion } from "framer-motion";
 import UnderConstructionPage from "@/misc/UnderConstructionPage";
-import { useRole } from "@/providers/role.provider";
-import { useMemo } from "react";
+import { Suspense, useMemo } from "react";
 import ErrorPage from "@/misc/ErrorPage";
-import Clients from "./Clients";
-import Logs from "./Logs";
-import Mediums from "./Mediums";
-import Contracts from "./Contracts";
-import Reports from "./Reports";
+import { useSettings } from "@/providers/settings.provider";
+import { LoaderCircle } from "lucide-react";
+import { linkDefinitions } from "@/data/definitions.links";
+import { SidebarProvider } from "@/providers/sidebar.provider";
+import { useAuth } from "@/providers/auth.provider";
+import { useModules } from "@/hooks/useModules";
+import { useUserRole } from "@/hooks/useRoles";
+import { RolesProvider } from "@/providers/roles.provider";
+import Container from "@/misc/Container";
 
 interface Link {
   title: string;
   handler: string;
-  element: JSX.Element | null;
+  element: React.LazyExoticComponent<() => JSX.Element> | null;
   isActive: boolean;
 }
 const Home = () => {
-  const { user } = useStoredUser();
-  const { modules, currentUserRole } = useRole();
+  const { user } = useAuth();
+  const { isLoading } = useSettings();
+
+  return (
+    <>
+      <AnimatePresence>
+        {isLoading && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="fixed top-0 left-0 w-[100dvw] h-[100dvh] flex items-center justify-center bg-black bg-opacity-20 backdrop-blur-[2px] z-20"
+          >
+            <LoaderCircle className="animate-spin text-main-100" size={48} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <RolesProvider>
+        <SidebarProvider>
+          <main className="relative h-screen">
+            <Helmet>
+              <title>Home | Sales Platform</title>
+            </Helmet>
+            <Sidebar />
+            <HomeRoutes />
+            <AnimatePresence mode="wait">
+              {user &&
+                (user.status === "new" || user.status === "password reset") && (
+                  <InitialSetup />
+                )}
+            </AnimatePresence>
+          </main>
+        </SidebarProvider>
+      </RolesProvider>
+    </>
+  );
+};
+
+const HomeRoutes = () => {
+  const { user } = useAuth();
+  const { data: modules } = useModules();
+  const { data: currentUserRole } = useUserRole(user?.ID ?? null);
+
   const isActive = (title: string): boolean => {
     if (!modules) return false;
 
@@ -39,21 +78,8 @@ const Home = () => {
   const hasNoPermissions = (permissions: number[]) =>
     permissions.every((permission) => permission === 0);
 
-  const linkDefinitions = [
-    { title: "dashboard", handler: "", element: <Dashboard /> },
-    { title: "companies", handler: "/companies/*", element: <Companies /> },
-    { title: "contracts", handler: "/contracts/*", element: <Contracts /> },
-    { title: "clients", handler: "/clients/*", element: <Clients /> },
-    { title: "mediums", handler: "/mediums/*", element: <Mediums /> },
-    { title: "reports", handler: "/reports/*", element: <Reports /> },
-    { title: "users", handler: "/users/*", element: <Users /> },
-    { title: "roles", handler: "/roles/*", element: <Roles /> },
-    { title: "logs", handler: "/logs", element: <Logs /> },
-  ];
-
   const links: Link[] = useMemo(() => {
     if (!modules || !currentUserRole) return [];
-
     const permissions = currentUserRole.access;
 
     return linkDefinitions
@@ -70,41 +96,34 @@ const Home = () => {
       }));
   }, [modules, currentUserRole]);
   return (
-    <main className="relative h-screen">
-      <Helmet>
-        <title>Home | Sales CRM Dashboard</title>
-      </Helmet>
-      <Sidebar />
-      {links.length > 0 && (
-        <CompanyProvider>
-          <Routes>
-            {links.map((route) =>
-              route.element ? (
-                <Route
-                  key={route.handler}
-                  path={route.handler}
-                  element={route.isActive ? route.element : <ErrorPage />}
-                />
-              ) : (
-                <Route
-                  key={route.handler}
-                  path={route.handler}
-                  element={<UnderConstructionPage />}
-                />
-              )
-            )}
-            <Route path="*" element={<Navigate to="/" />} />
-          </Routes>
-        </CompanyProvider>
-      )}
-      <AnimatePresence mode="wait">
-        {user &&
-          (user.status === "new" || user.status === "password reset") && (
-            <InitialSetup />
-          )}
-      </AnimatePresence>
-    </main>
+    links.length > 0 && (
+      <Routes>
+        {links.map((route) =>
+          route.element ? (
+            <Route
+              key={route.handler}
+              path={`${route.handler}/*`}
+              element={
+                <Suspense
+                  fallback={
+                    <Container title="Loading...">Loading...</Container>
+                  }
+                >
+                  {route.isActive ? <route.element /> : <ErrorPage />}
+                </Suspense>
+              }
+            />
+          ) : (
+            <Route
+              key={route.handler}
+              path={route.handler}
+              element={<UnderConstructionPage withContainer />}
+            />
+          )
+        )}
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+    )
   );
 };
-
 export default Home;

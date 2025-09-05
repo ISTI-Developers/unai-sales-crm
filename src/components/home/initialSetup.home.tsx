@@ -6,19 +6,17 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { LoaderCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useUser } from "@/providers/users.provider";
 import { useToast } from "@/hooks/use-toast";
 import { Helmet } from "react-helmet";
 import { useAuth } from "@/providers/auth.provider";
-import useStoredUser from "@/hooks/useStoredUser";
+import { useChangePassword } from "@/hooks/useUsers";
 const InitialSetup = () => {
-  const { logoutUser } = useAuth();
-  const { changePassword } = useUser();
+  const { user, logoutUser } = useAuth();
+  const { mutate: changePassword } = useChangePassword();
   const { toast } = useToast();
   const [password, setPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
-  const { user } = useStoredUser();
 
   const isReady = useMemo(() => {
     const testPassword = (password: string, regex: RegExp) => {
@@ -56,33 +54,35 @@ const InitialSetup = () => {
   const onSubmit = async () => {
     setLoading((prev) => !prev);
 
-    if (user) {
-      const response = await changePassword(user, password);
-      console.log(response);
-      if (response.acknowledged) {
-        toast({
-          description: `Your password has been updated. Please login again.`,
-          variant: "success",
-        });
+    if (!user) return;
 
-        const timeout = setTimeout(logoutUser, 1500);
+    changePassword(
+      {
+        user,
+        password,
+      },
+      {
+        onSuccess: (data) => {
+          if (!data) return;
+          if (data.acknowledged) {
+            toast({
+              description: `Your password has been updated. Please login again.`,
+              variant: "success",
+            });
 
-        return () => clearTimeout(timeout);
+            sessionStorage.removeItem("id");
+            const timeout = setTimeout(logoutUser, 1500);
+
+            return () => clearTimeout(timeout);
+          }
+        },
+        onSettled: () => {
+          setLoading((prev) => !prev);
+        },
       }
-
-      if (response.error) {
-        toast({
-          title: "Auth Error",
-          description: `ERROR: ${
-            response.error ||
-            "Authentication error. Please contact the developer."
-          }`,
-          variant: "destructive",
-        });
-        setLoading((prev) => !prev);
-      }
-    }
+    );
   };
+
   return (
     user && (
       <motion.div
@@ -96,7 +96,7 @@ const InitialSetup = () => {
         </Helmet>
         <Card>
           <CardHeader className="font-semibold text-lg">
-            Welcome to Sales CRM Dashboard!
+            Welcome to Sales Platform Dashboard!
           </CardHeader>
           <CardContent>
             <form className="flex flex-col gap-4">

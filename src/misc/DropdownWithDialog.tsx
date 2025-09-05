@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import classNames from "classnames";
+import { cn } from "@/lib/utils";
 
 interface ActionDialogProps {
   trigger: string;
@@ -41,7 +41,7 @@ const ActionDialog = ({
   return (
     <Dialog open={open} onOpenChange={(state) => onOpen(state)}>
       <DialogTrigger
-        className={classNames(
+        className={cn(
           "capitalize w-full text-start",
           ["delete", "deactivate", "disable"].includes(trigger)
             ? "text-red-100 focus:text-red-300"
@@ -57,7 +57,7 @@ const ActionDialog = ({
         </DialogHeader>
         {content && content}
         <DialogFooter>
-          <Button variant="ghost" onClick={() => setOpen(false)}>
+          <Button variant="ghost">
             Cancel
           </Button>
           {proceed && proceed}

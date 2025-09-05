@@ -1,4 +1,4 @@
-import classNames from "classnames";
+import { cn } from "@/lib/utils";
 import { ScrollArea, ScrollBar } from "../ui/scroll-area";
 import {
   Table,
@@ -16,48 +16,57 @@ import {
   useReactTable,
   VisibilityState,
   getFilteredRowModel,
+  PaginationState,
+  getPaginationRowModel,
 } from "@tanstack/react-table";
-import { useState } from "react";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "../ui/dropdown-menu";
+import { useState, useRef } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
+
 import { Button } from "../ui/button";
 import { generateWeeks } from "@/data/reports.columns";
 import { getISOWeek } from "date-fns";
-import { Link } from "react-router-dom";
-import { CirclePlus, X } from "lucide-react";
-import { capitalize } from "@/lib/utils";
-import { Input } from "../ui/input";
-import TableFilters from "@/misc/TableFilters";
+import { useReports } from "@/providers/reports.provider";
+import { notFilter } from "@/misc/not.filter";
+import TableConfigurations from "./config.report";
+import SelectedFilters from "./filters.report";
 
 interface DataTable<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
 }
+
 export function ReportsTable<TData, TValue>({
   columns,
   data,
 }: DataTable<TData, TValue>) {
   const weeks = generateWeeks();
+  const { isPending, filters, visibleWeeks } = useReports();
+
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
-    weeks.reduce<Record<string, boolean>>((acc, week, index) => {
-      const weekIndex = getISOWeek(new Date()) - 1;
-      acc[week] = weekIndex === index; // Use `week` as the key
-      return acc;
-    }, {})
+    () => {
+      return visibleWeeks
+        ? visibleWeeks
+        : weeks.reduce<Record<string, boolean>>((acc, week, index) => {
+            const weekIndex = getISOWeek(new Date()) - 1;
+            acc[week] = weekIndex === index;
+            return acc;
+          }, {});
+    }
   );
 
-  const [dropdownVisible, setDropdownVisibility] = useState(false);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
+  const [paginationState, setPaginationState] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 500,
+  });
+
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
     onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: setGlobalFilter,
     onColumnVisibilityChange: setColumnVisibility,
@@ -65,127 +74,46 @@ export function ReportsTable<TData, TValue>({
       columnVisibility,
       columnFilters,
       globalFilter,
+      pagination: paginationState,
     },
+    filterFns: {
+      not: notFilter,
+    },
+    onPaginationChange: setPaginationState,
+  });
+
+  const parentRef = useRef<HTMLDivElement>(null);
+  const rows = table.getRowModel().rows;
+
+  const rowVirtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 50, // adjust to your average row height
+    overscan: 10,
   });
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex justify-between gap-4">
-        <Input
-          type="search"
-          placeholder="Search..."
-          value={globalFilter ?? ""}
-          onChange={(event) => {
-            setGlobalFilter(String(event.target.value));
-          }}
-          className="max-w-sm"
-        />
-        <TableFilters table={table} data={data} filters={columnFilters} />
-        {columnFilters.length > 0 && (
-          <div className="flex items-center bg-base p-1 px-2 rounded-md gap-2">
-            {columnFilters.map((column, index) => {
-              return (
-                <div
-                  key={column.id}
-                  className="flex items-center gap-2 text-sm"
-                >
-                  <p className="capitalize">{column.id.replace(/_/g, " ")}</p>
-                  {column.value.map((val: string) => {
-                    return (
-                      <Button
-                        size="xs"
-                        variant="outline"
-                        className="flex items-center gap-1.5 text-sm"
-                        onClick={() => {
-                          setColumnFilters((prev) => {
-                            const updatedFilters = [...prev];
+      <TableConfigurations
+        setValue={(value) => setGlobalFilter(value)}
+        table={table}
+        data={data}
+        filters={columnFilters}
+      />
+      <SelectedFilters />
 
-                            updatedFilters[index] = {
-                              ...updatedFilters[index],
-                              value: updatedFilters[index].value.filter(
-                                (value) => value !== val
-                              ),
-                            };
-                            let finalFilters = updatedFilters;
-                            if (finalFilters[index].value.length === 0) {
-                              finalFilters = finalFilters.filter(
-                                (filter) => filter.id !== column.id
-                              );
-                            }
-
-                            return finalFilters;
-                          });
-                        }}
-                      >
-                        {capitalize(val)}
-                        <X size={14} />
-                      </Button>
-                    );
-                  })}
-                </div>
-              );
-            })}
-          </div>
-        )}
-        <DropdownMenu
-          open={dropdownVisible}
-          onOpenChange={(open) => {
-            if (open) {
-              setDropdownVisibility(true);
-            }
-          }}
-          defaultOpen
-        >
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="mr-auto">
-              Select Weeks
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            onPointerDownOutside={() => {
-              setDropdownVisibility(false);
-            }}
-            align="end"
-            className="max-h-[500px] overflow-y-auto scrollbar-thin"
-          >
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => {
-                return (
-                  !["client", "account_executive", "sales_unit"].includes(
-                    column.id
-                  ) && (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      className="capitalize"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) =>
-                        column.toggleVisibility(!!value)
-                      }
-                    >
-                      {capitalize(column.id, "_")}
-                    </DropdownMenuCheckboxItem>
-                  )
-                );
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <Button
-          asChild
-          variant="outline"
-          className="flex items-center gap-1.5 pl-2"
-        >
-          <Link to="./add">
-            <CirclePlus size={16} />
-            Create Report
-          </Link>
-        </Button>
-      </div>
       <ScrollArea className="w-full whitespace-nowrap rounded-md border">
-        <div className="max-h-[calc(100vh-15rem)]">
+        <div
+          className={cn(
+            "overflow-auto",
+            filters.length === 0
+              ? "max-h-[calc(100vh-13.25rem)]"
+              : "max-h-[calc(100vh-15.75rem)]"
+          )}
+          ref={parentRef}
+        >
           <Table>
-            <TableHeader className="sticky top-0 z-10">
+            <TableHeader className="sticky top-0 z-[3]">
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header, index) => {
@@ -193,8 +121,8 @@ export function ReportsTable<TData, TValue>({
                     return (
                       <TableHead
                         key={header.id}
-                        className={classNames(
-                          "bg-main-400 text-white shadow text-xs uppercase font-bold whitespace-nowrap min-w-[200px]",
+                        className={cn(
+                          "bg-main-400 text-white shadow text-xs uppercase font-bold w-fit",
                           columnID !== "client" ? "text-center" : "",
                           index === 0 ? "sticky left-0" : ""
                         )}
@@ -212,36 +140,85 @@ export function ReportsTable<TData, TValue>({
               ))}
             </TableHeader>
             <TableBody>
-              {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
+              {isPending ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-[calc(10em)] bg-slate-100 animate-pulse"
                   >
-                    {row.getVisibleCells().map((cell) => {
-                      const columnID = cell.column.id;
-                      return (
-                        <TableCell
-                          key={cell.id}
-                          className={classNames(
-                            columnID === "client"
-                              ? "sticky left-0 bg-slate-50 uppercase px-2 font-semibold"
-                              : ["sales_unit", "account_executive"].includes(
-                                  columnID
-                                )
-                              ? "bg-slate-50"
-                              : "text-center min-w-[200px]"
-                          )}
-                        >
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )}
-                        </TableCell>
-                      );
-                    })}
-                  </TableRow>
-                ))
+                    Loading
+                  </TableCell>
+                </TableRow>
+              ) : rowVirtualizer.getVirtualItems().length > 0 ? (
+                <>
+                  {/* Top padding */}
+                  {rowVirtualizer.getVirtualItems()[0]?.start > 0 && (
+                    <TableRow>
+                      <TableCell
+                        style={{
+                          height: rowVirtualizer.getVirtualItems()[0].start,
+                        }}
+                        colSpan={columns.length}
+                      />
+                    </TableRow>
+                  )}
+
+                  {/* Render visible rows */}
+                  {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                    const row = rows[virtualRow.index];
+                    return (
+                      <TableRow
+                        key={row.id}
+                        data-state={row.getIsSelected() && "selected"}
+                      >
+                        {row.getVisibleCells().map((cell) => {
+                          const columnID = cell.column.id;
+                          return (
+                            <TableCell
+                              key={cell.id}
+                              className={cn(
+                                columnID === "client"
+                                  ? "sticky left-0 bg-slate-50 uppercase px-2 font-semibold w-[15vw] whitespace-break-spaces z-[2]"
+                                  : [
+                                      "sales_unit",
+                                      "account_executive",
+                                      "status",
+                                    ].includes(columnID)
+                                  ? "bg-slate-50 text-center max-w-[10vw] w-fit"
+                                  : "text-left min-w-[400px] p-0"
+                              )}
+                            >
+                              {flexRender(
+                                cell.column.columnDef.cell,
+                                cell.getContext()
+                              )}
+                            </TableCell>
+                          );
+                        })}
+                      </TableRow>
+                    );
+                  })}
+
+                  {/* Bottom padding */}
+                  {(() => {
+                    const lastItem = rowVirtualizer.getVirtualItems().at(-1);
+                    if (!lastItem) return null;
+
+                    const bottomSpace =
+                      rowVirtualizer.getTotalSize() - lastItem.end;
+
+                    return (
+                      bottomSpace > 0 && (
+                        <TableRow>
+                          <TableCell
+                            style={{ height: bottomSpace }}
+                            colSpan={columns.length}
+                          />
+                        </TableRow>
+                      )
+                    );
+                  })()}
+                </>
               ) : (
                 <TableRow>
                   <TableCell
@@ -257,6 +234,45 @@ export function ReportsTable<TData, TValue>({
         </div>
         <ScrollBar orientation="horizontal" />
       </ScrollArea>
+      <div className="flex items-center justify-end space-x-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => table.previousPage()}
+          disabled={!table.getCanPreviousPage()}
+        >
+          Previous
+        </Button>
+        {(() => {
+          const currentPage = table.getState().pagination.pageIndex;
+          const pageCount = table.getPageCount();
+          const startPage = Math.max(0, currentPage - 1);
+          const endPage = Math.min(pageCount - 1, startPage + 2);
+          const pagesToShow = [];
+          for (let i = startPage; i <= endPage; i++) {
+            pagesToShow.push(i);
+          }
+          return pagesToShow.map((index) => (
+            <Button
+              key={index}
+              variant="outline"
+              size="sm"
+              onClick={() => table.setPageIndex(index)}
+              disabled={table.getState().pagination.pageIndex === index}
+            >
+              {index + 1}
+            </Button>
+          ));
+        })()}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => table.nextPage()}
+          disabled={!table.getCanNextPage()}
+        >
+          Next
+        </Button>
+      </div>
     </div>
   );
 }

@@ -1,14 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/data/data-table";
 import { columns } from "@/data/users.columns";
-import useStoredUser from "@/hooks/useStoredUser";
+import { useUsers } from "@/hooks/useUsers";
 import { UserTable } from "@/interfaces/user.interface";
 import Container from "@/misc/Container";
 import Page from "@/misc/Page";
 import AddUser from "@/pages/users/add.users";
 import EditUser from "@/pages/users/edit.users";
 import ViewUser from "@/pages/users/view.users";
-import { useUser } from "@/providers/users.provider";
 import { AnimatePresence } from "framer-motion";
 import { CirclePlus } from "lucide-react";
 import { useMemo } from "react";
@@ -29,16 +28,15 @@ const Users = () => {
 };
 
 const Main = () => {
-  const { users } = useUser();
-  const { user } = useStoredUser();
+  const { data: users, isLoading } = useUsers();
 
   const usersData: UserTable[] = useMemo(() => {
-    if (!users || !user) return [];
+    if (!users) return [];
 
     if (users.length < 0) return [];
-    
+
     return users.map((user) => {
-      const full_name = [user.first_name, user.last_name].join(" ");
+      const full_name = `${user.first_name} ${user.last_name}`;
 
       return {
         ID: Number(user.ID),
@@ -49,28 +47,31 @@ const Main = () => {
         status: user.status ? user.status : "active",
       };
     });
-  }, [user, users]);
+  }, [users]);
+
+  if (isLoading) return <>fetching...</>;
 
   return (
     <>
       <Helmet>
-        <title>Users | Sales CRM</title>
+        <title>Users | Sales Platform</title>
       </Helmet>
-      <header className="flex items-center justify-between">
-        <Button
-          asChild
-          variant="outline"
-          className="flex items-center gap-1.5 pl-2"
-        >
-          <Link to="./add">
-            <CirclePlus size={16} />
-            Add User
-          </Link>
-        </Button>
-      </header>
       <AnimatePresence>
         <Page className="w-full">
-          <DataTable columns={columns} data={usersData} />
+          <DataTable columns={columns} data={usersData} size={50}>
+            <header className="flex items-center justify-between">
+              <Button
+                asChild
+                variant="outline"
+                className="flex items-center gap-1.5 pl-2"
+              >
+                <Link to="./add">
+                  <CirclePlus size={16} />
+                  Add User
+                </Link>
+              </Button>
+            </header>
+          </DataTable>
         </Page>
       </AnimatePresence>
     </>

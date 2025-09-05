@@ -1,15 +1,7 @@
 import { DefaultResponse, ErrorResponse, ProviderProps } from "@/interfaces";
 import { createContext, useContext, useEffect, useState } from "react";
-import { useProvider } from "./provider";
-import axios from "axios";
+import { catchError, spAPI } from "./api";
 
-interface Log {
-  ID: number;
-  action: string;
-  module: string;
-  logged_at: string;
-  logged_by: string;
-}
 interface LogData {
   action: string;
   module: string;
@@ -36,7 +28,7 @@ export interface SystemLog {
 interface LogProvider {
   logs: HistoryLog[] | [];
   insertLog: (data: LogData) => Promise<DefaultResponse | null>;
-  getLogTemplate: (ID: number) => Promise<LogTemplate | null>;
+  getLogTemplate: (ID: number) => Promise<LogTemplate | undefined>;
   getModuleLogs: (
     module: string,
     IDs: number[],
@@ -61,28 +53,20 @@ export const useLog = (): LogProvider => {
 };
 
 export function LogProvider({ children }: ProviderProps) {
-  const { authHeader, handleError, handleSessionExpiration } = useProvider();
-  const url = import.meta.env.VITE_LOCAL_SERVER;
-  const logURL = `${url}logs`;
   const currentUser = localStorage.getItem("currentUser");
 
   const [logs, setLogs] = useState<HistoryLog[] | []>([]);
 
-  const getLogTemplate = async (ID: number): Promise<LogTemplate | null> => {
+  const getLogTemplate = async (
+    ID: number
+  ): Promise<LogTemplate | undefined> => {
     try {
-      const response: DefaultResponse = await axios.get(
-        `${logURL}?t_id=${ID}`,
-        {
-          headers: authHeader(),
-        }
-      );
-      const results: LogTemplate = handleSessionExpiration(response);
-      if (results) {
-        return results.data;
+      const response = await spAPI.get<LogTemplate>(`logs?t_id=${ID}`);
+      if (response) {
+        return response.data;
       }
-      return null;
     } catch (error) {
-      return handleError(error);
+      catchError(error);
     }
   };
   const getModuleLogs = async (
@@ -93,17 +77,14 @@ export function LogProvider({ children }: ProviderProps) {
     try {
       if (IDs.length === 0 || modules.length === 0) return [];
 
-      const response = await axios.get(
-        `${logURL}?module=${module}&ids=${JSON.stringify(
+      const response = await spAPI.get(
+        `logs?module=${module}&ids=${JSON.stringify(
           IDs
-        )}&modules=${JSON.stringify(modules)}`,
-        {
-          headers: authHeader(),
-        }
+        )}&modules=${JSON.stringify(modules)}`
       );
       return response.data;
     } catch (error) {
-      return handleError(error);
+      catchError(error);
     }
   };
   const insertLog = async (
@@ -113,17 +94,14 @@ export function LogProvider({ children }: ProviderProps) {
       const formdata = new FormData();
       formdata.append("data", JSON.stringify(data));
 
-      const response: DefaultResponse = await axios.post(logURL, formdata, {
-        headers: authHeader(),
-      });
-      const results = handleSessionExpiration(response);
-      if (results) {
-        return results.data;
+      const response = await spAPI.post<DefaultResponse>("logs", formdata);
+      if (response) {
+        return response.data;
       }
 
       return null;
     } catch (error) {
-      return handleError(error);
+      catchError(error);
     }
   };
 
@@ -178,34 +156,25 @@ export function LogProvider({ children }: ProviderProps) {
         return response;
       }
     } catch (e) {
-      return handleError(e);
+      catchError(e);
     }
   };
 
   useEffect(() => {
     const setup = async () => {
-      if (!currentUser) {
-        return;
-      }
+      if (!currentUser) return;
 
       try {
-        const response: Log[] | [] = await axios.get(logURL, {
-          headers: authHeader(),
-        });
-        const results = handleSessionExpiration(response);
-        if (results) {
-          setLogs(results.data);
+        const response = await spAPI.get<HistoryLog[]>("logs");
+        if (response) {
+          setLogs(response.data);
         }
       } catch (error) {
-        return handleError(error);
+        return catchError(error);
       }
     };
 
     setup();
-
-    const interval = setInterval(setup, 60000);
-
-    return () => clearInterval(interval);
   }, [currentUser]);
 
   const value = {

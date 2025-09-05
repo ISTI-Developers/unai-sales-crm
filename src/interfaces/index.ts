@@ -16,10 +16,12 @@ export interface List {
   role?: number;
 }
 
-export interface DefaultResponse {
+export interface DefaultResponse<T = undefined> {
   acknowledged: boolean;
   error?: string;
   token?: string;
+  id?: number;
+  item?: T;
 }
 
 export interface ClassList {
@@ -27,4 +29,11 @@ export interface ClassList {
   inactive: string;
   "password reset": string;
   new: string;
+}
+
+export interface Access {
+  view: boolean;
+  add: boolean;
+  edit: boolean;
+  delete: boolean;
 }

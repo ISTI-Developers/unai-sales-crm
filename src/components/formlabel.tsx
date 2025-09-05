@@ -1,9 +1,9 @@
 import { Label } from "./ui/label";
 
-const FormLabel = ({ ...props }) => {
+const FormLabel = ({ id, label }: { id: string; label: string }) => {
   return (
-    <Label htmlFor={props.id} className="capitalize">
-      {props.label.replace(/_/g, " ")}
+    <Label htmlFor={id} className="capitalize">
+      {label.replace(/_/g, " ")}
     </Label>
   );
 };

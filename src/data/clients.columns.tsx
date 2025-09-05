@@ -1,3 +1,5 @@
+import ClientAccounts from "@/components/clients/accounts.clients";
+import DeleteClient from "@/components/clients/delete.client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,21 +25,111 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { List } from "@/interfaces";
-import {
-  Client,
-  ClientMedium,
-  ClientWithContact,
-} from "@/interfaces/client.interface";
-import { colors } from "@/lib/utils";
-import { useClient } from "@/providers/client.provider";
+import { Tooltip, TooltipTrigger } from "@/components/ui/tooltip";
+import { TooltipContentWithArrow } from "@/components/ui/tooltip-arrow";
+import { useToast } from "@/hooks/use-toast";
+import { useClientOptionList } from "@/hooks/useClientOptions";
+import { useClientAccess, useUpdateClientStatus } from "@/hooks/useClients";
+import { ClientMedium, ClientTable } from "@/interfaces/client.interface";
+import { cn, colors } from "@/lib/utils";
+import { useAuth } from "@/providers/auth.provider";
 import { ColumnDef, Row } from "@tanstack/react-table";
-import classNames from "classnames";
 import { MoreHorizontal, PenBox } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
-export const columns: ColumnDef<Client>[] = [
+const ActionCell = ({ row }: { row: Row<ClientTable> }) => {
+  const { user } = useAuth();
+  const client: ClientTable = row.original;
+  const { access } = useClientAccess(10);
+  const [show, setShow] = useState(false);
+
+  const clientAccess = useMemo(() => {
+    if (!user) return { edit: false, delete: false };
+
+    const salesUnit = user.sales_unit;
+    if (!salesUnit) {
+      return {
+        edit: user.role.role_id in [1, 3, 10, 11],
+        delete: user.role.role_id in [1, 3, 10, 11]
+      };
+    }
+
+    console.log(access);
+
+    return {
+      edit: salesUnit.sales_unit_id === client.sales_unit_id && access.edit,
+      delete: salesUnit.sales_unit_id === client.sales_unit_id && access.delete,
+    }
+  }, [access, user, client]);
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon">
+          <span className="sr-only">Open Menu</span>
+          <MoreHorizontal size={20} />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent>
+        <DropdownLink
+          link={`./${(client.name as string).replace(/ /g, "_").replace(/\//g, "-")}`}
+          label="view"
+          client={client}
+          access
+        />
+
+        <DropdownLink
+          link={`./${(client.name as string).replace(/ /g, "_").replace(/\//g, "-")}/edit`}
+          label="edit"
+          access={clientAccess.edit}
+          client={client}
+        />
+        <Tooltip>
+          <DropdownMenuItem
+            className={cn(
+              "text-red-300 focus:text-red-500 focus:bg-red-50",
+              !clientAccess.delete
+                ? "opacity-50 focus:bg-transparent cursor-not-allowed"
+                : ""
+            )}
+            onClick={(e) => e.preventDefault()}
+          >
+            <Dialog open={show} onOpenChange={setShow}>
+              <TooltipTrigger asChild>
+                <DialogTrigger
+                  className="w-full text-left disabled:cursor-not-allowed"
+                  disabled={!clientAccess.delete}
+                >
+                  Delete
+                </DialogTrigger>
+              </TooltipTrigger>
+              <DeleteClient client={client} onOpenChange={setShow} />
+            </Dialog>
+          </DropdownMenuItem>
+          {!clientAccess.delete && (
+            <TooltipContentWithArrow>
+              Action not allowed.
+            </TooltipContentWithArrow>
+          )}
+        </Tooltip>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
+
+export const columns: ColumnDef<ClientTable>[] = [
+  {
+    accessorKey: "row",
+    header: () => {
+      return <p className="pl-4">#</p>;
+    },
+    cell: ({ table, row }) => {
+      const rows = table.getRowModel().rows;
+      const rowIndex = rows.findIndex((r) => r.id === row.id);
+      return <p className="text-center">{rowIndex + 1}</p>;
+    },
+  },
   {
     id: "name",
     accessorKey: "name",
@@ -47,7 +139,11 @@ export const columns: ColumnDef<Client>[] = [
     cell: ({ row }) => {
       const name: string = row.getValue("name");
 
-      return <p className="pl-4 max-w-[200px]">{name}</p>;
+      return (
+        <p className="w-full pl-4 text-xs max-w-[250px] uppercase">
+          {name}
+        </p>
+      );
     },
   },
   {
@@ -57,20 +153,29 @@ export const columns: ColumnDef<Client>[] = [
     cell: ({ row }) => {
       const { industry, industry_name } = row.original;
       let color = "#233345";
-      if (industry) {
-        color = colors[industry - 1];
+      if (industry !== 0) {
+        color = colors[industry as number - 1];
       }
-      return industry ? (
-        <Badge
-          variant="outline"
-          className="text-white"
-          style={{ backgroundColor: color }}
-        >
-          {industry_name}
-        </Badge>
-      ) : (
-        "---"
+      return (
+        <div className="min-w-[150px]">
+          {industry ? (
+            <Badge
+              variant="outline"
+              className="text-white whitespace-nowrap"
+              style={{ backgroundColor: color }}
+            >
+              {industry_name as string}
+            </Badge>
+          ) : (
+            "---"
+          )}
+        </div>
       );
+    },
+    filterFn: (row, columnId, filterValue) => {
+      const item: string = row.getValue(columnId);
+      console.log(row, item, filterValue)
+      return filterValue.includes(item);
     },
   },
   {
@@ -80,23 +185,38 @@ export const columns: ColumnDef<Client>[] = [
     cell: ({ row }) => {
       const brand: string = row.getValue("brand");
 
-      return brand ? <p>{brand}</p> : "---";
+      return brand ? (
+        <p className="w-full whitespace-nowrap lg:whitespace-break-spaces text-xs lg:max-w-[150px]">
+          {brand.slice(0, 20)}
+        </p>
+      ) : (
+        "---"
+      );
     },
-  },
-  {
-    id: "company",
-    accessorKey: "company",
-    header: "Company",
   },
   {
     id: "sales_unit",
     accessorKey: "sales_unit",
     header: "Sales Unit",
+    cell: ({ row }) => {
+      const su: string = row.getValue("sales_unit");
+      return <p className="text-xs">{su}</p>
+    },
+    filterFn: (row, columnId, filterValue) => {
+      const item: string = row.getValue(columnId);
+      return filterValue.includes(item);
+    },
   },
   {
     id: "account_executive",
     accessorKey: "account_executive",
     header: "Account Executive",
+    cell: ClientAccounts,
+    filterFn: (row, _, filterValue) => {
+      const account_executives = row.original.account_executives;
+
+      return account_executives.some(account => filterValue.some((value: string) => value === account.account_executive));
+    },
   },
   {
     id: "mediums",
@@ -104,22 +224,45 @@ export const columns: ColumnDef<Client>[] = [
     header: "Medium",
     cell: ({ row }) => {
       const mediums: ClientMedium[] = row.getValue("mediums");
+      return (
+        <div className="flex gap-1 flex-wrap max-w-[250px]">
+          {mediums.slice(0, 2).map((medium) => {
+            const index = medium.medium_id % colors.length;
 
-      return mediums.map((medium) => {
-        const index = medium.medium_id % colors.length;
-
-        const color = colors[index] ?? "#233345";
-        return (
-          <Badge
-            key={medium.cm_id}
-            variant="outline"
-            className="text-white"
-            style={{ backgroundColor: color }}
-          >
-            {medium.name}
-          </Badge>
-        );
-      });
+            const color = colors[index] ?? "#233345";
+            return (
+              <Badge
+                key={medium.cm_id}
+                variant="outline"
+                className="text-white whitespace-nowrap"
+                style={{ backgroundColor: color }}
+              >
+                {medium.name}
+              </Badge>
+            );
+          })}
+          {mediums.length > 2 && (
+            <Tooltip>
+              <TooltipTrigger>...</TooltipTrigger>
+              <TooltipContentWithArrow>
+                {mediums.slice(2).map((medium) => (
+                  <p
+                    key={
+                      medium.client_id +
+                      "-" +
+                      medium.cm_id +
+                      "-" +
+                      medium.medium_id
+                    }
+                  >
+                    {medium.name}
+                  </p>
+                ))}
+              </TooltipContentWithArrow>
+            </Tooltip>
+          )}
+        </div>
+      );
     },
     filterFn: (row, columnId, filterValue) => {
       const mediums: ClientMedium[] = row.getValue(columnId);
@@ -138,88 +281,31 @@ export const columns: ColumnDef<Client>[] = [
     id: "actions",
     accessorKey: "action",
     header: "Action",
-    cell: ({ row }) => {
-      const client: ClientWithContact = row.original;
-
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <span className="sr-only">Open Menu</span>
-              <MoreHorizontal size={20} />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownLink
-              link={`./${client.name.replace(/ /g, "_")}`}
-              label="view"
-              client={client}
-            />
-            <DropdownLink
-              link={`./${client.name.replace(/ /g, "_")}/edit`}
-              label="edit"
-              client={client}
-            />
-            <DropdownMenuItem asChild>
-              <Link
-                to="/reports/add"
-                onClick={() => {
-                  const clientItem: List = {
-                    id: String(client.client_id),
-                    value: client.name,
-                    label: client.name,
-                  };
-                  localStorage.setItem(
-                    "storedClient",
-                    JSON.stringify(clientItem)
-                  );
-                }}
-                className="capitalize"
-              >
-                create report
-              </Link>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
-    },
+    cell: ActionCell,
   },
 ];
-const StatusSelect = ({ row }: { row: Row<Client> }) => {
-  const { clientOptions, updateClientStatus } = useClient();
+
+const StatusSelect = ({ row }: { row: Row<ClientTable> }) => {
+  const { mutate: updateClientStatus, isPending } = useUpdateClientStatus();
   const { client_id, name: client, status_name } = row.original;
+  const { access } = useClientAccess(10);
+
+  const { toast } = useToast();
 
   const [isEditable, setEditable] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
 
-  const name = status_name.toLowerCase();
-  const options: List[] | [] = useMemo(() => {
-    if (!clientOptions) return [];
-    const category = clientOptions.filter((option) =>
-      option.some((opt) => opt.category === "status")
-    );
-
-    if (Array.isArray(category)) {
-      return category[0]
-        .map(({ misc_id, name }) => {
-          return {
-            id: misc_id,
-            label: name,
-            value: misc_id,
-          };
-        })
-        .sort((a, b) => a.label.localeCompare(b.label));
-    }
-  }, [clientOptions]);
+  const name = (status_name as string).toLowerCase();
+  const { options } = useClientOptionList("status");
 
   const statusMap: {
     [key: string]:
-      | "default"
-      | "secondary"
-      | "destructive"
-      | "outline"
-      | null
-      | undefined;
+    | "default"
+    | "secondary"
+    | "destructive"
+    | "outline"
+    | null
+    | undefined;
   } = {
     active: "outline",
     hot: "outline",
@@ -242,8 +328,29 @@ const StatusSelect = ({ row }: { row: Row<Client> }) => {
       (option) => option.label.toLowerCase() === selectedStatus
     );
     if (status) {
-      const response = await updateClientStatus(status, client_id);
-      console.log(response);
+      updateClientStatus(
+        { status: status.id, ID: String(client_id) },
+        {
+          onSuccess: (data) => {
+            if (data.acknowledged) {
+              toast({
+                description: "Status has been updated.",
+                variant: "success",
+              });
+              setEditable(false);
+              setSelectedStatus(null);
+            }
+          },
+          onError: (error) =>
+            toast({
+              description: `${typeof error === "object" && error !== null && "error" in error
+                ? (error as { error?: string }).error
+                : "Please contact the IT developer."
+                }`,
+              variant: "destructive",
+            }),
+        }
+      );
     }
   };
   return (
@@ -260,19 +367,26 @@ const StatusSelect = ({ row }: { row: Row<Client> }) => {
         >
           <DialogTrigger asChild>
             <Button
-              onClick={() => setEditable(true)}
+              onClick={(e) =>
+                access.edit ? setEditable(true) : e.preventDefault()
+              }
               variant="ghost"
               size={null}
               tabIndex={-1}
-              className="relative group select-none cursor-pointer flex gap-2 justify-start w-full outline-none focus:outline-none focus-visible:ring-0"
+              className={cn(
+                "relative group select-none cursor-pointer flex gap-2 justify-start w-fit outline-none focus:outline-none focus-visible:ring-0",
+                !access.edit ? "pointer-events-none" : ""
+              )}
             >
               <Badge
                 variant={statusMap[name]}
-                className={classNames(statusClasses[name], "uppercase")}
+                className={cn(statusClasses[name], "uppercase")}
               >
-                {status_name}
+                {status_name as string}
               </Badge>
-              <PenBox className="absolute top-1/2 -translate-y-1/2 right-0 opacity-0 group-hover:opacity-100" />
+              {access.edit && (
+                <PenBox className="absolute top-1/2 -translate-y-1/2 right-0 opacity-0 group-hover:opacity-100" />
+              )}
             </Button>
           </DialogTrigger>
           <DialogContent>
@@ -281,7 +395,7 @@ const StatusSelect = ({ row }: { row: Row<Client> }) => {
               <DialogDescription>
                 <p>
                   Update the status of{" "}
-                  <span className="uppercase font-bold">{client}</span> by
+                  <span className="uppercase font-bold">{client as string}</span> by
                   selecting from the list below.
                 </p>
               </DialogDescription>
@@ -306,10 +420,7 @@ const StatusSelect = ({ row }: { row: Row<Client> }) => {
                       <SelectItem key={`status_${option.id}`} value={label}>
                         <Badge
                           variant={statusMap[label]}
-                          className={classNames(
-                            statusClasses[label],
-                            "uppercase"
-                          )}
+                          className={cn(statusClasses[label], "uppercase")}
                         >
                           {label}
                         </Badge>
@@ -333,7 +444,11 @@ const StatusSelect = ({ row }: { row: Row<Client> }) => {
               <Button
                 type="button"
                 variant="ghost"
-                disabled={selectedStatus === null || selectedStatus === name}
+                disabled={
+                  selectedStatus === null ||
+                  selectedStatus === name ||
+                  isPending
+                }
                 onClick={onSubmit}
                 className="bg-main-100 hover:bg-main-400 text-white hover:text-white"
               >
@@ -350,20 +465,36 @@ const DropdownLink = ({
   client,
   label,
   link,
+  access,
 }: {
-  client: ClientWithContact;
+  client: ClientTable;
   label: string;
   link: string;
+  access: boolean;
 }) => {
   return (
-    <DropdownMenuItem asChild>
-      <Link
-        to={link}
-        onClick={() => localStorage.setItem("client", String(client.client_id))}
-        className="capitalize"
-      >
-        {label}
-      </Link>
-    </DropdownMenuItem>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <DropdownMenuItem asChild>
+          <Link
+            to={access ? link : ""}
+            onClick={() =>
+              access && localStorage.setItem("client", String(client.client_id))
+            }
+            className={cn(
+              "capitalize",
+              !access && "opacity-50 cursor-not-allowed"
+            )}
+            tabIndex={access ? 0 : -1}
+            aria-disabled={!access}
+          >
+            {label}
+          </Link>
+        </DropdownMenuItem>
+      </TooltipTrigger>
+      {!access && (
+        <TooltipContentWithArrow>Action not allowed.</TooltipContentWithArrow>
+      )}
+    </Tooltip>
   );
 };

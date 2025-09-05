@@ -6,6 +6,13 @@ export interface Medium {
   name: string;
 }
 
+export interface MediumWithIDs {
+  cm_id: number;
+  client_id: number;
+  medium_id: number;
+  name: string;
+}
+
 export interface MediumCompany {
   [key: string]: string | undefined;
   name: string;

@@ -4,7 +4,6 @@ import { columns } from "@/data/roles.columns";
 import { columns as moduleColumns } from "@/data/modules.columns";
 import Container from "@/misc/Container";
 import Page from "@/misc/Page";
-import { useRole } from "@/providers/role.provider";
 import { AnimatePresence } from "framer-motion";
 import { CirclePlus } from "lucide-react";
 import { Helmet } from "react-helmet";
@@ -23,6 +22,8 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ManageRole from "@/pages/roles/manage.role";
+import { useRoles } from "@/hooks/useRoles";
+import { useInsertModule, useModules } from "@/hooks/useModules";
 
 const Roles = () => {
   return (
@@ -39,30 +40,28 @@ const Roles = () => {
 
 const Main = () => {
   const { toast } = useToast();
-  const { roles, modules, insertModule, forceReload } = useRole();
+  const { data: roles } = useRoles();
+  const { data: modules } = useModules();
+  const { mutate: insertModule } = useInsertModule();
 
   const [module, setModule] = useState("");
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState("roles");
 
   const createModule = async () => {
-    const response = await insertModule(module);
-
-    if (response.acknowledged) {
-      toast({
-        title: "Creation Success",
-        description: "Successfully added a new module.",
-        variant: "success",
-      });
-      setOpen(false);
-      forceReload();
-    } else {
-      toast({
-        title: "Creation Error",
-        description: response.error ?? "Please contact the IT department",
-        variant: "destructive",
-      });
-    }
+    insertModule(module, {
+      onSuccess: (response) => {
+        if (!response) return;
+        if (response.acknowledged) {
+          toast({
+            title: "Creation Success",
+            description: "Successfully added a new module.",
+            variant: "success",
+          });
+          setOpen(false);
+        }
+      },
+    });
   };
 
   return (
@@ -87,7 +86,7 @@ const Main = () => {
               className="bg-white p-2 rounded-md w-full"
             >
               <Helmet>
-                <title>Roles | Sales CRM</title>
+                <title>Roles | Sales Platform</title>
               </Helmet>
               <div className="flex flex-col gap-2">
                 <header className="flex items-center justify-between">
@@ -115,7 +114,7 @@ const Main = () => {
               className="bg-white p-2 rounded-md w-full"
             >
               <Helmet>
-                <title>Modules | Sales CRM</title>
+                <title>Modules | Sales Platform</title>
               </Helmet>
               <div className="flex flex-col gap-2">
                 <header className="flex items-center justify-between">

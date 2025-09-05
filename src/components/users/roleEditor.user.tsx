@@ -7,7 +7,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import { useUser } from "@/providers/users.provider";
 import { List } from "@/interfaces";
 import { Button } from "../ui/button";
 import { PenBox } from "lucide-react";
@@ -22,40 +21,43 @@ import {
 } from "../ui/dialog";
 import { Label } from "../ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { useRole } from "@/providers/role.provider";
+import { useChangeRole } from "@/hooks/useUsers";
+import { useRoleProvider } from "@/providers/roles.provider";
 
 const RoleEditor = ({ row }: RoleEditorProps) => {
   const role: string = row.getValue("role");
   const item = row.original;
   const { toast } = useToast();
-  const { changeRole, forceReload } = useUser();
-  const { roleOptions } = useRole();
+  const { mutate: changeRole } = useChangeRole();
+  const { roleOptions } = useRoleProvider();
 
   const [isEditable, setEditable] = useState<boolean>(false);
   const [selectedRole, setSelectedRole] = useState<List | null>(null);
 
   const onSubmit = async () => {
-    if (selectedRole !== null) {
-      const response = await changeRole(String(item.ID), item.user, selectedRole.id, selectedRole.label);
+    if (!selectedRole) return;
 
-      if (response.acknowledged) {
-        toast({
-          description: `Role update success!`,
-          variant: "success",
-        });
-        setEditable(false);
-        forceReload();
-      } else {
-        toast({
-          title: "Role Update Error",
-          description: `ERROR: ${
-            response.error ||
-            "An error has occured. Send a ticket to the developer."
-          }`,
-          variant: "destructive",
-        });
+    changeRole(
+      {
+        userID: item.ID,
+        roleID: selectedRole.id,
+        label: selectedRole.label,
+        member: item.user,
+      },
+      {
+        onSuccess: (data) => {
+          if (data) {
+            if (data.acknowledged) {
+              toast({
+                description: `Role update success!`,
+                variant: "success",
+              });
+              setEditable(false);
+            }
+          }
+        },
       }
-    }
+    );
   };
 
   return (

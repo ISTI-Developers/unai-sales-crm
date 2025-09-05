@@ -11,18 +11,30 @@ import { ComboBox } from "@/components/combobox";
 import { useToast } from "@/hooks/use-toast";
 import { User } from "@/interfaces/user.interface";
 import Page from "@/misc/Page";
-import { useAuth } from "@/providers/auth.provider";
-import { useUser } from "@/providers/users.provider";
 import { ChevronLeft, LoaderCircle } from "lucide-react";
 import { ChangeEvent, FormEvent, useMemo, useState } from "react";
 import { Helmet } from "react-helmet";
 import { Link, useNavigate } from "react-router-dom";
 import { v4 } from "uuid";
-import { useRole } from "@/providers/role.provider";
+import { useInsertUser } from "@/hooks/useUsers";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useCompanies } from "@/hooks/useCompanies";
+import { generatePassword } from "@/lib/utils";
+import { useRoleProvider } from "@/providers/roles.provider";
 
 const AddUser = () => {
-  const { generatePassword } = useAuth();
-  const { insertUser } = useUser();
+  const { data: companies } = useCompanies();
+  const { mutate: insertUser } = useInsertUser();
+  const { roleOptions } = useRoleProvider();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
   const [user, setUser] = useState<User>({
     ID: v4(),
     first_name: "",
@@ -36,13 +48,11 @@ const AddUser = () => {
     role: {
       role_id: 5,
       name: "account executive",
+      access: [],
     },
     status: "new",
   });
-  const { roleOptions } = useRole();
   const [loading, setLoading] = useState<boolean>(false);
-  const { toast } = useToast();
-  const navigate = useNavigate();
 
   const onInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     setUser((prev) => ({
@@ -56,25 +66,29 @@ const AddUser = () => {
 
     setLoading((prev) => !prev);
 
-    const response = await insertUser(user);
-
-    if (response.acknowledged) {
-      toast({
-        description: `Account creation success! Credentials have been sent to ${user.email_address}.`,
-        variant: "success",
-      });
-      navigate("/users");
-    } else {
-      toast({
-        title: "Account Creation Error",
-        description: `ERROR: ${
-          response.error ||
-          "An error has occured. Send a ticket to the developer."
-        }`,
-        variant: "destructive",
-      });
-      setLoading((prev) => !prev);
-    }
+    insertUser(user, {
+      onSuccess: (data) => {
+        if (data) {
+          if (data.acknowledged) {
+            toast({
+              description: `Account creation success! Credentials have been sent to ${user.email_address}.`,
+              variant: "success",
+            });
+            navigate("/users");
+          }
+        }
+      },
+      onError: (error) => {
+        toast({
+          title: "Account Creation Error",
+          description: `ERROR: ${
+            error || "An error has occured. Send a ticket to the developer."
+          }`,
+          variant: "destructive",
+        });
+        setLoading((prev) => !prev);
+      },
+    });
   };
 
   const isReady = useMemo(() => {
@@ -88,7 +102,7 @@ const AddUser = () => {
   return (
     <Page className="flex flex-col gap-4">
       <Helmet>
-        <title>Add User | Sales CRM</title>
+        <title>Add User | Sales Platform</title>
       </Helmet>
       <header className="flex items-center justify-between border-b pb-1.5">
         <h1 className="text-blue-500 font-bold uppercase">New User</h1>
@@ -141,7 +155,7 @@ const AddUser = () => {
                       id={key}
                       type={key.includes("email") ? "email" : "text"}
                       name={key}
-                      value={user[key]}
+                      value={user[key] as string}
                       onChange={onInputChange}
                       required={key !== "middle_name"}
                       disabled={loading}
@@ -149,6 +163,46 @@ const AddUser = () => {
                   </div>
                 );
               })}
+            <div className="grid grid-cols-[20%_80%] items-center">
+              <Label htmlFor="company" className="flex gap-1 items-center">
+                <span>Company/Business Unit</span>
+              </Label>
+              <Select
+                value={user.company?.name ?? ""}
+                disabled={loading}
+                required
+                onValueChange={(value) => {
+                  if (!companies) return;
+
+                  const company = companies.find((c) => c.name === value);
+
+                  if (!company) return;
+
+                  console.log(company);
+                  setUser((prev) => ({
+                    ...prev,
+                    company: company,
+                  }));
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select company" />
+                </SelectTrigger>
+                <SelectContent>
+                  {companies ? (
+                    companies.map((company) => (
+                      <SelectItem key={company.ID} value={company.name}>
+                        {`${company.name} (${company.code})`}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="-" disabled>
+                      Loading options...
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </section>
         <section className="rounded-md border p-4">
@@ -205,6 +259,7 @@ const AddUser = () => {
                     return {
                       ...prev,
                       role: {
+                        ...prev.role,
                         role_id: Number(id),
                         name: value,
                       },

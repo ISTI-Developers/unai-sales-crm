@@ -2,7 +2,7 @@ import Page from "@/misc/Page";
 import bulktemplate from "../../misc/bulktemplate.xlsx";
 import { Helmet } from "react-helmet";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ChevronLeft, LoaderCircle } from "lucide-react";
 import {
   Accordion,
@@ -11,21 +11,16 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import FileUpload from "@/components/clients/fileupload.clients";
-import { memo, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { ClientUpload } from "@/interfaces/client.interface";
 import {
   Table,
   TableBody,
-  TableCell,
   TableHead,
   TableHeader,
-  TableRow,
 } from "@/components/ui/table";
 import { capitalize, splitFullName } from "@/lib/utils";
 import Row from "@/components/clients/row.clients";
-import { useClient } from "@/providers/client.provider";
-import { useUser } from "@/providers/users.provider";
-import { useCompany } from "@/providers/company.provider";
 import {
   Dialog,
   DialogContent,
@@ -35,46 +30,35 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { useRole } from "@/providers/role.provider";
-import { List } from "@/interfaces";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import classNames from "classnames";
-import { useMedium } from "@/providers/mediums.provider";
 
-interface UserAccount {
-  [key: string]: string;
-  name: string;
-  first_name: string;
-  last_name: string;
-  email_address: string;
-  company: string;
-  sales_unit: string;
-  role: string;
-}
+import Fuse from "fuse.js";
+import { useToast } from "@/hooks/use-toast";
+import { useBatchInsertClients } from "@/hooks/useClients";
+import { useMediums } from "@/hooks/useMediums";
+import { useAllClientOptions } from "@/hooks/useClientOptions";
+import { useUsers } from "@/hooks/useUsers";
+import { useCompanies, useSalesUnits } from "@/hooks/useCompanies";
 
 const BulkAddClient = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
   const [data, setData] = useState<ClientUpload[] | null>(null);
   const [loading, setLoading] = useState(false);
-  const [names, setNames] = useState<UserAccount[]>([]);
   const [userForm, toggleUserForm] = useState<boolean>(false);
   const [processedClient, setProcessedClient] = useState<ClientUpload[] | null>(
     null
   );
 
-  const { mediums } = useMedium();
-  const { clientOptions, insertBatchClients } = useClient();
-  const { users } = useUser();
-  const { salesGroupCompanies, companies } = useCompany();
+  const { industries, sources, statuses, types } = useAllClientOptions();
+  const { data: users } = useUsers();
+  const { data: salesUnits } = useSalesUnits();
+  const { data: companies } = useCompanies();
+  const { data: mediums } = useMediums();
+  const { mutate: insertBatchClients } = useBatchInsertClients();
 
   const headers = useMemo(() => {
-    if (!data) return [];
+    if (!data || data.length === 0) return [];
 
     return Object.keys(data[0]).map((key) => capitalize(key, "_"));
   }, [data]);
@@ -95,70 +79,71 @@ const BulkAddClient = () => {
   const processClients = () => {
     if (
       !data ||
-      !clientOptions ||
       !users ||
-      !salesGroupCompanies ||
+      !salesUnits ||
       !companies ||
-      !mediums
+      !mediums ||
+      !industries ||
+      !sources ||
+      !statuses ||
+      !types
     )
       return;
-
     const newData = structuredClone(data);
 
     const fullNames = users.map((user) => ({
       id: user.ID,
       name: `${user.first_name} ${user.last_name}`,
     }));
+    const fuse = new Fuse(fullNames, {
+      includeMatches: true,
+      threshold: 0.6,
+      keys: ["name"],
+    });
 
     newData.forEach((item) => {
       const ae = String(item.account_executive);
       const su = String(item.sales_unit).replace(/\s+/g, "");
       const company = String(item.company);
-      const name = fullNames.find((name) =>
-        name.name.toLowerCase().match(ae.toLowerCase())
-      );
-      const salesUnit = salesGroupCompanies.find((salesUnit) =>
+      const name = fuse.search(ae);
+      const salesUnit = salesUnits.find((salesUnit) =>
         salesUnit.sales_unit_name.replace(/\s+/g, "").match(su)
       );
       const matchCompany = companies.find((comp) =>
         comp.name.toUpperCase().match(company.toUpperCase())
       );
-      const [industryOptions, typeOptions, statusOptions, sourceOptions] =
-        clientOptions;
-
       const matchedOptions = {
         industry:
-          industryOptions.find((opt) => opt.name === item.industry)?.misc_id ??
-          "",
-        status:
-          statusOptions.find((opt) => opt.name === item.status)?.misc_id ?? "",
-        source:
-          sourceOptions.find((opt) => opt.name === item.source)?.misc_id ?? "",
-        type: typeOptions.find((opt) => opt.name === item.type)?.misc_id ?? "",
+          industries.find((opt) => opt.name === item.industry)?.misc_id ?? 0,
+        status: statuses.find((opt) => opt.name === item.status)?.misc_id ?? 0,
+        source: sources.find((opt) => opt.name === item.source)?.misc_id ?? 0,
+        type: types.find((opt) => opt.name === item.type)?.misc_id ?? 0,
       };
       const matchMediums = mediums.filter((medium) => {
         if (item.mediums.length === 0) return false;
 
         const itemMediums = item.mediums.split(",");
-        
-        return itemMediums.some(
-          (itemMedium) => {
-            return medium.name.toUpperCase().match(itemMedium.trim().toUpperCase());
-          }
-        );
+
+        return itemMediums.some((itemMedium) => {
+          return medium.name
+            .toUpperCase()
+            .match(itemMedium.trim().toUpperCase());
+        });
       });
-      console.log(matchMediums);
-      
+
+      const mediumIDs =
+        matchMediums.length > 0 ? matchMediums.map((medium) => medium.ID) : [0];
+
       item.sales_unit = salesUnit?.sales_unit_id ?? "";
       item.company = matchCompany?.ID ?? "";
       item.industry = matchedOptions.industry;
       item.status = matchedOptions.status;
       item.source = matchedOptions.source;
       item.type = matchedOptions.type;
-      item.mediums = matchMediums.map((medium) => medium.ID);
+      item.mediums = mediumIDs;
 
-      if (name) {
-        item.account_executive = name.id;
+      if (name.length > 0) {
+        item.account_executive = name[0].item.id;
       } else {
         const { first_name, last_name } = splitFullName(ae);
         setNames((prev) => [
@@ -182,36 +167,30 @@ const BulkAddClient = () => {
   const onClientSubmit = async () => {
     if (!processedClient) return;
 
-    const response = await insertBatchClients(processedClient);
-    console.log(response);
-  };
-
-  const onUserInfoChange = (value: string, accessor: string, index: number) => {
-    setNames((prev) => {
-      const updatedPrev = structuredClone(prev);
-
-      updatedPrev[index] = {
-        ...updatedPrev[index],
-        [accessor]: value,
-      };
-
-      console.log(updatedPrev);
-      return updatedPrev;
+    insertBatchClients(processedClient, {
+      onSuccess: () => {
+        toggleUserForm(false);
+        toast({
+          description: `New Clients have been added.`,
+          variant: "success",
+        });
+        navigate("/clients", { replace: true });
+      },
+      onError: (error) => {
+        toast({
+          description: `${error}`,
+          variant: "destructive",
+        });
+      },
     });
   };
 
-  const handleClose = (open: boolean) => {
-    toggleUserForm(open);
-    if (!open) {
-      setNames([]);
-    }
-  };
   return (
     <Page className="flex flex-col gap-4">
       <Helmet>
-        <title>Add Multiple Clients | Clients | Sales CRM</title>
+        <title>Add Multiple Clients | Clients | Sales Platform</title>
       </Helmet>
-      <Dialog onOpenChange={handleClose} open={userForm}>
+      <Dialog onOpenChange={toggleUserForm} open={userForm}>
         <header className="flex items-center justify-between border-b pb-1.5">
           <h1 className="text-blue-500 font-bold uppercase">
             Add Multiple Clients
@@ -305,68 +284,13 @@ const BulkAddClient = () => {
         ) : (
           <>{!data && loading ? "Loading..." : ""}</>
         )}
-        <DialogContent
-          className={classNames(names.length !== 0 ? "min-w-[50vw]" : "")}
-        >
+        <DialogContent className="min-w-[50vw]">
           <DialogHeader>
-            <DialogTitle>
-              {names.length !== 0
-                ? "Complete Required Details"
-                : "Add Multiple Clients"}
-            </DialogTitle>
+            <DialogTitle>Add Multiple Clients</DialogTitle>
           </DialogHeader>
           <DialogDescription>
-            {names.length !== 0 ? (
-              <>
-                It looks like there are unregistered account executives. Before
-                uploading these to the system, please complete the required
-                details for the users listed below. If you cannot find their
-                company and sales unit group, please create it first in the{" "}
-                <Link to="/companies" className="text-blue-100 underline">
-                  Companies
-                </Link>
-                page
-              </>
-            ) : (
-              <>Are you sure you want to upload these clients?</>
-            )}
+            Are you sure you want to upload these clients?
           </DialogDescription>
-          {names.length !== 0 && (
-            <div className="relative max-h-[40vh] overflow-auto rounded-md border">
-              <Table>
-                <TableHeader>
-                  {[
-                    "first_name",
-                    "last_name",
-                    "email_address",
-                    "company",
-                    "sales_unit",
-                    "role",
-                  ].map((header) => {
-                    return (
-                      <TableHead
-                        key={header}
-                        className="sticky top-0 bg-main-400 text-white shadow text-xs uppercase font-bold"
-                      >
-                        {capitalize(header, "_")}
-                      </TableHead>
-                    );
-                  })}
-                </TableHeader>
-                <TableBody>
-                  {names.map((user, index) => {
-                    return (
-                      <UserRow
-                        user={user}
-                        index={index}
-                        onChange={onUserInfoChange}
-                      />
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          )}
           <DialogFooter>
             <Button
               type="button"
@@ -389,141 +313,6 @@ const BulkAddClient = () => {
         </DialogContent>
       </Dialog>
     </Page>
-  );
-};
-
-const UserRow = memo(
-  ({
-    user,
-    index,
-    onChange,
-  }: {
-    user: UserAccount;
-    index: number;
-    onChange: (value: string, accesor: string, index: number) => void;
-  }) => {
-    return (
-      <TableRow>
-        {Object.keys(user).map((detail) => {
-          return (
-            <UserCell
-              key={detail}
-              user={user}
-              index={index}
-              accessor={detail}
-              onChange={onChange}
-            />
-          );
-        })}
-      </TableRow>
-    );
-  },
-  (prevProps, nextProps) => {
-    // Custom comparison to prevent unnecessary re-renders
-    return prevProps.user === nextProps.user;
-  }
-);
-
-const UserCell = ({
-  user,
-  accessor,
-  onChange,
-  index,
-}: {
-  user: UserAccount;
-  accessor: string;
-  index: number;
-  onChange: (value: string, accessor: string, index: number) => void;
-}) => {
-  const { salesGroupCompanies, companies } = useCompany();
-  const { roles } = useRole();
-  const [rolesOptions, salesUnits, companyOptions]: List[][] = useMemo(() => {
-    if (!roles || !salesGroupCompanies || !companies) return [[], [], []];
-
-    return [
-      roles
-        .filter((role) => role.role_id > 2)
-        .map((role) => {
-          return {
-            id: role.role_id,
-            value: role.name,
-            label: role.name,
-          };
-        }),
-      salesGroupCompanies.map((su) => {
-        return {
-          id: su.sales_unit_id,
-          value: su.sales_unit_name,
-          label: su.sales_unit_name,
-        };
-      }),
-      companies.map((company) => {
-        return {
-          id: company.ID,
-          value: company.name,
-          label: company.name,
-        };
-      }),
-    ];
-  }, [roles, salesGroupCompanies, companies]);
-
-  return (
-    accessor !== "name" && (
-      <TableCell>
-        {["company", "sales_unit", "role"].includes(accessor) ? (
-          <Select value={user[accessor]}>
-            <SelectTrigger>
-              <SelectValue
-                placeholder={`Select ${capitalize(accessor, "_")}`}
-              />
-            </SelectTrigger>
-            <SelectContent>
-              {accessor === "role"
-                ? rolesOptions.map((option, index) => {
-                    return (
-                      <SelectItem
-                        key={`${accessor}_${index}`}
-                        value={option.value}
-                      >
-                        {option.label}
-                      </SelectItem>
-                    );
-                  })
-                : accessor === "sales_unit"
-                ? salesUnits.map((option, index) => {
-                    return (
-                      <SelectItem
-                        key={`${accessor}_${index}`}
-                        value={option.value}
-                      >
-                        {option.label}
-                      </SelectItem>
-                    );
-                  })
-                : companyOptions.map((option, index) => {
-                    return (
-                      <SelectItem
-                        key={`${accessor}_${index}`}
-                        value={option.value}
-                      >
-                        {option.label}
-                      </SelectItem>
-                    );
-                  })}
-            </SelectContent>
-          </Select>
-        ) : (
-          <Input
-            type="text"
-            value={user[accessor]}
-            className="w-max"
-            onChange={(e) => {
-              onChange(e.target.value, accessor, index);
-            }}
-          />
-        )}
-      </TableCell>
-    )
   );
 };
 export default BulkAddClient;

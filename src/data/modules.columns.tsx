@@ -8,8 +8,8 @@ import {
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
+import { useToggleModule } from "@/hooks/useModules";
 import { Modules } from "@/interfaces/user.interface";
-import { useRole } from "@/providers/role.provider";
 import { ColumnDef, Row } from "@tanstack/react-table";
 import { useState } from "react";
 
@@ -35,7 +35,7 @@ export const columns: ColumnDef<Modules>[] = [
 ];
 
 const StatusToggle = ({ row }: { row: Row<Modules> }) => {
-  const { toggleModule, forceReload } = useRole();
+  const { mutate: toggleModule } = useToggleModule();
   const { toast } = useToast();
   const module = row.original;
   const status = row.getValue("actions");
@@ -45,24 +45,30 @@ const StatusToggle = ({ row }: { row: Row<Modules> }) => {
   const onToggleChange = async () => {
     if (module.m_id && module.status_id) {
       const newStatus = module.status_id === 1 ? 2 : 1;
-      const response = await toggleModule(module, newStatus);
-
-      if (response.acknowledged) {
-        toast({
-          description: `${module.name} has been ${
-            status === "active" ? "disabled" : "enabled"
-          }.`,
-          variant: "success",
-        });
-        setOpen(false);
-        forceReload();
-      } else {
-        toast({
-          title: "System Error",
-          description: response.error ?? "Please contact the IT department.",
-          variant: "destructive",
-        });
-      }
+      toggleModule(
+        { module, status: newStatus },
+        {
+          onSuccess: (response) => {
+            if (!response) return;
+            if (response.acknowledged) {
+              toast({
+                description: `${module.name} has been ${
+                  status === "active" ? "disabled" : "enabled"
+                }.`,
+                variant: "success",
+              });
+              setOpen(false);
+            } else {
+              toast({
+                title: "System Error",
+                description:
+                  response.error ?? "Please contact the IT department.",
+                variant: "destructive",
+              });
+            }
+          },
+        }
+      );
     }
   };
 

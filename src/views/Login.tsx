@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import logo from "@/assets/unmg.png";
+import logo from "@/assets/logo.png";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { Helmet } from "react-helmet";
 import { Input } from "@/components/ui/input";
@@ -8,16 +8,15 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useNavigate } from "react-router-dom";
-import classNames from "classnames";
+import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/providers/auth.provider";
 import Page from "@/misc/Page";
 import PasswordReset from "@/components/home/passwordReset.home";
-import Cookies from "js-cookie";
+import { useLogin } from "@/hooks/useAuth";
 
 const Login = () => {
   const { toast } = useToast();
-  const { loginUser } = useAuth();
+  const { mutate: login } = useLogin();
   const navigate = useNavigate();
 
   const [isEyeVisible, setIsEyeVisible] = useState(false);
@@ -27,6 +26,12 @@ const Login = () => {
   const usernameRef = useRef<HTMLInputElement | null>(null);
   const passwordRef = useRef<HTMLInputElement | null>(null);
 
+  const eyeAnimation = {
+    initial: { opacity: 0, scale: 0.75 },
+    animate: { opacity: 1, scale: 1 },
+    exit: { opacity: 0, scale: 0.75 },
+    transition: { duration: 0.1 },
+  };
   const toggleIcon = () => {
     setIsEyeVisible((prev) => !prev);
   };
@@ -46,7 +51,7 @@ const Login = () => {
       return;
     }
     let saveLogin: string | null = String(false);
-    const username = usernameRef.current.value.trim();
+    const username = usernameRef.current.value.trim().toLowerCase();
     const password = passwordRef.current.value.trim();
     if (remembermeRef.current) {
       saveLogin = remembermeRef.current.ariaChecked;
@@ -62,32 +67,22 @@ const Login = () => {
       return;
     }
 
-    const response = await loginUser(username, password);
-
-    if (response !== null && typeof response === "object") {
-      setHasSubmitted(false);
-      if ("error" in response) {
-        toast({
-          title: "Login Error",
-          description: response.error,
-          variant: "destructive",
-        });
-        usernameRef.current.value = "";
-        passwordRef.current.value = "";
-        return;
+    login(
+      { username: username, password: password },
+      {
+        onSettled: () => {
+          setHasSubmitted(false);
+          localStorage.setItem("saveLogin", String(saveLogin));
+        },
+        onError: () => {
+          if (usernameRef.current && passwordRef.current) {
+            usernameRef.current.value = "";
+            passwordRef.current.value = "";
+            return;
+          }
+        },
       }
-      localStorage.setItem("currentUser", JSON.stringify(response));
-      sessionStorage.setItem("loginTime", String(new Date().getTime()));
-      localStorage.setItem("saveLogin", String(saveLogin));
-      if (response.token) {
-        Cookies.set("token", response.token);
-      }
-      if (localStorage.getItem("last_location") !== null) {
-        navigate(String(localStorage.getItem("last_location")));
-      } else {
-        navigate("/");
-      }
-    }
+    );
   };
 
   useEffect(() => {
@@ -95,44 +90,50 @@ const Login = () => {
       navigate("/");
       return;
     }
-  }, [navigate]);
+  }, []);
 
   return (
     <Page
-      className={classNames(
-        "flex items-center justify-center h-screen",
+      className={cn(
+        "flex items-center justify-center h-[100dvh]",
         "bg-[url('assets/unmg.webp')] bg-cover bg-center"
       )}
     >
       <Helmet>
-        <title>Sales CRM - Login</title>
+        <title>Sales Platform - Login</title>
       </Helmet>
       <div className="bg-base bg-opacity-90 backdrop-blur-md w-full h-full flex justify-center items-center">
-        <Card className="bg-white shadow-lg flex flex-col py-4">
-          <CardHeader className="flex flex-col items-center">
-            <img src={logo} alt="UNMG Logo" className="w-full max-w-[150px]" />
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <h1 className="text-xl font-semibold text-blue-500">
-              Sales Dashboard
+        <Card className="bg-white bg-opacity-50 lg:bg-opacity-100 shadow-lg flex flex-col p-4 px-2 pt-0 rounded-none w-full h-[100dvh] lg:h-auto lg:max-w-md lg:rounded-lg">
+          <CardHeader className="flex flex-col items-center pb-0 py-16 lg:pt-6 lg:pb-10">
+            <img
+              src={logo}
+              alt="UNMG Logo"
+              className="w-full max-w-[150px] lg:max-w-[125px] -mb-6"
+            />
+            <h1 className="text-2xl lg:text-xl font-bold text-main-500 text-center">
+              UNMG Sales Platform
             </h1>
-            <form className="flex flex-col gap-5" onSubmit={onSubmit}>
+            <h3>Log in to your account</h3>
+            {/* <h3 className="text-xs font-light text-slate-300">Making lives meaningful since 1937 💅</h3> */}
+          </CardHeader>
+          <CardContent>
+            <form className="flex flex-col ~gap-8/6" onSubmit={onSubmit}>
               <Input
                 type="text"
                 placeholder="Email or Username"
                 required
                 ref={usernameRef}
-                className="w-full min-w-[25rem] h-12 focus-visible:ring-0"
+                className="w-full ~h-16/12 ~pl-6/4 rounded-xl lg:rounded-md focus-visible:ring-0 shadow-none backdrop-blur"
               />
 
               {/* PASSWORD FIELD */}
-              <div className="border rounded-md h-12 flex items-center shadow overflow-hidden">
+              <div className="border w-full ~h-16/12 rounded-xl lg:rounded-md flex items-center overflow-hidden backdrop-blur">
                 <Input
                   type={isEyeVisible ? "text" : "password"}
                   placeholder="Password"
                   required
                   ref={passwordRef}
-                  className="border-none shadow-none focus-visible:ring-0"
+                  className="border-none shadow-none ~pl-6/4 focus-visible:ring-0"
                 />
                 <Button
                   type="button"
@@ -141,23 +142,11 @@ const Login = () => {
                 >
                   <AnimatePresence initial={false} mode="wait">
                     {isEyeVisible ? (
-                      <motion.div
-                        key="eye"
-                        initial={{ opacity: 0, scale: 0.75 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.75 }}
-                        transition={{ duration: 0.1 }}
-                      >
+                      <motion.div tabIndex={-1} key="eye" {...eyeAnimation}>
                         <Eye />
                       </motion.div>
                     ) : (
-                      <motion.div
-                        key="eye-off"
-                        initial={{ opacity: 0, scale: 0.75 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.75 }}
-                        transition={{ duration: 0.1 }}
-                      >
+                      <motion.div tabIndex={-1} key="eye-off" {...eyeAnimation}>
                         <EyeOff />
                       </motion.div>
                     )}
@@ -166,7 +155,7 @@ const Login = () => {
               </div>
 
               {/* EXTRAS SECTION */}
-              <section className="flex justify-between items-center">
+              <section className="flex justify-between items-center px-1">
                 <div className="flex gap-1.5 items-center text-slate-600">
                   <Checkbox id="remember-me" ref={remembermeRef} />
                   <label htmlFor="remember-me" className="text-sm">
@@ -178,7 +167,7 @@ const Login = () => {
               <Button
                 type="submit"
                 disabled={hasSubmitted}
-                className="uppercase h-12 bg-black mt-4"
+                className="uppercase w-full ~h-16/12 rounded-xl lg:rounded-md bg-main-700 hover:bg-main-500"
               >
                 {hasSubmitted && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

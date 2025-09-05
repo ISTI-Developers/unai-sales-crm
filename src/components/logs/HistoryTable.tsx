@@ -4,19 +4,18 @@ import { HistoryLog } from "@/providers/log.provider";
 const HistoryTable = ({
   history,
   className = "",
-  full = false,
 }: {
   history: HistoryLog[] | null;
   full?: boolean;
   className?: string;
 }) => {
-  const list = history && (full ? history : history.slice(0, 3));
+  const list = history 
 
   return list ? (
     <>
       <div
         className={cn(
-          "grid grid-cols-[20%_60%_20%] uppercase font-semibold text-sm",
+          "grid grid-cols-[1fr_3fr_1fr] gap-2 uppercase font-semibold text-xs",
           className
         )}
       >
@@ -24,18 +23,18 @@ const HistoryTable = ({
         <p>Action</p>
         <p>Author</p>
       </div>
-      <div className="flex flex-col gap-3">
-        {list.map((history) => {
+      <div className="flex flex-col gap-3 max-h-[300px] overflow-y-auto">
+        {list.length > 0 ? list.map((history) => {
           return (
-            <div className="grid grid-cols-[20%_60%_20%] text-sm">
+            <div className="grid grid-cols-[1fr_3fr_1fr] gap-2 text-xs">
               <p className="text-slate-400">
                 {new Date(history.date).toLocaleString()}
               </p>
               <p>{history.action}</p>
-              <p>{history.author}</p>
+              <p className="capitalize">{history.author}</p>
             </div>
           );
-        })}
+        }) : <div className="w-full text-center text-sm pt-2 text-slate-400">--- No history found ---</div>}
       </div>
     </>
   ) : (

@@ -23,11 +23,12 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useEffect, useMemo, useState } from "react";
-import { useCompany } from "@/providers/company.provider";
 import { List } from "@/interfaces";
 import { MultiComboBox } from "@/components/multicombobox";
-import { useMedium } from "@/providers/mediums.provider";
 import { useToast } from "@/hooks/use-toast";
+import { useCompanies } from "@/hooks/useCompanies";
+import { useDeleteMediumm, useUpdateMedium } from "@/hooks/useMediums";
+
 
 export const columns: ColumnDef<MediumWithCompanies>[] = [
   {
@@ -72,21 +73,6 @@ export const columns: ColumnDef<MediumWithCompanies>[] = [
           })}
         </div>
       );
-      //   return mediums.map((medium) => {
-      //     const index = medium.medium_id % colors.length;
-
-      //     const color = colors[index] ?? "#233345";
-      //     return (
-      //       <Badge
-      //         key={medium.cm_id}
-      //         variant="outline"
-      //         className="text-white"
-      //         style={{ backgroundColor: color }}
-      //       >
-      //         {medium.name}
-      //       </Badge>
-      //     );
-      //   });
     },
     filterFn: (row, columnId, filterValue) => {
       const companies: Company[] = row.getValue(columnId);
@@ -109,7 +95,7 @@ export const columns: ColumnDef<MediumWithCompanies>[] = [
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem onClick={(e) => e.preventDefault()}>
+            <DropdownMenuItem asChild>
               <EditButton item={medium} />
             </DropdownMenuItem>
             <DropdownMenuItem onClick={(e) => e.preventDefault()}>
@@ -123,23 +109,19 @@ export const columns: ColumnDef<MediumWithCompanies>[] = [
 ];
 
 const DeleteButton = ({ item }: { item: MediumWithCompanies }) => {
-  const { deleteMedium } = useMedium();
+  const { mutate: deleteMedium } = useDeleteMediumm();
   const { toast } = useToast();
   const onDelete = async () => {
-    const response = await deleteMedium(item.ID);
-    if (response.acknowledged) {
-      toast({
-        variant: "success",
-        description: "Medium has been deleted.",
-      });
-    } else {
-      console.log(response);
-      toast({
-        variant: "destructive",
-        title: "An Error Occured",
-        description: response.error ?? "Please contact the IT team.",
-      });
-    }
+    deleteMedium(item.ID, {
+      onSuccess: (data) => {
+        if (data.acknowledged) {
+          toast({
+            variant: "success",
+            description: "Medium has been deleted.",
+          });
+        }
+      },
+    });
   };
 
   return (
@@ -166,8 +148,8 @@ const DeleteButton = ({ item }: { item: MediumWithCompanies }) => {
 };
 
 const EditButton = ({ item }: { item: MediumWithCompanies }) => {
-  const { companies } = useCompany();
-  const { updateMedium, setReload } = useMedium();
+  const { data: companies } = useCompanies();
+  const { mutate: updateMedium } = useUpdateMedium();
   const { toast } = useToast();
   const [medium, setMedium] = useState<MediumWithCompanies>({
     ID: 0,
@@ -180,6 +162,7 @@ const EditButton = ({ item }: { item: MediumWithCompanies }) => {
 
   useEffect(() => {
     if (!item) return;
+    console.count("Render");
 
     setMedium(item);
     setSelectedCompanies(
@@ -189,14 +172,14 @@ const EditButton = ({ item }: { item: MediumWithCompanies }) => {
         value: company.code,
       }))
     );
-  }, [item]);
+  }, []);
 
   const options: List[] = useMemo(() => {
     if (!companies) return [];
 
     return companies.map((company) => {
       return {
-        id: company.ID,
+        id: String(company.ID),
         label: company.code,
         value: company.code,
       };
@@ -243,31 +226,26 @@ const EditButton = ({ item }: { item: MediumWithCompanies }) => {
           code: company.value,
         })),
       ],
+      company_medium_id: Number(oldMedium.company_medium_id),
     };
 
-    const response = await updateMedium(newMedium);
-
-    if (response.acknowledged) {
-      toast({
-        variant: "success",
-        description: "Medium has been deleted.",
-      });
-      toggleOpen(false);
-      setReload((prev) => (prev = prev + 1));
-    } else {
-      console.log(response);
-      toast({
-        variant: "destructive",
-        title: "An Error Occured",
-        description: response.error ?? "Please contact the IT team.",
-      });
-    }
+    updateMedium(newMedium, {
+      onSuccess: (data) => {
+        if (data.acknowledged) {
+          toast({
+            variant: "success",
+            description: "Medium has been updated.",
+          });
+          toggleOpen(false);
+        }
+      },
+    });
   };
 
   return (
     medium && (
       <Dialog modal open={open} onOpenChange={toggleOpen}>
-        <DialogTrigger className="w-full text-start">Edit</DialogTrigger>
+        <DialogTrigger className="w-full text-start hover:bg-zinc-100 text-sm p-2 rounded-sm">Edit</DialogTrigger>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Medium</DialogTitle>
@@ -276,7 +254,6 @@ const EditButton = ({ item }: { item: MediumWithCompanies }) => {
             <div>
               <Label htmlFor="name">Name</Label>
               <Input
-                tabIndex={0}
                 type="text"
                 id="name"
                 value={medium.name}

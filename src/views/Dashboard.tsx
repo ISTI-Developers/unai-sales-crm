@@ -1,204 +1,99 @@
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { lazy, Suspense } from "react";
 import Container from "@/misc/Container";
-// import { Send } from "lucide-react";
-// import { AnimatePresence, motion } from "framer-motion";
-import { useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollArea } from "@/components/ui/scroll-area";
+// import Clients from "@/components/dashboard/client.dashboard";
+// import Sites from "@/components/dashboard/sites.dashboard";
+// import Reports from "@/components/dashboard/reports.dashboard";
+// import WeeklyReports from "@/components/dashboard/weeklyReports.dashboard";
 
+// Lazy-loaded components
+const DashboardHeader = lazy(
+  () => import("@/components/dashboard/header.dashboard")
+);
+const ClientCard = lazy(() => import("@/components/dashboard/clientCard"));
+const SitesCard = lazy(() => import("@/components/dashboard/sitesCard"));
+const ReportsCard = lazy(() => import("@/components/dashboard/reportsCard"));
+const ClientChart = lazy(() => import("@/components/dashboard/clientChart"));
+const ClientDistributionChart = lazy(
+  () => import("@/components/dashboard/clientDistributionChart")
+);
+const BookingsCard = lazy(() => import("@/components/dashboard/bookingsCard")
+);
+const ReportsSubmissionChart = lazy(
+  () => import("@/components/dashboard/reportsSubmissionChart")
+);
+const WeeklyReportsCard = lazy(
+  () => import("@/components/dashboard/weeklyReportsCard")
+);
 const Dashboard = () => {
-  const [open, onOpenChange] = useState<boolean>(false);
   return (
     <Container>
-      {/* <Dialog open={open} onOpenChange={onOpenChange}>
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Name
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Title
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Status
-              </th>
-              <th scope="col" className="relative px-6 py-3">
-                <span className="sr-only">Edit</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            <tr>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="flex items-center">
-                  <div className="ml-4">
-                    <div className="text-sm font-medium text-gray-900">
-                      John Doe
-                    </div>
-                  </div>
-                </div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm text-gray-900">Software Engineer</div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                  Active
-                </span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <Button onClick={() => onOpenChange(true)}>Edit</Button>
-              </td>
-            </tr>
-            <tr>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="flex items-center">
-                  <div className="ml-4">
-                    <div className="text-sm font-medium text-gray-900">
-                      Jane Smith
-                    </div>
-                  </div>
-                </div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm text-gray-900">Product Manager</div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                  Inactive
-                </span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <DialogTrigger asChild>
-                  <Button>Edit</Button>
-                </DialogTrigger>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit User</DialogTitle>
-            <DialogDescription>
-              Lorem ipsum, dolor sit amet consectetur adipisicing elit. Ea,
-              earum.
-            </DialogDescription>
-          </DialogHeader>
-          <div>
-            <form>
-              <div className="mb-4">
-                <label
-                  className="block text-gray-700 text-sm font-bold mb-2"
-                  htmlFor="name"
-                >
-                  Name
-                </label>
-                <input
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  id="name"
-                  type="text"
-                  placeholder="Enter name"
-                />
-              </div>
-              <div className="mb-4">
-                <label
-                  className="block text-gray-700 text-sm font-bold mb-2"
-                  htmlFor="title"
-                >
-                  Title
-                </label>
-                <input
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  id="title"
-                  type="text"
-                  placeholder="Enter title"
-                />
-              </div>
-              <div className="mb-4">
-                <label
-                  className="block text-gray-700 text-sm font-bold mb-2"
-                  htmlFor="status"
-                >
-                  Status
-                </label>
-                <select
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  id="status"
-                >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-              </div>
-              <DialogFooter>
-                <Button type="submit">Save</Button>
-                <Button type="button" onClick={() => onOpenChange(false)}>
-                  Cancel
-                </Button>
-              </DialogFooter>
-            </form>
-          </div>
-        </DialogContent>
-      </Dialog> */}
-
-      {/* <motion.div
-        animate={{
-          width: open ? "300px" : "100px",
-          height: open ? "140px" : "40px",
-        }}
-        transition={{ duration: 0.3, type: "spring", damping: "15" }}
-        className="shadow-lg p-2 rounded-md flex flex-col gap-4 overflow-hidden"
-      >
-        <motion.button
-          onClick={() => onOpenChange((prev) => !prev)}
-          initial={{ opacity: 0, scale: 0 }}
-          animate={{
-            opacity: !open ? 1 : 0,
-            scale: !open ? 1 : 0,
-            width:!open ? "fit-content" : "0px",
-            height: !open ? "fit-content" : "0px",
-          }}
-          exit={{ opacity: 1, scale: 1 }}
-        >
-          Feedback
-        </motion.button>
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0 }}
-          transition={{ duration: 0.3 }}
-          className="flex flex-col gap-4"
-        >
-          <Textarea
-            placeholder="Feedback"
-            className="resize-none border-2 w-full"
-          ></Textarea>
-          <button
-            type="button"
-            onClick={() => onOpenChange((prev) => !prev)}
-            className="flex items-center gap-2 w-fit ml-auto"
+      <Suspense fallback={<div>Loading header...</div>}>
+        <DashboardHeader />
+      </Suspense>
+      <ScrollArea>
+        <div className="lg:h-[calc(100vh-10rem)] grid md:grid-cols-6 md:grid-rows-[auto_250px_1fr_1fr] xl:grid-rows-none xl:grid-cols-9 gap-4">
+          <Suspense
+            fallback={<Skeleton className="w-full h-full md:col-[1/3]" />}
           >
-            <p>Send</p>
-            <Send />
-          </button>
-        </motion.div>
-      </motion.div> */}
+            <ClientCard />
+          </Suspense>
+          <Suspense
+            fallback={<Skeleton className="w-full h-full md:col-[3/5]" />}
+          >
+            <SitesCard />
+          </Suspense>
+          <Suspense
+            fallback={<Skeleton className="w-full h-full md:col-[5/7]" />}
+          >
+            <ReportsCard />
+          </Suspense>
+          <Suspense
+            fallback={<Skeleton className="w-full h-full md:col-[1/4]" />}
+          >
+            <ClientChart />
+          </Suspense>
+          <Suspense
+            fallback={<Skeleton className="w-full h-full md:col-[4/7] md:row-[2/3]" />}
+          >
+            <ClientDistributionChart />
+          </Suspense>
+
+          <Suspense
+            fallback={<Skeleton className="w-full h-full md:col-[1/4] md:row-[3/4]" />}
+          >
+            <BookingsCard />
+          </Suspense>
+          <Suspense
+            fallback={<Skeleton className="w-full h-full md:row-[3/4] md:col-[1/5] xl:col-[1/7]" />}
+          >
+            <ReportsSubmissionChart />
+          </Suspense>
+          <Suspense
+            fallback={<Skeleton className="w-full h-full md:row-[3/4] md:col-[5/7] xl:row-[1/4] xl:col-[7/10]" />}
+          >
+            <WeeklyReportsCard />
+          </Suspense>
+        </div>
+      </ScrollArea>
+      {/* 
+      <div className="flex flex-col gap-4 lg:flex-row">
+        <Clients />
+        <Sites />
+      </div>
+      <div className="flex flex-col gap-4 lg:flex-row">
+        <Reports />
+        <WeeklyReports />
+      </div> */}
+
+      {/* <Suspense fallback={<div>Loading client summary...</div>}>
+        <ClientSummary user={user} />
+      </Suspense>
+
+      <Suspense fallback={<div>Loading report summary...</div>}>
+        <ReportSummary user={user} />
+      </Suspense> */}
     </Container>
   );
 };

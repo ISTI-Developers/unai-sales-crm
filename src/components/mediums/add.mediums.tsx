@@ -15,11 +15,11 @@ import {
   SelectValue,
 } from "../ui/select";
 import { MediumCompany } from "@/interfaces/mediums.interface";
-import { useCompany } from "@/providers/company.provider";
 import { List } from "@/interfaces";
 import { Button } from "../ui/button";
 import { Plus, Trash } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useCompanies } from "@/hooks/useCompanies";
 
 const AddMedium = ({
   mediums,
@@ -98,7 +98,7 @@ const MediumField = ({
   setMedium: (value: string, id: string) => void;
   removeRow: () => void;
 }) => {
-  const { companies } = useCompany();
+  const { data: companies } = useCompanies();
 
   const options: List[] = useMemo(() => {
     if (!companies) return [];

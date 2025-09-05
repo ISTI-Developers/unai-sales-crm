@@ -1,6 +1,5 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,13 +9,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import RoleEditor from "@/components/users/roleEditor.user";
 import { useToast } from "@/hooks/use-toast";
+import { usePasswordReset } from "@/hooks/useAuth";
+import { useDeleteUser, useUpdateUserStatus } from "@/hooks/useUsers";
 import { ClassList } from "@/interfaces";
 import { UserTable } from "@/interfaces/user.interface";
 import DropdownWithDialog from "@/misc/DropdownWithDialog";
-import { useAuth } from "@/providers/auth.provider";
-import { useUser } from "@/providers/users.provider";
 import { ColumnDef, Row } from "@tanstack/react-table";
-import classNames from "classnames";
+import { cn } from "@/lib/utils";
 import { ArrowUpDown, LoaderCircle, MoreHorizontal } from "lucide-react";
 import { ReactNode, useState } from "react";
 import { Link } from "react-router-dom";
@@ -66,7 +65,7 @@ export const columns: ColumnDef<UserTable>[] = [
       ) : (
         <Badge
           variant="outline"
-          className={classNames(
+          className={cn(
             "select-none pointer-events-none",
             ["superadmin", "sales admin"].includes(role.toLocaleLowerCase())
               ? "text-gray-400 bg-gray-50"
@@ -92,7 +91,7 @@ export const columns: ColumnDef<UserTable>[] = [
       ) : (
         <Badge
           variant="outline"
-          className={classNames(
+          className={cn(
             "select-none pointer-events-none",
             ["superadmin", "sales admin"].includes(role.toLocaleLowerCase())
               ? "text-gray-400 bg-gray-50"
@@ -129,7 +128,7 @@ export const columns: ColumnDef<UserTable>[] = [
       const className =
         statusClasses[status] || "bg-green-100 text-green-700 border-green-300";
       return (
-        <Badge variant={null} className={classNames(className, "capitalize")}>
+        <Badge variant={null} className={cn(className, "capitalize")}>
           {status.replace(/_/g, " ")}
         </Badge>
       );
@@ -151,10 +150,20 @@ export const columns: ColumnDef<UserTable>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem asChild>
-              <Link to={`./${user.user.replace(/ /g, "_")}`}>View</Link>
+              <Link
+                to={`./${user.user.replace(/ /g, "_")}`}
+                onClick={() => localStorage.setItem("userID", String(user.ID))}
+              >
+                View
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to={`./${user.user.replace(/ /g, "_")}/edit`}>Edit</Link>
+              <Link
+                to={`./${user.user.replace(/ /g, "_")}/edit`}
+                onClick={() => localStorage.setItem("userID", String(user.ID))}
+              >
+                Edit
+              </Link>
             </DropdownMenuItem>
             <CustomDropdown
               user={user}
@@ -263,8 +272,7 @@ const ResetPassword = ({
   user: UserTable;
   toggleDialog: (state: boolean) => void;
 }) => {
-  const { resetPassword } = useAuth();
-  const { forceReload } = useUser();
+  const { mutate: resetPassword } = usePasswordReset(user.ID);
   const { toast } = useToast();
 
   const [loading, setLoading] = useState<boolean>(false);
@@ -272,23 +280,25 @@ const ResetPassword = ({
   const onClick = async () => {
     setLoading((prev) => !prev);
 
-    await resetPassword(user);
-    toast({
-      title: "Password Reset Success",
-      description:
-        "The temporary password has been sent to the registered email of the user.",
-      variant: "success",
+    resetPassword(user, {
+      onSuccess: () => {
+        toast({
+          title: "Password Reset Success",
+          description:
+            "The temporary password has been sent to the registered email of the user.",
+          variant: "success",
+        });
+        setLoading((prev) => !prev);
+        toggleDialog(false);
+      },
     });
-    setLoading((prev) => !prev);
-    forceReload();
-    toggleDialog(false);
   };
   return (
     <Button
       variant="destructive"
       disabled={loading}
       onClick={onClick}
-      className={classNames("flex gap-2", loading ? "pl-2" : "")}
+      className={cn("flex gap-2", loading ? "pl-2" : "")}
     >
       {loading && <LoaderCircle className="animate-spin" />}
       Reset Password
@@ -305,43 +315,62 @@ const ContinueButton = ({
   status: string;
   toggleDialog: (state: boolean) => void;
 }) => {
-  const { updateUserStatus, deleteUser, forceReload } = useUser();
+  const { mutate: updateUserStatus } = useUpdateUserStatus();
+  const { mutate: deleteUser } = useDeleteUser();
   const { toast } = useToast();
 
   const [loading, setLoading] = useState<boolean>(false);
+  const statuses = {
+    Reactivate: 1,
+    Deactivate: 2,
+  };
 
   const onClick = async () => {
     setLoading((prev) => !prev);
-    const ID = user.ID;
-    let response;
-    if (status === "Deactivate") {
-      response = await updateUserStatus(user, 2);
-    } else if (status === "Reactivate") {
-      response = await updateUserStatus(user, 1);
+
+    if (status !== "Delete") {
+      updateUserStatus(
+        {
+          user,
+          status: statuses[status as keyof typeof statuses],
+        },
+        {
+          onSuccess: (response) => {
+            if (!response) {
+              throw new Error("An error has occured.");
+            }
+
+            toast({
+              title: `User ${status} Success`,
+              description: (
+                <>
+                  The user has been <span className="uppercase">{status}d</span>{" "}
+                  successfully
+                </>
+              ),
+              variant: "success",
+            });
+            setLoading((prev) => !prev);
+            toggleDialog(false);
+          },
+        }
+      );
     } else {
-      response = await deleteUser(user);
-    }
-    if (response && response.acknowledged) {
-      toast({
-        title: `User ${status} Success`,
-        description: (
-          <>
-            The user has been <span className="uppercase">{status}d</span>{" "}
-            successfully
-          </>
-        ),
-        variant: "success",
-      });
-      setLoading((prev) => !prev);
-      toggleDialog(false);
-      forceReload();
-    } else {
-      toast({
-        title: `User ${status} Error`,
-        description:
-          response?.error ||
-          "An error has occured. Please contact the IT developer",
-        variant: "destructive",
+      deleteUser(user, {
+        onSuccess: () => {
+          toast({
+            title: `User ${status} Success`,
+            description: (
+              <>
+                The user has been <span className="uppercase">{status}d</span>{" "}
+                successfully
+              </>
+            ),
+            variant: "success",
+          });
+          setLoading((prev) => !prev);
+          toggleDialog(false);
+        },
       });
     }
   };
@@ -350,7 +379,7 @@ const ContinueButton = ({
       variant={status === "Reactivate" ? "outline" : "destructive"}
       disabled={loading}
       onClick={onClick}
-      className={classNames(
+      className={cn(
         "flex gap-2",
         loading ? "pl-2" : "",
         status === "Reactivate"

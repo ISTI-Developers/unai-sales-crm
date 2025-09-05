@@ -1,4 +1,4 @@
-import { format } from "date-fns";
+import { addYears, format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -8,25 +8,26 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Dispatch, SetStateAction } from "react";
-
+import { DateBefore } from "react-day-picker";
 export function DatePicker({
   date,
   onDateChange,
   disabled,
+  min,
 }: {
-  date: Date | undefined;
-  onDateChange: Dispatch<SetStateAction<Date | undefined>>;
-  disabled: boolean;
+  date: Date;
+  onDateChange: (value: Date | undefined) => void;
+  disabled?: boolean;
+  min?: Date;
 }) {
   return (
-    <Popover>
+    <Popover modal>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
           disabled={disabled}
           className={cn(
-            "w-[280px] justify-start text-left font-normal",
+            "w-full justify-start text-left font-normal",
             !date && "text-muted-foreground"
           )}
         >
@@ -37,9 +38,16 @@ export function DatePicker({
       <PopoverContent className="w-auto p-0">
         <Calendar
           mode="single"
+          disabled={
+            {
+              before: min,
+            } as DateBefore
+          }
+          startMonth={date}
+          endMonth={addYears(new Date(), 5)}
           selected={date}
-          onSelect={onDateChange}
-          initialFocus
+          captionLayout="dropdown"
+          onSelect={(date) => onDateChange(date)}
         />
       </PopoverContent>
     </Popover>

@@ -1,49 +1,27 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Role, User } from "@/interfaces/user.interface";
+import { useUser } from "@/hooks/useUsers";
+import { Role } from "@/interfaces/user.interface";
 import Page from "@/misc/Page";
-import { useCompany } from "@/providers/company.provider";
-import { useUser } from "@/providers/users.provider";
 import { ChevronLeft } from "lucide-react";
-
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode } from "react";
 import { Helmet } from "react-helmet";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, Navigate, useParams } from "react-router-dom";
 
 const ViewUser = () => {
   const { id } = useParams();
-  const [user, setUser] = useState<User | null>(null);
+  const userID = localStorage.getItem("userID");
 
-  const { users } = useUser();
-  const { companies } = useCompany();
-  const navigate = useNavigate();
+  const { data: user, isLoading } = useUser(userID);
 
-  useEffect(() => {
-    if (!id) {
-      navigate("/users");
-      return;
-    }
+  if (!id || userID === null) {
+    return <Navigate to="/users" />;
+  }
 
-    const setup = async () => {
-      if (users) {
-        const paramName = id.replace(/_/g, " ");
-        const viewedUser = users.find((u) => {
-          const full_name = [u.first_name, u.last_name].join(" ");
-          return paramName.toLowerCase() === full_name.toLowerCase();
-        });
-
-        if (viewedUser) {
-          setUser(viewedUser);
-        } else {
-          navigate("/users");
-          return;
-        }
-      }
-    };
-
-    setup();
-  }, [companies, id, navigate, users]);
+  if (isLoading) {
+    return <>Loading... </>;
+  }
   return (
     id && (
       <Page className="flex flex-col gap-4">
@@ -81,7 +59,7 @@ const ViewUser = () => {
                     <UserDetail
                       key={key}
                       id={key}
-                      value={user[key]}
+                      value={user[key] as string}
                       role={user.role}
                     />
                   );
@@ -125,6 +103,7 @@ const ViewUser = () => {
               type="submit"
               variant="ghost"
               className="w-fit bg-main-100 hover:bg-main-700 text-white hover:text-white float-right flex gap-4 disabled:cursor-not-allowed"
+              onClick={() => localStorage.setItem("userID", String(user.ID))}
             >
               <Link to="./edit">Edit</Link>
             </Button>

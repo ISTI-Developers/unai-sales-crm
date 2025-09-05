@@ -9,26 +9,28 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
-import { DefaultResponse } from "@/interfaces";
+import { useModules } from "@/hooks/useModules";
+import {
+  useInsertRole,
+  useRole,
+  useUpdaterolePermissions,
+} from "@/hooks/useRoles";
 import { Permissions, Role } from "@/interfaces/user.interface";
 import { capitalize } from "@/lib/utils";
 import Page from "@/misc/Page";
-import { useRole } from "@/providers/role.provider";
-import classNames from "classnames";
+import { cn } from "@/lib/utils";
 import { ChevronLeft, LoaderCircle } from "lucide-react";
 import { FormEvent, Fragment, useEffect, useMemo, useState } from "react";
 import { Helmet } from "react-helmet";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 
 const ManageRole = () => {
+  const roleID = localStorage.getItem("role");
   const { pathname } = useLocation();
-  const {
-    role: data,
-    modules,
-    updateRolePermissions,
-    forceReload,
-    insertRole,
-  } = useRole();
+  const { data: modules } = useModules();
+  const { data } = useRole(roleID);
+  const { mutate: insertRole } = useInsertRole();
+  const { mutate: updateRolePermissions } = useUpdaterolePermissions();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -49,31 +51,40 @@ const ManageRole = () => {
 
   // Sync role state with the provider when it changes
   useEffect(() => {
-    if (!localStorage.getItem("role") && title !== "Add Role") {
+    if ((!roleID && title !== "Add Role") || !modules) {
       navigate("/roles");
+      return;
     }
-    if (data) {
-      setRole(data[0]);
-    } else if (title === "Add Role") {
-      if (modules) {
-        setRole({
-          role_id: 1,
-          name: "",
-          description: "",
-          access: [
-            ...modules.map((module) => {
-              return {
-                m_id: module.m_id,
-                name: module.name,
-                permissions: [0, 0, 0, 0],
-                status: module.status,
-              };
-            }),
-          ],
-        });
-      }
+    if (title === "Add Role") {
+      setRole({
+        role_id: 1,
+        name: "",
+        description: "",
+        access: [
+          ...modules.map((module) => {
+            return {
+              m_id: module.m_id,
+              name: module.name,
+              permissions: [0, 0, 0, 0],
+              status: module.status,
+            };
+          }),
+        ],
+      });
+    } else if (data) {
+      const updatedRoles = data.map((item: Role) => ({
+        ...item,
+        access: modules.map((module) => ({
+          m_id: module.m_id,
+          name: module.name,
+          permissions: item.access?.find((perm) => perm.m_id === module.m_id)
+            ?.permissions || [0, 0, 0, 0],
+          status: module.status,
+        })),
+      }));
+      setRole(updatedRoles[0]);
     }
-  }, [data, title, modules]);
+  }, [data, title, modules, roleID]);
 
   const updatePermission = (
     moduleID: number,
@@ -159,43 +170,34 @@ const ManageRole = () => {
     if (!role) return;
     setLoading((prev) => !prev);
 
-    let toastTitle = "Role Created!";
-    let errorTitle = "Creation Error";
-    let action = "added";
-    let response: DefaultResponse = {
-      acknowledged: false,
-    };
-
     if (title === "Add Role") {
-      response = await insertRole(role);
+      insertRole(role, {
+        onSuccess: (response) => {
+          if (!response) return;
+          toast({
+            title: "Role Created!",
+            description: `${capitalize(
+              role.name
+            )} has been added successfully.`,
+            variant: "success",
+          });
+          navigate(`/roles`);
+        },
+      });
     } else {
-      response = await updateRolePermissions(role);
-      toastTitle = "Role Updated!";
-      errorTitle = "Update Error";
-      action = "updated";
-    }
-    if (response.acknowledged) {
-      toast({
-        title: toastTitle,
-        description: `${capitalize(
-          role.name
-        )} has been ${action} successfully.`,
-        variant: "success",
+      updateRolePermissions(role, {
+        onSuccess: (response) => {
+          if (!response) return;
+          toast({
+            title: "Role Updated!",
+            description: `${capitalize(
+              role.name
+            )} has been updated successfully.`,
+            variant: "success",
+          });
+          navigate(`/roles`);
+        },
       });
-      forceReload();
-      navigate(`/roles`);
-    }
-
-    if (response.error) {
-      toast({
-        title: errorTitle,
-        description: `ERROR: ${
-          response.error ||
-          "An error has occured. Please contact the developer."
-        }`,
-        variant: "destructive",
-      });
-      setLoading((prev) => !prev);
     }
   };
 
@@ -209,10 +211,14 @@ const ManageRole = () => {
     return Boolean(title.toLowerCase().match(/add|edit/));
   }, [title]);
 
+  if (!roleID) {
+    return <Navigate to="/roles" />;
+  }
+
   return (
     <Page className="flex flex-col gap-4">
       <Helmet>
-        <title>{title} | Roles | Sales CRM</title>
+        <title>{title} | Roles | Sales Platform</title>
       </Helmet>
       <header className="flex items-center justify-between border-b pb-1.5">
         <h1 className="text-blue-500 font-bold uppercase">{title}</h1>
@@ -362,7 +368,7 @@ const RoleAccesses = ({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <h4
-                      className={classNames(
+                      className={cn(
                         "text-start w-full pl-4",
                         access.status === "inactive"
                           ? "text-slate-300 select-none cursor-not-allowed"

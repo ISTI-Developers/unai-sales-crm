@@ -18,6 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Contract } from "@/interfaces/contract.interface";
+import { formatAmount } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
@@ -114,10 +115,7 @@ export const columns: ColumnDef<Contract>[] = [
               <ContractField title="Company" value={contract.company} />
               <ContractField
                 title="Grand Total"
-                value={Intl.NumberFormat("en-PH", {
-                  style: "currency",
-                  currency: "PHP",
-                }).format(Number(contract.grand_total))}
+                value={formatAmount(Number(contract.grand_total))}
               />
               <ContractField
                 title="Contract Term"
@@ -153,10 +151,7 @@ export const columns: ColumnDef<Contract>[] = [
                               "MMM dd, yyyy"
                             )}`}</TableCell>
                             <TableCell>
-                              {Intl.NumberFormat("en-PH", {
-                                style: "currency",
-                                currency: "PHP",
-                              }).format(Number(item.grand_total))}
+                              {formatAmount(item.grand_total)}
                             </TableCell>
                             <TableCell>{item.contract_status}</TableCell>
                           </TableRow>
