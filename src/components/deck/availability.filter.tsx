@@ -38,7 +38,7 @@ const AvailabilityFilter = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All</SelectItem>
-            <SelectItem value="open">Open</SelectItem>
+            <SelectItem value="open">Available</SelectItem>
             <SelectItem value="booked">Booked</SelectItem>
             <SelectItem value="range">Custom range</SelectItem>
           </SelectContent>

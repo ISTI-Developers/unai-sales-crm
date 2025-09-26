@@ -1,10 +1,9 @@
 import { toast } from "@/hooks/use-toast";
+import { User } from "@/interfaces/user.interface";
 import axios, { AxiosError } from "axios";
 
 const mainURL = import.meta.env.VITE_SERVER;
-// const oohURL = import.meta.env.VITE_OOH_SERVER;
 export const spAPI = axios.create({ baseURL: mainURL, timeout: 120000 });
-// export const oohAPI = axios.create({ baseURL: oohURL, timeout: 120000 });
 
 spAPI.interceptors.request.use(
   (config) => {
@@ -21,6 +20,11 @@ spAPI.interceptors.request.use(
     }
     if (token && !config.url?.includes("auth")) {
       config.headers.Authorization = `Bearer ${token}`;
+      const currentUserString = localStorage.getItem("currentUser");
+      if (currentUserString) {
+        const currentUser: User = JSON.parse(currentUserString);
+        config.headers["X-User-Id"] = currentUser.ID;
+      }
     }
 
     return config;
@@ -28,25 +32,6 @@ spAPI.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// oohAPI.interceptors.request.use(
-//   (config) => {
-//     const token = localStorage.getItem("token");
-
-//     if (!config.url?.includes("user") && !token) {
-//       console.log(config.url);
-//       return Promise.reject({
-//         message: "OOH - No authentication token found. Request cancelled.",
-//         config,
-//         isAuthError: true, // optional custom flag
-//       });
-//     }
-//     if (token && !config.url?.includes("user")) {
-//       config.headers.Authorization = `Bearer ${token}`;
-//     }
-//     return config;
-//   },
-//   (error) => Promise.reject(error)
-// );
 export function logoutAndRedirect() {
   localStorage.removeItem("currentUser");
   localStorage.removeItem("last_location");

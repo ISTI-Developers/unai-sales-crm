@@ -1,0 +1,335 @@
+import { Hash, Plus } from "lucide-react"
+import { Button } from "../ui/button"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog"
+import { Dispatch, SetStateAction, useMemo, useState } from "react"
+import { SourceFilter, sourceFilters, TypeDimensions, Widget, WidgetData, WidgetIconMap, WidgetType, widgetTypes } from "@/misc/dashboardLayoutMap"
+import { motion, AnimatePresence } from "framer-motion"
+import { capitalize, cn } from "@/lib/utils"
+import { Label } from "../ui/label"
+import { Input } from "../ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
+import { MultiComboBox } from "../multicombobox"
+import { Layout, Layouts } from "react-grid-layout"
+import IconPicker, { ColorPicker } from "../ui/iconpicker"
+import { icons } from "@/data/icons"
+import WidgetPreview from "./preview.widget"
+
+const EditHeader = ({ onToggleEdit, widgets, onWidgetUpdate }: { onToggleEdit: (toggle: boolean) => void; widgets: Widget[]; onWidgetUpdate: (widget: WidgetData) => void }) => {
+    const [open, onOpenChange] = useState(false)
+    const [widget, setWidget] = useState<WidgetData>({
+        key: "",
+        type: undefined,
+        label: "",
+        content: 0,
+        icon: "Hash",
+        color: "#233345",
+        module: "",
+        filter: [],
+        layouts: {
+        },
+    });
+    function generateWidgetId(type: WidgetType, existing: Widget[]) {
+        const count = existing.filter(w => w.type === type).length;
+        return type ? `${type.toLowerCase()}_${count + 1}` : '';
+    }
+    function getNextPosition(layouts: Layout[], cols: number, defaultW: number, defaultH: number) {
+        if (layouts.length === 0) {
+            return { x: 0, y: 0, w: defaultW, h: defaultH };
+        }
+
+        const last = layouts[layouts.length - 1];
+        let nextX = last.x + last.w;
+        let nextY = last.y;
+
+        // If it overflows the grid width, wrap to next row
+        if (nextX + defaultW > cols) {
+            nextX = 0;
+            nextY = last.y + last.h;
+        }
+
+        return { x: nextX, y: nextY, w: defaultW, h: defaultH };
+    }
+    function generateLayouts(id: string, type: WidgetType, existingLayouts: Layouts) {
+        if (!type) return;
+
+        const lg = TypeDimensions[type]['lg'];
+        const md = TypeDimensions[type]['md'];
+        const sm = TypeDimensions[type]['sm'];
+        const xs = TypeDimensions[type]['xs'];
+        const xxs = TypeDimensions[type]['xxs'];
+        return {
+            lg: [
+                ...existingLayouts.lg,
+                { i: id, ...getNextPosition(existingLayouts.lg, 12, ...lg) }
+            ],
+            md: [
+                ...existingLayouts.md,
+                { i: id, ...getNextPosition(existingLayouts.md, 9, ...md) }
+            ],
+            sm: [
+                ...existingLayouts.sm,
+                { i: id, ...getNextPosition(existingLayouts.sm, 6, ...sm) }
+            ],
+            xs: [
+                ...existingLayouts.sm,
+                { i: id, ...getNextPosition(existingLayouts.xs, 3, ...xs) }
+            ],
+            xxs: [
+                ...existingLayouts.sm,
+                { i: id, ...getNextPosition(existingLayouts.xxs, 1, ...xxs) }
+            ],
+
+        };
+    }
+    function mergeLayouts(widgets: Widget[]) {
+        return {
+            lg: widgets.flatMap(w => w.layouts.lg ?? []),
+            md: widgets.flatMap(w => w.layouts.md ?? []),
+            sm: widgets.flatMap(w => w.layouts.sm ?? []),
+            xs: widgets.flatMap(w => w.layouts.xs ?? []),
+            xxs: widgets.flatMap(w => w.layouts.xxs ?? []),
+        };
+    }
+
+
+    const setType = (type: string) => {
+        setWidget(prev => {
+            return {
+                ...prev,
+                type: type as WidgetType,
+                label: type,
+                content: <p className="text-4xl 2xl:text-5xl font-light ">100</p>,
+                icon: WidgetIconMap[type as keyof typeof WidgetIconMap]
+            }
+        })
+    }
+
+    const onSave = () => {
+        const id = generateWidgetId(widget.type, widgets);
+        const layouts = generateLayouts(id, widget.type, mergeLayouts(widgets));
+
+        if (!layouts) return;
+
+        const updatedWidget = {
+            ...widget,
+            key: id,
+            layouts: layouts
+
+        }
+        onWidgetUpdate(updatedWidget)
+        onOpenChange(false)
+    }
+    return (
+        <div className="flex justify-between items-center gap-4 p-2 pb-0">
+            <h1 className="font-bold">Edit Mode</h1>
+            <Dialog modal open={open} onOpenChange={(open) => {
+                onOpenChange(open);
+                setWidget({
+                    key: "",
+                    type: undefined,
+                    label: "",
+                    content: 0,
+                    icon: "Hash",
+                    color: "#233345",
+                    module: "",
+                    filter: [],
+                    layouts: {
+                    },
+                })
+            }}>
+                <DialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="rounded-full mr-auto h-7">
+                        <Plus />
+                        <span>Widget</span>
+                    </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl">
+                    <DialogHeader>
+                        <DialogTitle>Add Widget</DialogTitle>
+                        <DialogDescription>Add new widget by setting up the configurations below.</DialogDescription>
+                    </DialogHeader>
+                    <div className={cn("flex min-h-[50vh] items-center rounded-md", widget.type ? "p-0 bg-transparent" : "p-4 bg-slate-100")}>
+                        <AnimatePresence mode="wait">
+                            {!widget.type &&
+                                <motion.div key="selection"
+                                    className="mx-auto text-center space-y-4 text-xs font-semibold text-slate-500"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    transition={{ duration: 0.3, ease: "easeInOut" }}>
+                                    <p>Add a widget to visualize your dashboard</p>
+                                    <div className="h-fit flex flex-wrap max-w-sm mx-auto gap-4 items-center justify-center">
+                                        {widgetTypes.map(type => {
+                                            if (type === undefined) return;
+
+                                            const Icon = icons.find(icon => icon.value === WidgetIconMap[type])?.Icon ?? Hash;
+
+                                            return <div key={type} role="button" className="cursor-pointer p-4 min-w-[100px] flex flex-col gap-2 items-center justify-center rounded-md bg-white transition-all hover:-translate-y-1 hover:shadow-sm" title="button" onClick={() => setType(type)}>
+                                                <Icon size={32} />
+                                                <span className="font-semibold uppercase text-xs">{type}</span>
+                                            </div>
+                                        })}
+                                    </div>
+                                </motion.div>
+                            }
+                            {widget.type &&
+                                <motion.div key="configuration"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    transition={{ duration: 0.3, ease: "easeInOut" }} className="w-full h-full flex flex-col lg:flex gap-4 relative">
+                                    <div className="w-full h-full flex flex-col-reverse lg:flex-row gap-4 max-h-[50vh] overflow-auto">
+                                        <section key="settings" className="bg-slate-100 w-full lg:max-w-[50%] rounded h-full shadow-sm p-4 flex flex-col gap-2 overflow-auto">
+                                            <header className="text-sm font-semibold">Configure {widget.type}</header>
+                                            <main className="space-y-2">
+                                                <Configuration widget={widget} setWidget={setWidget} />
+                                            </main>
+                                        </section>
+                                        {/* PREVIEW */}
+                                        <WidgetPreview widget={widget} />
+                                    </div>
+                                    <Button onClick={onSave} disabled={widget.module === ""} className="lg:absolute right-0 bottom-0 bg-main-100 text-white hover:bg-main-400 hover:text-white" variant="outline">
+                                        Generate
+                                    </Button>
+                                </motion.div>
+                            }
+                        </AnimatePresence>
+
+                    </div>
+                </DialogContent>
+            </Dialog>
+            <Button onClick={() => onToggleEdit(false)} className="p-[0.3rem] px-2 rounded-full h-auto text-xs bg-emerald-100 border-none text-emerald-400 hover:bg-emerald-200 hover:text-emerald-400" variant="outline">
+                Save Changes
+            </Button>
+        </div>
+    )
+}
+
+function Configuration({ widget, setWidget }: { widget: WidgetData; setWidget: Dispatch<SetStateAction<WidgetData>> }) {
+
+    const filterOptions = useMemo(() => {
+        if (widget.module === "") return undefined;
+
+        return sourceFilters[widget.module as keyof typeof sourceFilters];
+    }, [widget.module])
+
+    const onSourceSelect = (value: string) => {
+        const options = sourceFilters[value as keyof typeof sourceFilters]
+        if (!options) return;
+
+        const filter = Object.keys(options).map(option => ({ key: option, value: ["all"] }))
+        setWidget(prev => ({ ...prev, module: value, filter: filter }))
+    }
+    return <>
+        <div>
+            <Label htmlFor="label" className="text-xs">Label</Label>
+            <Input id="label" value={widget.label} placeholder="Set label" onChange={(e) => setWidget(prev => ({ ...prev, label: e.target.value }))} className="h-8 bg-slate-200 shadow-none" />
+        </div>
+        <div className="grid grid-cols-[2fr_1fr] gap-2">
+            <div className="flex flex-col">
+                <Label htmlFor="icon" className="text-xs">Icon</Label>
+                <IconPicker icon={widget.icon} setIcon={(icon) => setWidget(prev => ({ ...prev, icon: icon }))} />
+            </div>
+            <div className="flex flex-col">
+                <Label htmlFor="icon" className="text-xs">Color</Label>
+                <ColorPicker color={widget.color} setColor={(color) => setWidget(prev => ({ ...prev, color: color }))} />
+            </div>
+        </div>
+        <div>
+            <Label htmlFor="Source" className="text-xs">Source</Label>
+            <Select value={widget.module} onValueChange={onSourceSelect}>
+                <SelectTrigger id="source" className="h-8 bg-slate-200 shadow-none">
+                    <SelectValue placeholder="Select Source" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value='clients'>Clients</SelectItem>
+                    <SelectItem value='sites'>Sites</SelectItem>
+                    <SelectItem value='reports'>Reports</SelectItem>
+                </SelectContent>
+            </Select>
+        </div>
+        <div>
+            <Label htmlFor="filters" className="text-xs">Filters</Label>
+            {filterOptions ?
+                <div className="bg-slate-200 min-h-[50px] rounded-md flex flex-col">
+                    {Object.keys(filterOptions).map(option => {
+
+                        const filters = widget.filter.find(filter => filter.key === option);
+                        if (!filters) return;
+
+                        return <FilterItem key={option} id={option} filters={filters} onValueChange={(value) => {
+                            setWidget(prev => {
+                                const exists = prev.filter.find(filter => filter.key === option);
+
+                                return {
+                                    ...prev,
+                                    filter: exists ? [
+                                        ...prev.filter.map(filter => {
+                                            if (filter.key === option) {
+                                                return {
+                                                    key: option,
+                                                    value: value
+                                                }
+                                            }
+
+                                            return filter;
+                                        })
+                                    ] : prev.filter
+                                }
+                            })
+                        }} options={filterOptions[option as keyof typeof filterOptions]} />
+                    })}
+                </div>
+                :
+                <div className="bg-slate-200 min-h-[50px] rounded-md flex items-center justify-center text-center text-xs text-slate-600">
+                    Please select a source to view available filters.
+                </div>
+            }
+        </div>
+    </>
+}
+
+function FilterItem({ id, options, filters, onValueChange }: { id: string; options: string[]; filters: SourceFilter; onValueChange: (value: string[]) => void }) {
+
+    const setValue = (id: string) => {
+        const currentFilters = filters.value ?? [];
+
+        let updated: string[];
+
+        if (id === "all") {
+            // Toggle "all"
+            updated = currentFilters.includes("all") ? ["all"] : ["all"];
+        } else {
+            // Remove "all" if another filter is chosen
+            updated = currentFilters.filter(f => f !== "all");
+
+            if (updated.includes(id)) {
+                // Remove filter
+                updated = updated.filter(f => f !== id);
+            } else {
+                // Add filter
+                updated = [...updated, id];
+            }
+        }
+        onValueChange(updated)
+    };
+
+    return <div className="p-2">
+        <Label htmlFor={id} className="capitalize text-xs">{id}</Label>
+        <MultiComboBox list={options.map(option => {
+            return {
+                id: option,
+                value: option,
+                label: capitalize(option)
+            }
+        })} value={filters.value.map(value => {
+            return {
+                id: value,
+                value: value,
+                label: capitalize(value)
+            }
+        })} setValue={(id) => setValue(id)} title={id} />
+    </div >
+}
+
+export default EditHeader

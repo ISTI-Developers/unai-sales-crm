@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Button } from "@/components/ui/button";
 import { columns } from "@/data/clients.columns";
 import { DataTable } from "@/data/data-table";
-import { useClientAccess, useClients } from "@/hooks/useClients";
+import { useAccess, useClients } from "@/hooks/useClients";
 import { ClientTable } from "@/interfaces/client.interface";
 import Container from "@/misc/Container";
 import Page from "@/misc/Page";
@@ -68,7 +69,7 @@ const Clients = () => {
 };
 
 const Main = () => {
-  const { access } = useClientAccess(10);
+  const { access: add } = useAccess("clients.add");
   const { data, isLoading, fetchStatus } = useClients();
 
   const clients: ClientTable[] = useMemo(() => {
@@ -93,18 +94,58 @@ const Main = () => {
       return acc
     }, {} as Record<string, ClientTable>)
 
-    return Object.values(grouped)
+    return Object.values(grouped);
+
   }, [data, isLoading])
+
+  const clientsWithChildren = useMemo(() => {
+    if (clients.length === 0) return clients;
+
+    const grouped = Object.values(
+      clients.reduce((acc, item) => {
+        const clientName = item.name.toUpperCase().trim()
+        if (!acc[clientName]) {
+          acc[clientName] = {
+            ...item,
+            name: clientName,
+            children: [],
+          } as ClientTable & { children?: ClientTable[] };
+        } else {
+          acc[clientName].children?.push(item);
+        }
+        return acc;
+      }, {} as Record<string, ClientTable & { children?: ClientTable[] }>)
+    );
+
+
+    const groupedValues = Object.values(grouped).map(client => {
+      if (client.children?.length === 0) {
+        const { children, ...rest } = client; // remove children
+        return rest; // return client without children
+      }
+      return client; // return as-is if has children
+    });
+
+
+
+    const ORDER = ["HOT", "ACTIVE", "ON/OFF", "FOR ELECTIONS", "POOL"];
+    return groupedValues.sort(
+      (a, b) => ORDER.indexOf(a.status_name as string) - ORDER.indexOf(b.status_name as string)
+    );
+  }, [clients])
+
   if (isLoading) {
     return <>{fetchStatus}...</>;
   }
+
+
   return (
     <>
       <AnimatePresence>
         <Page className="w-full">
           {data && (
-            <DataTable columns={columns} data={clients} size={100}>
-              {access.add && (
+            <DataTable columns={columns} data={clientsWithChildren} size={100} getSubRows={(row: ClientTable) => row.children}>
+              {add && (
                 <header className="flex items-center gap-4">
                   <Button
                     asChild

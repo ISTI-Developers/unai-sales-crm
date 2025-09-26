@@ -1,6 +1,6 @@
 import logo from "@/assets/LogoWR.png";
 import { Separator } from "../ui/separator";
-import Links from "@/data/links";
+import useLinks from "@/data/links";
 import { Button } from "../ui/button";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -54,7 +54,7 @@ const Sidebar = () => {
 };
 
 const NavList = () => {
-  const { links } = Links();
+  const { links } = useLinks();
   const { isCollapsed } = useSidebar();
   return (
     <>

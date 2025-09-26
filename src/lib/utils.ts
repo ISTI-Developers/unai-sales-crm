@@ -171,4 +171,56 @@ export const colors = [
   "#4d73d4",
   "#70fe84",
   "#37de6d",
+  "#4e729a",
+  "#971a23",
+  "#3a3541",
+  "#233345",
+  "#34d399",
+  "#71717a",
+  "#2563eb",
+  "#475569",
+  "#3a3541",
+  "#09090b",
+  "#000000",
+  "#015064",
+];
+
+export const vibrantColors = [
+  // 🔴 Reds / Pinks
+  "#ef4444", // vibrant red
+  "#f43f5e", // rose
+  "#ec4899", // pink
+
+  // 🟠 Oranges
+  "#f97316", // orange
+  "#fb923c", // tangerine
+  "#f59e0b", // amber
+
+  // 🟡 Yellows
+  "#eab308", // yellow
+  "#fde047", // bright yellow
+
+  // 🟢 Greens
+  "#22c55e", // green
+  "#16a34a", // emerald
+  "#34d399", // vibrant teal-green
+
+  // 💧 Teals / Aquas
+  "#14b8a6", // teal
+  "#06b6d4", // cyan
+  "#0ea5e9", // sky blue
+
+  // 🔵 Blues
+  "#2563eb", // bright blue
+  "#3b82f6", // vivid indigo-blue
+  "#1d4ed8", // saturated blue
+
+  // 🟣 Purples
+  "#8b5cf6", // violet
+  "#a855f7", // purple
+  "#d946ef", // fuchsia
+
+  // ⚫ Optional deep contrast (keep minimal)
+  "#09090b", // black
+  "#233345", // black
 ];

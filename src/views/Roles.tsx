@@ -35,7 +35,7 @@ const Roles = () => {
         <Route path="/:id/edit" element={<ManageRole />} />
       </Routes>
     </Container>
-  );
+  );S
 };
 
 const Main = () => {
@@ -78,7 +78,7 @@ const Main = () => {
                 Roles
               </TabsTrigger>
               <TabsTrigger value="modules" className="font-semibold">
-                Permission Modules
+                Modules
               </TabsTrigger>
             </TabsList>
             <TabsContent

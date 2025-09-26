@@ -11,10 +11,11 @@ interface Link extends LinkDefinitions {
   isActive: boolean;
 }
 
-const Links = () => {
+const useLinks = () => {
   const { user } = useAuth();
   const { data: modules } = useModules();
   const { data: currentUserRole } = useUserRole(user?.ID ?? null);
+
   const isActive = (title: string): boolean => {
     if (!modules) return false;
 
@@ -25,23 +26,24 @@ const Links = () => {
     );
   };
 
-  const hasNoPermissions = (permissions: number[]) =>
-    permissions.every((permission) => permission === 0);
-
   // Memoize the links data based on modules
   const links: Link[] = useMemo(() => {
     // console.log(modules, currentUserRole);
     if (!modules || !currentUserRole) return [];
 
-    const permissions = currentUserRole.access;
+    const { permissions } = currentUserRole;
 
     return linkDefinitions
       .filter((def) => {
-        const matchRole = permissions.find(
-          (role) => role.name.toLowerCase() === def.title.toLowerCase()
-        );
+        const matchRole = permissions.find((permission) => {
+          const [module, action] = permission.split(".");
+          return (
+            module.toLowerCase() === def.title.toLowerCase() &&
+            action.includes("view")
+          );
+        });
 
-        return matchRole ? !hasNoPermissions(matchRole.permissions) : false;
+        return Boolean(matchRole);
       })
       .map((link) => ({
         ...link,
@@ -53,4 +55,4 @@ const Links = () => {
   return { links };
 };
 
-export default Links;
+export default useLinks;

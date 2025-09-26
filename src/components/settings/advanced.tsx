@@ -5,21 +5,59 @@ import { Label } from "../ui/label";
 import { Separator } from "../ui/separator";
 import { Textarea } from "../ui/textarea";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useMemo, useRef, useState } from "react";
 import CustomReceipients from "./customReceipients";
 import { toast } from "@/hooks/use-toast";
-import { useCreateAdvisory } from "@/hooks/useSettings";
+import { useCreateAdvisory, useUNISURLs, useUpdateUNISURL } from "@/hooks/useSettings";
 
 const Advanced = () => {
   return (
     <section className="space-y-4 pb-4">
-      <h1 className="font-bold text-lg bg-white">General Settings</h1>
+      <h1 className="font-bold text-lg bg-white">Advanced Settings</h1>
       <div className="space-y-8">
         <SendAdvisory />
+        <UNISSource />
       </div>
     </section>
   );
 };
+
+const UNISSource = () => {
+  const { data, isLoading } = useUNISURLs();
+  const { mutate } = useUpdateUNISURL()
+
+  const paths = useMemo(() => {
+    if (!data || isLoading) return [];
+
+    return data;
+  }, [data, isLoading])
+
+  return <div className="space-y-2">
+    <h2 className="font-semibold border-l-4 border-main-500 px-2">
+      UNIS Source
+    </h2>
+    <Separator />
+    <p className="text-sm">UNIS url path to be used for APIs and images.</p>
+    <RadioGroup onValueChange={(value) => {
+      const updatedPaths = paths.map(item => {
+        return {
+          ...item,
+          status: item.path === value ? 1 : 0
+        }
+      })
+
+      mutate(updatedPaths)
+    }}>
+      {paths &&
+        paths.map(item => {
+          return <div key={item.ID} className="flex items-center gap-2">
+            <RadioGroupItem id={item.path} value={item.path} checked={Boolean(item.status)} />
+            <Label htmlFor={item.path}>{item.path}</Label>
+          </div>
+        })}
+    </RadioGroup>
+  </div >
+}
 
 const SendAdvisory = () => {
   const [receipient, setReceipient] = useState("all");

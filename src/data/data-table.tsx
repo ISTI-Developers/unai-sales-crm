@@ -13,6 +13,7 @@ import {
   ColumnFiltersState,
   flexRender,
   getCoreRowModel,
+  getExpandedRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
@@ -29,6 +30,7 @@ interface DataTableProps<TData, TValue> {
   data: TData[];
   size?: number;
   children?: ReactNode;
+  getSubRows?: (row: TData) => TData[] | undefined;
 }
 
 export function DataTable<TData, TValue>({
@@ -36,6 +38,7 @@ export function DataTable<TData, TValue>({
   data,
   size = 10,
   children,
+  getSubRows,
 }: DataTableProps<TData, TValue>) {
   const { pathname } = useLocation();
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -55,6 +58,8 @@ export function DataTable<TData, TValue>({
     onGlobalFilterChange: setGlobalFilter,
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getExpandedRowModel: getExpandedRowModel(),
+    getSubRows,
     state: {
       sorting,
       columnFilters,
@@ -81,10 +86,7 @@ export function DataTable<TData, TValue>({
     if (columnFilters.length > 0) {
       localStorage.setItem(`f${pathname}`, JSON.stringify(columnFilters));
     } else {
-      // const storedFilters = localStorage.getItem("f");
-      // if (storedFilters && JSON.parse(storedFilters).length === 0) {
-      //   setColumnFilters([]);
-      // }
+      //
     }
   }, [columnFilters, pathname]);
   return (
@@ -118,9 +120,9 @@ export function DataTable<TData, TValue>({
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                     </TableHead>
                   );
                 })}
@@ -129,10 +131,14 @@ export function DataTable<TData, TValue>({
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
+              table.getRowModel().rows.map((row) => {
+
+                const backgroundColor = row.depth > 0 ? `bg-zinc-${row.depth}00` : '';
+
+                return <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
+                  className={cn(backgroundColor)}
                 >
                   {row.getVisibleCells().map((cell, index) => (
                     <TableCell
@@ -150,7 +156,7 @@ export function DataTable<TData, TValue>({
                     </TableCell>
                   ))}
                 </TableRow>
-              ))
+              })
             ) : (
               <TableRow>
                 <TableCell

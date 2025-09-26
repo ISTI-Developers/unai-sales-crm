@@ -39,11 +39,11 @@ const FileUpload = ({ setData, setLoading }: FileUpload) => {
     const workbook = read(data, { type: "binary" });
     const sheet = workbook.Sheets["Client Form"];
     const records: string[][] = utils.sheet_to_json(sheet, { header: 1 });
-    
+
     const headers: string[] = records[0];
-    const formattedData: ClientUpload[] = records
-      .slice(1)
-      .filter((record) => record.length !== 0)
+    const rows = records.slice(1).filter((record) => record.length !== 0);
+
+    const formattedData: ClientUpload[] = rows
       .map((row) => {
         return headers.reduce((obj: ClientUpload, header, index) => {
           header = header.split("*")[0].split(" ").join("_").toLowerCase();
@@ -59,7 +59,7 @@ const FileUpload = ({ setData, setLoading }: FileUpload) => {
             obj[header] = row[index] ?? "";
           }
           return obj;
-        }, {});
+        }, {} as ClientUpload);
       });
 
     return formattedData;

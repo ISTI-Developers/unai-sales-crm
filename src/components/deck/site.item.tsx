@@ -8,9 +8,11 @@ import { fetchImage } from "@/lib/fetch";
 import { SiteImage } from "@/interfaces/sites.interface";
 import { Button } from "../ui/button";
 import { Trash2 } from "lucide-react";
+import { useActiveUNISURL } from "@/hooks/useSettings";
 
 const SiteItem = ({ site }: { site: DeckSite }) => {
   const { data: images } = useSiteImages(site.site_code);
+  const { data: unisURL, isLoading } = useActiveUNISURL();
   const [siteImages, setSiteImages] = useState<SiteImage[]>([]);
   const { setSelectedOptions, setSelectedSites } = useDeck();
 
@@ -23,6 +25,7 @@ const SiteItem = ({ site }: { site: DeckSite }) => {
     });
   };
   useEffect(() => {
+    if (!unisURL) return;
     let isCancelled = false;
     const objectUrls: string[] = []; // Track all created object URLs
 
@@ -31,7 +34,7 @@ const SiteItem = ({ site }: { site: DeckSite }) => {
 
       const processedImagePromises = images.map(async (image) => {
         const upload_path =
-          "https://unis.unitedneon.com/unis/" + image.upload_path;
+          unisURL.path + image.upload_path;
         const imgUrl = await fetchImage(upload_path); // returns object URL
         if (imgUrl) {
           objectUrls.push(imgUrl); // Track it for cleanup
@@ -55,7 +58,7 @@ const SiteItem = ({ site }: { site: DeckSite }) => {
       isCancelled = true;
       objectUrls.forEach((url) => URL.revokeObjectURL(url)); // Clean up blob URLs
     };
-  }, [images]);
+  }, [images, unisURL, isLoading]);
   return (
     <div
       className="bg-slate-100 rounded-xl flex flex-col gap-4"

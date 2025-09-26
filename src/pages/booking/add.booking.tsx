@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useCreateBookingWithNoSite } from "@/hooks/useBookings";
-import { useClientAccess } from "@/hooks/useClients";
+import { useAccess } from "@/hooks/useClients";
 import { useSiteCities } from "@/hooks/useSites";
 import { useUsers } from "@/hooks/useUsers";
 import { List } from "@/interfaces";
@@ -29,7 +29,7 @@ const AddNewBooking = () => {
   const { user } = useAuth();
   const { data, isLoading, fetchStatus } = useUsers();
   const { data: areas } = useSiteCities();
-  const { access } = useClientAccess(19);
+  const { access: add } = useAccess("booking.add");
   const { mutate } = useCreateBookingWithNoSite();
   const navigate = useNavigate();
 
@@ -87,7 +87,7 @@ const AddNewBooking = () => {
     });
   };
 
-  if (!access.add) {
+  if (!add) {
     return <Navigate to="/booking" replace />;
   }
   return (

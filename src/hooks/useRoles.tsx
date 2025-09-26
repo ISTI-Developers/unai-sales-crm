@@ -18,7 +18,7 @@ export const useRole = (ID: string | null) => {
   return useQuery({
     queryKey: ["roles", ID],
     queryFn: async () => {
-      const response = await spAPI.get<Role[]>("roles", {
+      const response = await spAPI.get<Role>("roles", {
         params: {
           id: ID,
         },

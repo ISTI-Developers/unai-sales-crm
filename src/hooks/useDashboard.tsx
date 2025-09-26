@@ -52,7 +52,6 @@ export const useCurrentWeekReport = () => {
   });
 };
 
-// SELECT su.unit_name, LEFT(MONTHNAME(r.date_submitted),3) as month, CONCAT(LEFT(MONTHNAME(r.date_submitted), 3)," Wk", TIMESTAMPDIFF( WEEK, STR_TO_DATE(DATE_FORMAT(r.date_submitted, '%Y-%m-01'), '%Y-%m-%d') - INTERVAL (WEEKDAY(STR_TO_DATE(DATE_FORMAT(r.date_submitted, '%Y-%m-01'), '%Y-%m-%d'))) DAY, r.date_submitted ) + 1) AS 'wk', COUNT(*) AS reports, TIMESTAMPDIFF( WEEK, STR_TO_DATE(DATE_FORMAT(r.date_submitted, '%Y-%m-01'), '%Y-%m-%d') - INTERVAL (WEEKDAY(STR_TO_DATE(DATE_FORMAT(r.date_submitted, '%Y-%m-01'), '%Y-%m-%d'))) DAY, r.date_submitted ) + 1 as week FROM reports r JOIN sales_units su ON r.sales_unit_id = su.ID JOIN clients c ON c.ID = r.client_id JOIN client_accounts ca ON c.ID = ca.client_id WHERE YEAR(r.date_submitted) = YEAR(NOW()) GROUP BY su.unit_name, month, week;
 export type Status = string;
 export type SalesUnit = string;
 

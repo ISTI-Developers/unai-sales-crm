@@ -66,7 +66,6 @@ export interface ClientInformation {
 }
 
 export interface Client {
-  [key: string]: number | string | null | ClientMedium[];
   client_id: number;
   name: string;
   industry: number | null;
@@ -96,6 +95,7 @@ export type Account = {
 };
 export type ClientTable = Omit<Client, "account_id" | "account_executive"> & {
   account_executives: Account[];
+  children?: ClientTable[];
 };
 export interface ClientWithContact extends Client {
   [x: string]: string | number | null | ClientMedium[];
@@ -129,7 +129,6 @@ export interface ClientForm {
   source: number | string;
 }
 export interface ClientUpload {
-  [key: string]: string | number;
   client: string;
   brand: string;
   industry: number | string;

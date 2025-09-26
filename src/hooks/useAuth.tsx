@@ -49,19 +49,10 @@ export const useLogin = () => {
         const localResponse = await spAPI.post<User>("auth", formData, {
           params: { type: "login" },
         });
-
-        // // External OOH API call
-        // const oohResponse = await oohAPI.post<OOHResponse>(`user/login`, {
-        //   username,
-        //   password,
-        // });
-
         console.log("Local Response:", localResponse.data);
-        // console.log("OOH Response:", oohResponse.data);
-
+    
         return {
           local: localResponse.data,
-          // ooh: oohResponse.data,
         };
       } catch (error) {
         console.error("Login error:", error);

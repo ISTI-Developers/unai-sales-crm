@@ -10,7 +10,7 @@ import {
 import { useBookingColumns } from "@/data/booking.columns";
 import { DataTable } from "@/data/data-table";
 import { useBookings } from "@/hooks/useBookings";
-import { useClientAccess } from "@/hooks/useClients";
+import { useAccess } from "@/hooks/useClients";
 import { useAvailableSites, useSites } from "@/hooks/useSites";
 import { BookingTable } from "@/interfaces/sites.interface";
 import Container from "@/misc/Container";
@@ -52,7 +52,7 @@ const Main = () => {
   const { data: bookings } = useBookings();
   const { data, isError, isLoading, fetchStatus, error } = useAvailableSites();
   const { columns } = useBookingColumns();
-  const { access } = useClientAccess(19);
+  const { access: add } = useAccess("booking.add");
 
   const availableSites: BookingTable[] = useMemo(() => {
     if (!sites || !data || !bookings || isLoading) return [];
@@ -143,7 +143,7 @@ const Main = () => {
                         </Suspense>
                       </DialogContent>
                     </Dialog>
-                    {access.add && (
+                    {add && (
                       <Button asChild variant="outline">
                         <Link to={"./new"}>
                           <Plus />

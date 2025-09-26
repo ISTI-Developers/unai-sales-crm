@@ -29,19 +29,21 @@ import { Tooltip, TooltipTrigger } from "@/components/ui/tooltip";
 import { TooltipContentWithArrow } from "@/components/ui/tooltip-arrow";
 import { useToast } from "@/hooks/use-toast";
 import { useClientOptionList } from "@/hooks/useClientOptions";
-import { useClientAccess, useUpdateClientStatus } from "@/hooks/useClients";
+import { useAccess, useUpdateClientStatus } from "@/hooks/useClients";
+import { useCompanies } from "@/hooks/useCompanies";
 import { ClientMedium, ClientTable } from "@/interfaces/client.interface";
 import { cn, colors } from "@/lib/utils";
 import { useAuth } from "@/providers/auth.provider";
-import { ColumnDef, Row } from "@tanstack/react-table";
-import { MoreHorizontal, PenBox } from "lucide-react";
+import { CellContext, ColumnDef, Row } from "@tanstack/react-table";
+import { ListChevronsDownUp, ListChevronsUpDown, MoreHorizontal, PenBox } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 const ActionCell = ({ row }: { row: Row<ClientTable> }) => {
   const { user } = useAuth();
   const client: ClientTable = row.original;
-  const { access } = useClientAccess(10);
+  const { access: edit } = useAccess("clients.editAll");
+  const { access: remove } = useAccess("clients.delete");
   const [show, setShow] = useState(false);
 
   const clientAccess = useMemo(() => {
@@ -55,13 +57,12 @@ const ActionCell = ({ row }: { row: Row<ClientTable> }) => {
       };
     }
 
-    console.log(access);
 
     return {
-      edit: salesUnit.sales_unit_id === client.sales_unit_id && access.edit,
-      delete: salesUnit.sales_unit_id === client.sales_unit_id && access.delete,
+      edit: salesUnit.sales_unit_id === client.sales_unit_id && edit,
+      delete: salesUnit.sales_unit_id === client.sales_unit_id && remove,
     }
-  }, [access, user, client]);
+  }, [edit, remove, user, client]);
 
   return (
     <DropdownMenu>
@@ -118,6 +119,20 @@ const ActionCell = ({ row }: { row: Row<ClientTable> }) => {
   );
 };
 
+const CompanyCell = ({ row }: CellContext<ClientTable, unknown>) => {
+  const { data, isLoading } = useCompanies();
+  const id = row.original.company_id;
+
+  if (isLoading) return <>loading...</>
+  if (!data) return <span className="text-red-400">error</span>
+
+  const company = data.find(item => item.ID === id);
+
+  if (!company) return <span className="text-red-400">error</span>
+
+  return <p className="text-xs">{`${company.code}`}</p>
+}
+
 export const columns: ColumnDef<ClientTable>[] = [
   {
     accessorKey: "row",
@@ -140,9 +155,19 @@ export const columns: ColumnDef<ClientTable>[] = [
       const name: string = row.getValue("name");
 
       return (
-        <p className="w-full pl-4 text-xs max-w-[250px] uppercase">
-          {name}
-        </p>
+        <div className={cn("w-full max-w-[300px] pl-4 flex gap-4 items-center ")} style={{ paddingLeft: `${row.depth * 5}rem` }}>
+          {row.getCanExpand() && (
+            <Button variant="ghost" size="icon" onClick={row.getToggleExpandedHandler()}>
+              {row.getIsExpanded() ? <ListChevronsDownUp /> : <ListChevronsUpDown />}
+            </Button>
+          )}
+          <div className={cn("text-xs uppercase", "flex items-center gap-1")}>
+            <span>{name}</span>
+            {row.original.children &&
+              <p className="text-[0.65rem] bg-emerald-400 w-4 h-4 flex items-center justify-center rounded text-white font-semibold">{row.original.children.length}</p>
+            }
+          </div>
+        </div>
       );
     },
   },
@@ -174,7 +199,6 @@ export const columns: ColumnDef<ClientTable>[] = [
     },
     filterFn: (row, columnId, filterValue) => {
       const item: string = row.getValue(columnId);
-      console.log(row, item, filterValue)
       return filterValue.includes(item);
     },
   },
@@ -192,6 +216,16 @@ export const columns: ColumnDef<ClientTable>[] = [
       ) : (
         "---"
       );
+    },
+  },
+  {
+    id: "company",
+    accessorKey: "company",
+    header: "Company",
+    cell: CompanyCell,
+    filterFn: (row, columnId, filterValue) => {
+      const item: string = row.getValue(columnId);
+      return filterValue.includes(item);
     },
   },
   {
@@ -288,7 +322,7 @@ export const columns: ColumnDef<ClientTable>[] = [
 const StatusSelect = ({ row }: { row: Row<ClientTable> }) => {
   const { mutate: updateClientStatus, isPending } = useUpdateClientStatus();
   const { client_id, name: client, status_name } = row.original;
-  const { access } = useClientAccess(10);
+  const { access: edit } = useAccess("clients.editStatus");
 
   const { toast } = useToast();
 
@@ -368,14 +402,14 @@ const StatusSelect = ({ row }: { row: Row<ClientTable> }) => {
           <DialogTrigger asChild>
             <Button
               onClick={(e) =>
-                access.edit ? setEditable(true) : e.preventDefault()
+                edit ? setEditable(true) : e.preventDefault()
               }
               variant="ghost"
               size={null}
               tabIndex={-1}
               className={cn(
                 "relative group select-none cursor-pointer flex gap-2 justify-start w-fit outline-none focus:outline-none focus-visible:ring-0",
-                !access.edit ? "pointer-events-none" : ""
+                !edit ? "pointer-events-none" : ""
               )}
             >
               <Badge
@@ -384,7 +418,7 @@ const StatusSelect = ({ row }: { row: Row<ClientTable> }) => {
               >
                 {status_name as string}
               </Badge>
-              {access.edit && (
+              {edit && (
                 <PenBox className="absolute top-1/2 -translate-y-1/2 right-0 opacity-0 group-hover:opacity-100" />
               )}
             </Button>

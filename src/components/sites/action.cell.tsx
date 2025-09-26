@@ -12,14 +12,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useClientAccess } from "@/hooks/useClients";
+import { useAccess } from "@/hooks/useClients";
 import { Site } from "@/interfaces/sites.interface";
 import { CellContext } from "@tanstack/react-table";
 import { MoreHorizontal } from "lucide-react";
 import { Link } from "react-router-dom";
 export const ActionCell = ({ row }: CellContext<Site, unknown>) => {
   const site = row.original;
-  const { access } = useClientAccess(18);
+  const { access: edit } = useAccess("sites.edit");
+  const { access: remove } = useAccess("sites.delete");
 
   return (
     <DropdownMenu>
@@ -38,7 +39,7 @@ export const ActionCell = ({ row }: CellContext<Site, unknown>) => {
             View
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem asChild disabled={!access.edit}>
+        <DropdownMenuItem asChild disabled={!edit}>
           <Link
             className="cursor-pointer text-xs"
             to={`/sites/${site.site_code}/edit`}
@@ -53,7 +54,7 @@ export const ActionCell = ({ row }: CellContext<Site, unknown>) => {
           <Dialog>
             <DialogTrigger
               className="cursor-pointer text-xs w-full text-start p-2 py-1 text-red-300 rounded hover:bg-zinc-100 disabled:pointer-events-none disabled:opacity-50"
-              disabled={!access.delete}
+              disabled={!remove}
             >
               Delete
             </DialogTrigger>

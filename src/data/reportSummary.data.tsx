@@ -115,6 +115,18 @@ const useReportSummary = () => {
       label: "SU 7",
       color: "#881337",
     },
+    MGM: {
+      label: "MGM",
+      color: "#d1a093"
+    },
+    Sales: {
+      label: "TAMC Sales",
+      color: "#a112e3"
+    },
+    UTASI_Sales: {
+      label: "UTASI Sales",
+      color: "#f19283"
+    }
   } satisfies ChartConfig;
 
   const thisWeeksReports = useMemo(() => {

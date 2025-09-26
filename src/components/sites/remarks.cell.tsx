@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { PenLine } from "lucide-react";
 import { useUpdateRemarks } from "@/hooks/useSites";
 import { useAuth } from "@/providers/auth.provider";
-import { useClientAccess } from "@/hooks/useClients";
+import { useAccess } from "@/hooks/useClients";
 
 const RemarksCell = ({ row, column }: CellContext<Site, unknown>) => {
   const { mutate } = useUpdateRemarks();
@@ -15,7 +15,7 @@ const RemarksCell = ({ row, column }: CellContext<Site, unknown>) => {
   const [remark, setRemark] = useState<string>(remarks ?? "");
   const [toggle, onToggle] = useState(false);
   const { user } = useAuth();
-  const { access } = useClientAccess(19);
+  const { access } = useAccess(19);
 
   const onSubmit = () => {
     mutate(

@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { useClient, useClientAccess } from "@/hooks/useClients";
+import { useClient, useAccess } from "@/hooks/useClients";
 import { capitalize } from "@/lib/utils";
 import Page from "@/misc/Page";
 import { useAuth } from "@/providers/auth.provider";
@@ -12,7 +12,7 @@ import { useUserReportViewAccesses } from "@/hooks/useSettings";
 
 const ManageClient = () => {
   const { user } = useAuth();
-  const { access } = useClientAccess(10);
+  const { access } = useAccess(10);
   const { data: reportAccess } = useUserReportViewAccesses((user?.ID as number) ?? 0);
 
   const clientID = localStorage.getItem("client");

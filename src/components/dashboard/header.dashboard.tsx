@@ -3,11 +3,14 @@ import { format } from "date-fns";
 import { useOnlineUsers } from "@/hooks/useUsers";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
-function DashboardHeader() {
+import { PenLine } from "lucide-react";
+import { Button } from "../ui/button";
+function DashboardHeader({ onToggleEdit }: { onToggleEdit: (toggle: boolean) => void }) {
   return (
-    <section className="flex justify-between">
+    <section className="flex items-center justify-between gap-2">
       <DateAndTime />
       <OnlineBadge />
+      <Button onClick={() => onToggleEdit(true)} className="p-[0.3rem] h-auto rounded-full text-xs bg-yellow-200 border-none text-yellow-500/50 hover:bg-yellow-400 hover:text-yellow-500" variant="outline"><PenLine size={8} /></Button>
     </section>
   );
 }
@@ -53,7 +56,7 @@ function OnlineBadge() {
   }, [isLoading, data]);
   return (
     <Tooltip delayDuration={100}>
-      <TooltipTrigger>
+      <TooltipTrigger className="ml-auto">
         <div
           className={cn(
             "flex items-center gap-2 text-sm rounded-full p-1 px-2",

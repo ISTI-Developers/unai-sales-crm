@@ -18,6 +18,7 @@ import ReportWeekDialog from "./reportWeekDialog";
 import MiscTable from "./miscTable";
 import UserOverride from "./userOverride";
 import { useAuth } from "@/providers/auth.provider";
+import CompanyAccess from "./companyAccesses";
 
 function General() {
   return (
@@ -26,6 +27,7 @@ function General() {
       <div className="space-y-8">
         <MiscManagement />
         <ReportWeekAccess />
+        <CompanyClientAccess />
       </div>
     </section>
   );
@@ -100,8 +102,8 @@ function ReportWeekAccess() {
         weeks[currentWeekIndex] === week
           ? true
           : weekAccess.find((access) => access.week === week)
-          ? true
-          : false;
+            ? true
+            : false;
       return {
         ID: weekAccess.find((wk) => wk.week === week)?.ID,
         week: week,
@@ -152,6 +154,23 @@ function ReportWeekAccess() {
       </div>
     </div>
   );
+}
+
+function CompanyClientAccess() {
+  return <div id="report-week-access" className="flex flex-col gap-4 items-start">
+    <div className="space-y-2">
+      <h2 className="font-semibold border-l-4 border-main-500 px-2">
+        Company Client Accesses
+      </h2>
+      <Separator />
+      <p className="text-sm">
+        Set the viewing access of each company clients.
+      </p>
+    </div>
+    <div className="grid grid-cols-2 w-full gap-8 bg-slate-100 p-4 rounded-md">
+      <CompanyAccess />
+    </div>
+  </div>
 }
 
 export default General;

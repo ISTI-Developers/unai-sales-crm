@@ -1,13 +1,13 @@
 import ClientNameField from '@/components/clients/name.client';
-import FormLabel from '@/components/formlabel';
 import { MultiComboBox } from '@/components/multicombobox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useAllClientOptions } from '@/hooks/useClientOptions';
-import { useCreateClient } from '@/hooks/useClients';
-import { useCompanies, useCompanySalesUnits } from '@/hooks/useCompanies';
+import { useAccess, useCreateClient } from '@/hooks/useClients';
+import { useCompanies, useSalesUnits } from '@/hooks/useCompanies';
 import { useMediums } from '@/hooks/useMediums';
 import { List } from '@/interfaces';
 import { ClientForm, ClientOptions } from '@/interfaces/client.interface';
@@ -24,8 +24,10 @@ const AddClient = () => {
   const { user } = useAuth();
   const { data: companies, isLoading } = useCompanies();
   const { data: mediums } = useMediums();
-  const salesUnits = useCompanySalesUnits(user?.company?.name);
+  const { data: salesUnits } = useSalesUnits()
   const clientOptions = useAllClientOptions();
+  const { access: editCompany } = useAccess("clients.editCompany")
+  const { access: editAll } = useAccess("clients.editAll")
   const { mutate: insertClient, isPending } = useCreateClient();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -33,7 +35,7 @@ const AddClient = () => {
     name: "",
     industry: "",
     brand: "",
-    company: user ? user.company ? `${user.company.name} (${user.company.code})` : "" : "",
+    company: user ? user.company ? `${user.company.name}` : "" : "",
     sales_unit: "",
     account_executive: [],
     status: "",
@@ -230,6 +232,20 @@ const AddClient = () => {
     });
   }
 
+  const isReady = useMemo(() => {
+    if (!client) return false;
+    return (
+      client.name.trim() !== "" &&
+      String(client.industry).trim() !== "" &&
+      String(client.company).trim() !== "" &&
+      String(client.sales_unit).trim() !== "" &&
+      (client.account_executive as List[]).length > 0 &&
+      String(client.status).trim() !== "" &&
+      (client.mediums as List[]).length > 0 &&
+      String(client.type).trim() !== "" &&
+      String(client.source).trim() !== ""
+    );
+  }, [client])
   return client && (
     <Page className="flex flex-col gap-4">
       <Helmet>
@@ -249,15 +265,15 @@ const AddClient = () => {
       <main>
         <form className='grid lg:grid-cols-2 gap-4' autoComplete='off' onSubmit={onSubmit}>
           <FormSection title='Client Information'>
-            <FormField id='name'>
-              <ClientNameField name={client.name} setClient={setClient} />
+            <FormField id='name' required>
+              <ClientNameField name={client.name} setName={(name) => onSelectChange(name, "name")} />
             </FormField>
             <InputField id='brand' value={client['brand']} disabled={false} onChange={onInputChange} />
-            <SelectField id='industry' value={client['industry'] as string} disabled={false} onChange={onSelectChange} options={getOptions('industry')} />
-            <SelectField id='company' value={client['company'] as string} disabled={true} onChange={onSelectChange} options={isLoading ? [] : companyOptions} />
-            <SelectField id='sales_unit' value={client['sales_unit'] as string} disabled={false} onChange={onSelectChange} options={salesOptions} />
+            <SelectField required id='industry' value={client['industry'] as string} disabled={false} onChange={onSelectChange} options={getOptions('industry')} />
+            <SelectField required id='company' value={client['company'] as string} disabled={!(editCompany || editAll)} onChange={onSelectChange} options={isLoading ? [] : companyOptions} />
+            <SelectField required id='sales_unit' value={client['sales_unit'] as string} disabled={false} onChange={onSelectChange} options={salesOptions} />
             <AccountExecutiveField id='account_executive' options={accountOptions} value={client.account_executive as List[]} setValue={onMultiSelectChange} />
-            <SelectField id='status' value={client['status'] as string} disabled={false} onChange={onSelectChange} options={getOptions('status')} />
+            <SelectField required id='status' value={client['status'] as string} disabled={false} onChange={onSelectChange} options={getOptions('status')} />
             <MediumField
               mediums={client.mediums as List[]}
               updateMedium={updateMedium}
@@ -267,13 +283,13 @@ const AddClient = () => {
             {Object.keys(client).slice(8, 13).map(field => {
               return <InputField id={field} value={client[field as keyof typeof client] as string} disabled={false} onChange={onInputChange} />
             })}
-            <SelectField id='type' value={client['type'] as string} disabled={false} onChange={onSelectChange} options={getOptions('type')} />
-            <SelectField id='source' value={client['source'] as string} disabled={false} onChange={onSelectChange} options={getOptions('source')} />
+            <SelectField required id='type' value={client['type'] as string} disabled={false} onChange={onSelectChange} options={getOptions('type')} />
+            <SelectField required id='source' value={client['source'] as string} disabled={false} onChange={onSelectChange} options={getOptions('source')} />
           </FormSection>
           <Button
             type="submit"
             variant="ghost"
-            disabled={isPending}
+            disabled={isPending || !isReady}
             className="w-fit bg-main-100 hover:bg-main-700 text-white hover:text-white float-right flex gap-4 disabled:cursor-not-allowed lg:col-[2/3] ml-auto"
           >
             {isPending && <LoaderCircle className="animate-spin" />}
@@ -286,13 +302,13 @@ const AddClient = () => {
 }
 
 const AccountExecutiveField = ({ id, value, options, setValue }: { id: string, value: List[]; options: List[]; setValue: (id: string) => void }) => {
-  return <FormField id={id}>
+  return <FormField id={id} required>
     <MultiComboBox list={options} setValue={(id) => setValue(id)} title={id.replace("_", " ")} value={value} />
   </FormField>
 }
 
-const SelectField = ({ id, value, onChange, options, disabled }: { id: string; value: string; onChange: (value: string, id: string) => void; disabled: boolean, options: Option[] }) => {
-  return <FormField id={id}>
+const SelectField = ({ id, value, onChange, options, disabled, required = false, }: { id: string; value: string; required?: boolean; onChange: (value: string, id: string) => void; disabled: boolean, options: Option[] }) => {
+  return <FormField id={id} required={required}>
     <Select
       value={value}
       disabled={disabled}
@@ -329,7 +345,7 @@ const MediumField = ({
 }) => {
   const { data: options } = useMediums();
   return (
-    <FormField id="mediums">
+    <FormField id="mediums" required>
       <MultiComboBox
         title="mediums"
         value={mediums as List[]}
@@ -348,21 +364,24 @@ const MediumField = ({
   );
 };
 
-const InputField = ({ id, value, onChange, disabled }: { id: string; value: string; onChange: ChangeEventHandler<HTMLInputElement>; disabled: boolean }) => {
-  return <FormField id={id}>
+const InputField = ({ id, value, onChange, required = false, disabled }: { id: string; value: string; required?: boolean; onChange: ChangeEventHandler<HTMLInputElement>; disabled: boolean }) => {
+  return <FormField id={id} required={required}>
     <Input
       id={id}
       value={value}
       disabled={disabled}
       onChange={onChange}
+      required={required}
     />
   </FormField>
 }
 
-const FormField = ({ id, children }: { id: string; children: ReactNode }) => {
+const FormField = ({ id, required = false, children }: { id: string; required?: boolean; children: ReactNode }) => {
   return (
     <div className="grid grid-cols-[1.25fr_4fr] items-center gap-2">
-      <FormLabel id={id} label={id} />
+      <Label htmlFor={id} className="capitalize">
+        {id.replace(/_/g, " ")}{required && <span className='text-red-400'>*</span>}
+      </Label>
       {children}
     </div>
   );

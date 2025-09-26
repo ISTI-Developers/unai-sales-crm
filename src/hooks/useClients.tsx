@@ -4,20 +4,22 @@ import {
   ClientInformation,
   ClientUpload,
 } from "@/interfaces/client.interface";
-import { Access, DefaultResponse } from "@/interfaces";
+import { DefaultResponse } from "@/interfaces";
 
 import { useMemo } from "react";
 import { catchError, spAPI } from "@/providers/api";
 import { useAuth } from "@/providers/auth.provider";
 
 export const useClients = () => {
+  const { user } = useAuth();
   return useQuery({
-    queryKey: ["clients"],
+    queryKey: ["clients", user?.ID],
     queryFn: async () => {
       const response = await spAPI.get<Client[]>("clients");
       return response.data;
     },
     staleTime: 1000 * 60 * 10,
+    enabled: !!user
   });
 };
 
@@ -56,8 +58,7 @@ export const useBatchInsertClients = () => {
   return useMutation({
     mutationFn: async (data: ClientUpload[]) => {
       const formdata = new FormData();
-      formdata.append("data", JSON.stringify(data));
-
+      formdata.append("data", JSON.stringify(data.map(item => ({ ...item, account_executive: JSON.parse(item.account_executive as string), mediums: JSON.parse(item.mediums) }))));
       const response = await spAPI.post(`clients?type=batch`, formdata);
 
       return response.data;
@@ -143,30 +144,13 @@ export const useDeleteClient = () => {
   });
 };
 
-export const useClientAccess = (id: number | null = null) => {
+export const useAccess = (permission: string) => {
   const { user } = useAuth();
-  const access: Access = useMemo(() => {
-    const defaultAccess = {
-      view: true,
-      add: false,
-      edit: false,
-      delete: false,
-    };
-    if (!user) return defaultAccess;
+  const access = useMemo(() => {
+    if (!user) return false;
 
-    const roleAccesses = user.role.access.find((role) => role.m_id === id);
-
-    if (!roleAccesses) return defaultAccess;
-
-    const permissions = roleAccesses.permissions;
-
-    return {
-      view: Boolean(permissions[0]),
-      add: Boolean(permissions[1]),
-      edit: Boolean(permissions[2]),
-      delete: Boolean(permissions[3]),
-    };
-  }, [user]);
+    return Boolean(user.role.permissions.find(perm => perm === permission))
+  }, [permission, user]);
 
   return { access };
 };

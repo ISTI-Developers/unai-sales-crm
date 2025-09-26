@@ -2,10 +2,6 @@ import { lazy, Suspense } from "react";
 import Container from "@/misc/Container";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
-// import Clients from "@/components/dashboard/client.dashboard";
-// import Sites from "@/components/dashboard/sites.dashboard";
-// import Reports from "@/components/dashboard/reports.dashboard";
-// import WeeklyReports from "@/components/dashboard/weeklyReports.dashboard";
 
 // Lazy-loaded components
 const DashboardHeader = lazy(
@@ -30,7 +26,7 @@ const Dashboard = () => {
   return (
     <Container>
       <Suspense fallback={<div>Loading header...</div>}>
-        <DashboardHeader />
+        <DashboardHeader onToggleEdit={() => { }} />
       </Suspense>
       <ScrollArea>
         <div className="lg:h-[calc(100vh-10rem)] grid md:grid-cols-6 md:grid-rows-[auto_250px_1fr_1fr] xl:grid-rows-none xl:grid-cols-9 gap-4">

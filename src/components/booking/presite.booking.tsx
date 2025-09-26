@@ -28,13 +28,14 @@ import {
 } from "../ui/alert-dialog";
 import TagBooking from "./tag.booking";
 import { cn } from "@/lib/utils";
-import { useClientAccess } from "@/hooks/useClients";
+import { useAccess } from "@/hooks/useClients";
 
 const PresiteBookings = () => {
   const { data, isLoading, isError, error } = usePreBookings();
   const { data: bookings } = useBookings();
   const { mutate } = useCancelBooking();
-  const { access } = useClientAccess(19);
+  const { access: edit } = useAccess("booking.viewAll");
+  const { access: remove } = useAccess("bookings.delete");
   const rows = useMemo(() => {
     if (!data || isLoading || !bookings) return null;
 
@@ -58,7 +59,7 @@ const PresiteBookings = () => {
   }, [bookings, data, isLoading]);
 
   const onCancel = (ID: number) => {
-    mutate(ID);
+    mutate({ booking_id: ID, reason: "" });
   };
 
   if (isError) return <>{JSON.stringify(error)}</>;
@@ -73,7 +74,7 @@ const PresiteBookings = () => {
             <TableHead>Term Details</TableHead>
             <TableHead>Remarks</TableHead>
             <TableHead>Status</TableHead>
-            {(access.edit || access.delete) && <TableHead>Action</TableHead>}
+            {(edit || remove) && <TableHead>Action</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -112,7 +113,7 @@ const PresiteBookings = () => {
                     </TableCell>
                     <TableCell>{row.remarks}</TableCell>
                     <TableCell>{row.booking_status}</TableCell>
-                    {(access.edit || access.delete) && (
+                    {(edit || remove) && (
                       <TableCell>
                         {row.booking_status !== "CANCELLED" && (
                           <>

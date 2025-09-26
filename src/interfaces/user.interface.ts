@@ -41,20 +41,12 @@ export interface UserTable {
   status: string;
 }
 
-export interface Permissions {
-  m_id: number;
-  name: string;
-  permissions: number[];
-  status: string;
-}
-
 export interface Role {
   role_id: number;
   name: string;
-  description?: string;
-  status_id?: number;
-  status?: string;
-  access: Permissions[];
+  description: string;
+  status: string;
+  permissions: string[];
 }
 
 export interface RoleTypes {

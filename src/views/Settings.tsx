@@ -1,5 +1,6 @@
 import Advanced from "@/components/settings/advanced";
 import General from "@/components/settings/general";
+import NestedTableTesting from "@/components/settings/test";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { capitalize } from "@/lib/utils";
@@ -9,7 +10,7 @@ import { useState } from "react";
 function Settings() {
   const settingsTabs = [
     { tab: "general", content: General },
-    { tab: "account", content: () => <>Account Tab</> },
+    { tab: "account", content: NestedTableTesting },
     { tab: "advanced", content: Advanced },
   ];
   const [activeTab, setActiveTab] = useState("general");
@@ -36,7 +37,7 @@ function Settings() {
           return (
             <TabsContent
               value={item.tab}
-              className="w-4/5 max-h-[calc(100vh_-_12rem)] overflow-y-auto"
+              className="w-4/5 max-h-[calc(100vh_-_10rem)] overflow-y-auto"
             >
               <Content />
             </TabsContent>

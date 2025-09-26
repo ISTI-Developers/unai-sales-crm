@@ -27,9 +27,9 @@ const ImagesSection = ({
         prev.map((site) =>
           site.site_code === site_code
             ? {
-                ...site,
-                images: data[0],
-              }
+              ...site,
+              images: data[0],
+            }
             : site
         )
       );
@@ -41,17 +41,7 @@ const ImagesSection = ({
     <Container>
       <ScrollArea className="max-h-[30vh] overflow-y-auto">
         <div className="flex flex-wrap flex-1 gap-4 w-full justify-center items-center text-black">
-          {(data?.length ?? 0) > 0
-            ? data?.map((item) => {
-                return (
-                  <ImageItem
-                    site_code={site_code}
-                    key={item.upload_id}
-                    item={item}
-                  />
-                );
-              })
-            : "No sites found from UNIS"}
+          {data ? data.length !== 0 ? data.map(item => (<ImageItem key={item.upload_id} item={item} site_code={site_code} />)) : "Loading images..." : "No images found."}
         </div>
       </ScrollArea>
     </Container>
@@ -72,9 +62,9 @@ const ImageItem = ({
       prev.map((site) =>
         site.site_code === site_code
           ? {
-              ...site,
-              images: item, // Append new image
-            }
+            ...site,
+            images: item, // Append new image
+          }
           : site
       )
     );

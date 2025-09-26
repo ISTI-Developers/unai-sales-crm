@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useClientAccess } from "@/hooks/useClients";
+import { useAccess } from "@/hooks/useClients";
 import { ClientInformation } from "@/interfaces/client.interface"
 import { lazy, Suspense, useState } from "react";
 import { Link, useParams } from "react-router-dom"
@@ -13,7 +13,10 @@ const ReportsTab = lazy(() => import("@/pages/clients/reports.tab"));
 const ClientTabs = ({ client, canEdit }: { client: ClientInformation, canEdit: boolean }) => {
     const params = useParams();
     const [activeTab, setTab] = useState(params?.tab ?? "client");
-    const { access } = useClientAccess(10);
+    const { access: view } = useAccess("clients.viewContactInformation");
+    const { access: viewAll } = useAccess("clients.viewAll");
+    const { access: edit } = useAccess("clients.editContact");
+    const { access: editAll } = useAccess("clients.editAll");
 
     const tabs = [
         {
@@ -25,7 +28,7 @@ const ClientTabs = ({ client, canEdit }: { client: ClientInformation, canEdit: b
         },
         {
             value: "contact",
-            content: access.view ?
+            content: view || viewAll ?
                 <Suspense fallback={<>Loading...</>}>
                     <ContactTab data={{
                         address: client.address,
@@ -46,7 +49,7 @@ const ClientTabs = ({ client, canEdit }: { client: ClientInformation, canEdit: b
         {
             value: "reports",
             content: <Suspense fallback={<>Loading...</>}>
-                <ReportsTab clientID={client.client_id} canEdit={access.view} />
+                <ReportsTab clientID={client.client_id} canEdit={edit || editAll} />
             </Suspense>
         },
         {

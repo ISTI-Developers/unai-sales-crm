@@ -214,7 +214,12 @@ const ManageButton = ({ action, role }: { action: string; role: Role }) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const onClick = async () => {
-    let statusID = role.status_id;
+    const status = new Map([
+      ["active", 1],
+      ["inactive", 2],
+      ["deleted", 5]
+    ])
+    let statusID = status.get(role.status);
     setLoading(true);
 
     if (!statusID) return;
@@ -250,10 +255,9 @@ const ManageButton = ({ action, role }: { action: string; role: Role }) => {
           if (response.error) {
             toast({
               title: "Error",
-              description: `ERROR: ${
-                response.error ||
+              description: `ERROR: ${response.error ||
                 "An error has occured. Please contact the developer."
-              }`,
+                }`,
               variant: "destructive",
             });
             setLoading((prev) => !prev);

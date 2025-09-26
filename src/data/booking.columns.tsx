@@ -3,7 +3,7 @@ import { AddressCell } from "@/components/booking/address.cell";
 import DateCell from "@/components/booking/date.cell";
 import RemarksCell from "@/components/booking/remarks.cell";
 import { Booking } from "@/hooks/useBookings";
-import { useClientAccess } from "@/hooks/useClients";
+import { useAccess } from "@/hooks/useClients";
 import { BookingTable } from "@/interfaces/sites.interface";
 import { formatAmount } from "@/lib/format";
 import { useAuth } from "@/providers/auth.provider";
@@ -11,7 +11,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { differenceInDays } from "date-fns";
 export const useBookingColumns = () => {
   const { user } = useAuth();
-  const { access } = useClientAccess(19);
+  const { access:edit } = useAccess("booking.update");
   const columns: ColumnDef<BookingTable>[] = [
     {
       accessorKey: "structure",
@@ -164,8 +164,8 @@ export const useBookingColumns = () => {
       cell: RemarksCell,
     },
   ];
-  if (user && access) {
-    if (access.edit || [1, 21].includes(user.ID as number)) {
+  if (user && edit) {
+    if (edit || [1, 21].includes(user.ID as number)) {
       columns.push({
         header: "Actions",
         cell: ActionCell,
