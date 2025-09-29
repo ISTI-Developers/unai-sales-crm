@@ -224,3 +224,16 @@ export const vibrantColors = [
   "#09090b", // black
   "#233345", // black
 ];
+
+export const chartColors = [
+  "#1e293b",
+  "#991b1b",
+  "#92400e",
+  "#3f6212",
+  "#065f46",
+  "#155e75",
+  "#1e40af",
+  "#5b21b6",
+  "#86198f",
+  "#9f1239",
+];

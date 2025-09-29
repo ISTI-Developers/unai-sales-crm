@@ -1,8 +1,13 @@
+import { ChartConfig } from "@/components/ui/chart";
 import { useClients } from "@/hooks/useClients";
+import { useCompanies, useSalesUnits } from "@/hooks/useCompanies";
+import { useSites } from "@/hooks/useSites";
+import { List } from "@/interfaces";
 import { Client } from "@/interfaces/client.interface";
 import { User } from "@/interfaces/user.interface";
-import { SourceFilter, WidgetType } from "@/misc/dashboardLayoutMap";
+import { ChartData, SourceFilter, WidgetType } from "@/misc/dashboardLayoutMap";
 import axios from "axios";
+import { chartColors } from "./utils";
 
 export async function fetchFromLark(url: string, options: RequestInit) {
   const response = await fetch(url, options);
@@ -99,4 +104,74 @@ const filterClients = (clients: Client[], filter: SourceFilter[]) => {
   }
 
   return filteredClients;
+};
+
+export const useOptions = (field?: string): List[] | undefined => {
+  const { data: companies } = useCompanies();
+  const { data: salesUnits } = useSalesUnits();
+
+  if (!field) return;
+
+  switch (field) {
+    case "company":
+      if (!companies) return;
+
+      return companies.map((c) => {
+        return {
+          id: String(c.ID),
+          label: c.code,
+          value: String(c.ID),
+        };
+      });
+      break;
+    case "sales_unit":
+      if (!salesUnits) return;
+
+      return salesUnits.map((s) => {
+        return {
+          id: String(s.sales_unit_id),
+          label: s.sales_unit_name,
+          value: String(s.sales_unit_id),
+        };
+      });
+  }
+};
+
+export const useData = (
+  source: string,
+  field: string,
+  config: ChartConfig,
+  map: ChartData[]
+) => {
+  const { data: clients } = useClients();
+  const { data: sites } = useSites();
+
+  if (source === "clients") {
+    switch (field) {
+      case "company":
+        if (!clients) return;
+        return map.map((key, index) => {
+          const label = config[key.key].label ?? "";
+          return {
+            label: String(label),
+            count: clients.filter((client) => key.id === client.company_id)
+              .length,
+            fill: chartColors[index],
+          };
+        });
+        break;
+      case "sales_unit":
+        if (!clients) return;
+        return map.map((key, index) => {
+          const label = config[key.key].label ?? "";
+          return {
+            label: String(label),
+            count: clients.filter((client) => key.id === client.sales_unit_id)
+              .length,
+            fill: chartColors[index],
+          };
+        });
+        break;
+    }
+  }
 };

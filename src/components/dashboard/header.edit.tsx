@@ -2,7 +2,7 @@ import { Hash, Plus } from "lucide-react"
 import { Button } from "../ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog"
 import { Dispatch, SetStateAction, useMemo, useState } from "react"
-import { SourceFilter, sourceFilters, TypeDimensions, Widget, WidgetData, WidgetIconMap, WidgetType, widgetTypes } from "@/misc/dashboardLayoutMap"
+import { chartFieldOptions, ChartOptionConfigItem, ChartWidget, SourceFilter, sourceFilters, TypeDimensions, Widget, WidgetData, WidgetIconMap, WidgetType, widgetTypes } from "@/misc/dashboardLayoutMap"
 import { motion, AnimatePresence } from "framer-motion"
 import { capitalize, cn } from "@/lib/utils"
 import { Label } from "../ui/label"
@@ -13,6 +13,9 @@ import { Layout, Layouts } from "react-grid-layout"
 import IconPicker, { ColorPicker } from "../ui/iconpicker"
 import { icons } from "@/data/icons"
 import WidgetPreview from "./preview.widget"
+import MultiComboBoxWithAll from "../multicomboboxwithall"
+import { List } from "@/interfaces"
+import { useOptions } from "@/lib/fetch"
 
 const EditHeader = ({ onToggleEdit, widgets, onWidgetUpdate }: { onToggleEdit: (toggle: boolean) => void; widgets: Widget[]; onWidgetUpdate: (widget: WidgetData) => void }) => {
     const [open, onOpenChange] = useState(false)
@@ -92,14 +95,23 @@ const EditHeader = ({ onToggleEdit, widgets, onWidgetUpdate }: { onToggleEdit: (
     }
 
 
-    const setType = (type: string) => {
+    const setType = (type: WidgetType) => {
         setWidget(prev => {
+            if (!prev || type === undefined) return prev;
+
             return {
                 ...prev,
-                type: type as WidgetType,
+                type: type,
                 label: type,
-                content: <p className="text-4xl 2xl:text-5xl font-light ">100</p>,
-                icon: WidgetIconMap[type as keyof typeof WidgetIconMap]
+                content: 100,
+                icon: WidgetIconMap[type as keyof typeof WidgetIconMap],
+                chartOptions: type === "Bar" || type === "Pie" || type === "Area" ? {
+                    field: undefined,
+                    chartConfig: {},
+                    dataKey: "count",
+                    nameKey: "label",
+                    data: [],
+                } : undefined
             }
         })
     }
@@ -286,7 +298,96 @@ function Configuration({ widget, setWidget }: { widget: WidgetData; setWidget: D
                 </div>
             }
         </div>
+        {(widget.type === "Bar" || widget.type === "Pie" || widget.type === "Area") && (
+            <ChartConfiguration widget={widget as ChartWidget} setWidget={setWidget} />
+        )}
+
     </>
+}
+
+function ChartConfiguration({ widget, setWidget }: { widget: ChartWidget; setWidget: Dispatch<SetStateAction<WidgetData>> }) {
+    const fieldOptions = useMemo(() => {
+        if (!widget.module) return [];
+
+        return chartFieldOptions[widget.module];
+    }, [widget])
+
+    const setField = (val: string) => {
+        setWidget(prev => {
+            if (!prev) return prev;
+
+            return {
+                ...prev,
+                chartOptions: {
+                    ...(prev as ChartWidget).chartOptions,
+                    field: val,
+                }
+            }
+        })
+    }
+    return <div className="space-y-1">
+        <Label htmlFor="filters" className="text-xs">Options</Label>
+        <div className="bg-slate-200 p-2 rounded-md">
+            <div className="space-y-2">
+                <Label>Data</Label>
+                {fieldOptions.length > 0 ?
+                    <Select value={widget.chartOptions.field} onValueChange={setField}>
+                        <SelectTrigger id="source" className="h-8 bg-white shadow-none">
+                            <SelectValue placeholder="Select Source" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {fieldOptions.map(field => {
+                                return <SelectItem key={field} value={field}>{capitalize(field, "_")}</SelectItem>
+                            })}
+                        </SelectContent>
+                    </Select>
+                    : <div className="bg-slate-200 min-h-[50px] rounded-md flex items-center justify-center text-center text-xs text-slate-600">
+                        Please select a source to view available field configurations.
+                    </div>}
+                {!(fieldOptions.length === 0) &&
+                    <ChartOptions key={widget.chartOptions.field} field={widget.chartOptions.field} onSelectChange={(value) => {
+                        const config = value.reduce((acc, item, index) => {
+                            if (!acc[item.label]) {
+                                acc[item.label] = {
+                                    label: item.label,
+                                    color: `var(--chart-${index + 1})`,
+                                };
+                            }
+                            return acc; // ✅ return accumulator
+                        }, {} as Record<string, ChartOptionConfigItem>);
+                        setWidget(prev => {
+                            if (!prev) return prev;
+
+                            return {
+                                ...prev,
+                                chartOptions: {
+                                    ...(prev as ChartWidget).chartOptions,
+                                    chartConfig: config,
+                                    data: value.map(val => ({ key: val.label, id: Number(val.value) }))
+                                }
+                            }
+                        })
+                    }} />
+                }
+            </div>
+        </div>
+    </div>
+
+}
+
+function ChartOptions({ field, onSelectChange }: { field?: string; onSelectChange: (value: List[]) => void }) {
+    const [value, setValue] = useState<List[]>([])
+    const options = useOptions(field);
+
+    const onValueChange = (value: List[]) => {
+        setValue(value)
+        onSelectChange(value)
+    }
+
+    return options && <div>
+        <Label>Records</Label>
+        <MultiComboBoxWithAll value={value} onValueChange={onValueChange} options={options} title={field} />
+    </div>
 }
 
 function FilterItem({ id, options, filters, onValueChange }: { id: string; options: string[]; filters: SourceFilter; onValueChange: (value: string[]) => void }) {

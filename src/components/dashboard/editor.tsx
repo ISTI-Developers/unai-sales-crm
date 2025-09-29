@@ -1,7 +1,7 @@
 import { Responsive, WidthProvider } from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
-import { WidgetData } from "@/misc/dashboardLayoutMap";
+import { ChartWidget, WidgetData } from "@/misc/dashboardLayoutMap";
 import { cn } from "@/lib/utils";
 import { Card } from "../ui/card";
 import { Button } from "../ui/button";
@@ -9,7 +9,7 @@ import { Hash, Trash2 } from "lucide-react";
 import { icons } from "@/data/icons";
 import { useWidgetData } from "@/lib/fetch";
 import { useState } from "react";
-import WeeklyReportsCard from "./weeklyReportsCard";
+import DashboardChart from "./chart.dashboard";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -52,7 +52,7 @@ const Editor = ({ widgets, isEditable, onDelete }: { widgets: WidgetData[]; isEd
                 draggableCancel="button"
             >
                 {widgets.map((widget: WidgetData) => (
-                    <Card key={widget.key} className={cn("relative rounded-sm p-4 border shadow transition-all flex flex-col gap-4", isEditable ? " border-2 border-dashed shadow-none select-none" : "", widget.type === "Metrics" ? "justify-between" : "")}>
+                    <Card key={widget.key} className={cn("relative rounded-sm p-4 border shadow transition-all flex flex-col", isEditable ? " border-2 border-dashed shadow-none select-none" : "", widget.type === "Metrics" ? "justify-between" : "")}>
                         <WidgetCard widget={widget} />
                         {isEditable &&
                             <div className="absolute bottom-0 right-0 bg-white flex gap-2 p-2 z-[500]">
@@ -91,7 +91,13 @@ export const WidgetCard = ({ widget, isPreview }: { widget: WidgetData; isPrevie
             <p className="text-4xl 2xl:text-5xl font-light ">{isPreview ? widget.content : data ?? 0}</p>
             :
             <div>
-                <WeeklyReportsCard />
+                {isPreview ?
+                    widget.type === "List" ?
+                        <>List preview</>
+                        :
+                        <>Chart Preview</> :
+                    <DashboardChart widget={widget as ChartWidget} />
+                }
             </div>}
     </>
 }

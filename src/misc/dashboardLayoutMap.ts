@@ -34,10 +34,8 @@ export type SourceFilter = {
   value: string[];
 };
 
-export type chartOptions = {
-
-}
-export type WidgetData = {
+// export type chartOptions = {};
+export type WidgetBase = {
   key: string;
   module: string;
   label: string;
@@ -47,8 +45,39 @@ export type WidgetData = {
   type: WidgetType;
   filter: SourceFilter[];
   layouts: Layouts;
-  chartOptions?: null;
 };
+
+export type ChartOptionConfigItem = {
+  label: string;
+  color: string;
+};
+type ChartOptionsConfig = {
+  [key: string]: ChartOptionConfigItem;
+};
+type ChartFieldOptions = {
+  [key: string]: string[];
+};
+export type ChartData = {
+  key: string;
+  id: number;
+};
+
+export type ChartOptions = {
+  field: string;
+  chartConfig: ChartOptionsConfig;
+  data: ChartData[];
+  dataKey: string;
+  nameKey: string;
+};
+
+// chart widgets
+export type ChartWidget = WidgetBase & {
+  type: "Area" | "Bar" | "Pie";
+  chartOptions: ChartOptions; // ✅ required
+};
+
+export type WidgetData = ChartWidget | WidgetBase;
+
 export type Widget = Omit<WidgetData, "filter">;
 
 export const sourceFilters = {
@@ -63,6 +92,12 @@ export const sourceFilters = {
     options: ["all", "current week"],
   },
 };
+
+export const chartFieldOptions: ChartFieldOptions = {
+  clients: ["company", "sales_unit", "account_executive", "status"],
+  sites: ["all", "available", "booked", "projected revenue"],
+};
+
 type Breakpoint = "lg" | "md" | "sm" | "xs" | "xxs";
 
 // Map: WidgetType → Breakpoint → [w, h]
