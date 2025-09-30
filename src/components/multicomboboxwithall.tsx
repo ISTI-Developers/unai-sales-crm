@@ -71,7 +71,7 @@ const MultiComboBoxWithAll = ({ title = "records", value, onValueChange, options
                                                     : "opacity-0"
                                             )}
                                         />
-                                        {option.label}
+                                        {capitalize(option.label)}
                                     </CommandItem>
                                 ))}
                             </>}
