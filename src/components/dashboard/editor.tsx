@@ -70,8 +70,8 @@ const Editor = ({ widgets, isEditable, onDelete }: { widgets: WidgetData[]; isEd
 export const WidgetCard = ({ widget, isPreview }: { widget: WidgetData; isPreview?: boolean }) => {
     const data = useWidgetData(widget.module, widget.filter, widget.type);
     return <>
-        <div className="flex items-center justify-between gap-1.5">
-            <p>{widget.label}</p>
+        {widget.type !== 'Area' && <div className="flex items-center justify-between gap-1.5">
+            <p className="font-semibold">{widget.label}</p>
             <div
                 className="rounded-full p-2"
                 style={{ backgroundColor: `${widget.color}1A`, color: widget.color }}
@@ -86,19 +86,17 @@ export const WidgetCard = ({ widget, isPreview }: { widget: WidgetData; isPrevie
                 })()}
             </div>
 
-        </div>
+        </div>}
         {widget.type === "Metrics" ?
             <p className="text-4xl 2xl:text-5xl font-light ">{isPreview ? widget.content : data ?? 0}</p>
-            :
-            <div>
-                {isPreview ?
-                    widget.type === "List" ?
-                        <>List preview</>
-                        :
+            : widget.type === "List" ?
+                isPreview ? <>List Preview</> : <>List Container</> :
+                <div>
+                    {isPreview ?
                         <>Chart Preview</> :
-                    <DashboardChart widget={widget as ChartWidget} />
-                }
-            </div>}
+                        <DashboardChart widget={widget as ChartWidget} />
+                    }
+                </div>}
     </>
 }
 export default Editor

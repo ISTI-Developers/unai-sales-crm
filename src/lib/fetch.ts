@@ -8,6 +8,7 @@ import { User } from "@/interfaces/user.interface";
 import { ChartData, SourceFilter, WidgetType } from "@/misc/dashboardLayoutMap";
 import axios from "axios";
 import { chartColors } from "./utils";
+import { useStatuses } from "@/hooks/useClientOptions";
 
 export async function fetchFromLark(url: string, options: RequestInit) {
   const response = await fetch(url, options);
@@ -109,6 +110,8 @@ const filterClients = (clients: Client[], filter: SourceFilter[]) => {
 export const useOptions = (field?: string): List[] | undefined => {
   const { data: companies } = useCompanies();
   const { data: salesUnits } = useSalesUnits();
+  const { data: clients } = useClients();
+  const { data: statuses } = useStatuses();
 
   if (!field) return;
 
@@ -134,9 +137,39 @@ export const useOptions = (field?: string): List[] | undefined => {
           value: String(s.sales_unit_id),
         };
       });
+    case "account_executive": {
+      if (!clients) return;
+
+      const accounts = [...new Set(clients.map((client) => client.account_id))];
+
+      return accounts.map((account) => {
+        return {
+          id: String(account),
+          label:
+            clients.find((client) => client.account_id === account)
+              ?.account_executive ?? "",
+          value: String(account),
+        };
+      });
+    }
+    case "status": {
+      if (!statuses) return;
+      return statuses.map((status) => {
+        return {
+          id: String(status.misc_id),
+          label: status.name,
+          value: String(status.misc_id),
+        };
+      });
+    }
   }
 };
-
+// or random but stable using index as seed
+const getRandomColorForIndex = (index: number) => {
+  const seed = (index * 9301 + 49297) % 233280; // simple LCG
+  const rnd = seed / 233280;
+  return chartColors[Math.floor(rnd * chartColors.length)];
+};
 export const useData = (
   source: string,
   field: string,
@@ -147,31 +180,47 @@ export const useData = (
   const { data: sites } = useSites();
 
   if (source === "clients") {
+    if (!clients) return;
     switch (field) {
       case "company":
-        if (!clients) return;
         return map.map((key, index) => {
           const label = config[key.key].label ?? "";
           return {
             label: String(label),
             count: clients.filter((client) => key.id === client.company_id)
               .length,
-            fill: chartColors[index],
+            fill: getRandomColorForIndex(index),
           };
         });
-        break;
       case "sales_unit":
-        if (!clients) return;
         return map.map((key, index) => {
           const label = config[key.key].label ?? "";
           return {
             label: String(label),
             count: clients.filter((client) => key.id === client.sales_unit_id)
               .length,
-            fill: chartColors[index],
+            fill: getRandomColorForIndex(index),
           };
         });
-        break;
+      case "account_executive":
+        return map.map((key, index) => {
+          const label = config[key.key].label ?? "";
+          return {
+            label: String(label),
+            count: clients.filter((client) => key.id === client.account_id)
+              .length,
+            fill: getRandomColorForIndex(index),
+          };
+        });
+      case "status":
+        return map.map((key, index) => {
+          const label = config[key.key].label ?? "";
+          return {
+            label: String(label),
+            count: clients.filter((client) => key.id === client.status).length,
+            fill: getRandomColorForIndex(index),
+          };
+        });
     }
   }
 };
