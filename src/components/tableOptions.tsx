@@ -1,4 +1,3 @@
-import { Input } from "./ui/input";
 import TableFilters from "@/misc/TableFilters";
 import { Button } from "./ui/button";
 import { X } from "lucide-react";
@@ -36,7 +35,7 @@ const TableOptions = <TData,>({
                 {column.value.map((val: string) => {
                   return (
                     <Button
-                      size="xs"
+                      size="sm"
                       variant="outline"
                       className="flex items-center gap-1.5 text-sm"
                       onClick={() => {

@@ -41,7 +41,7 @@ const Search = ({
       onChange={(event) => {
         setInputValue(String(event.target.value));
       }}
-      className={cn("w-full max-w-md transition-all", className)}
+      className={cn("w-full max-w-md transition-all h-7", className)}
     />
   );
 };

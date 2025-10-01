@@ -227,7 +227,7 @@ function TableFilters<TData>({ table, data, filters }: Filters<TData>) {
         <Button
           type="button"
           variant="outline"
-          className="flex items-center gap-1.5"
+          className="flex items-center gap-1.5 h-7"
         >
           <Filter size={16} />
           Filter

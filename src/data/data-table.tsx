@@ -90,7 +90,7 @@ export function DataTable<TData, TValue>({
     }
   }, [columnFilters, pathname]);
   return (
-    <div className="flex flex-col gap-4 max-h-[calc(100vh-7.25rem)]">
+    <div className="flex flex-col gap-2 max-h-[calc(100vh-9rem)]">
       <div className="flex justify-between items-center">
         <TableOptions
           data={data}
@@ -111,7 +111,7 @@ export function DataTable<TData, TValue>({
                     <TableHead
                       key={header.id}
                       className={cn(
-                        "sticky top-0 bg-main-400 text-white text-[0.65rem] whitespace-nowrap uppercase font-bold z-10",
+                        "sticky top-0 bg-main-400 text-white text-[0.5rem] whitespace-nowrap uppercase font-bold z-10",
                         index === headerGroup.headers.length - 1
                           ? "text-center"
                           : ""
