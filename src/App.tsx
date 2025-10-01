@@ -15,11 +15,13 @@ import { lazy, Suspense } from "react";
 import ScreenLoader from "./misc/ScreenLoader";
 
 const Home = lazy(() => import("./views/Home"));
+const Banner = lazy(() => import("./misc/banner"));
 
 function App() {
   const location = useLocation();
   return (
     <>
+      <Banner />
       <ToastProvider duration={3000}>
         <LogProvider>
           <AuthProvider>

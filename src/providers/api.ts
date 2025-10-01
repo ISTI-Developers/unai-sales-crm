@@ -1,6 +1,8 @@
 import { toast } from "@/hooks/use-toast";
 import { User } from "@/interfaces/user.interface";
+import { QueryKey } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
+import { openDB } from "idb";
 
 const mainURL = import.meta.env.VITE_SERVER;
 export const spAPI = axios.create({ baseURL: mainURL, timeout: 120000 });
@@ -87,32 +89,6 @@ spAPI.interceptors.response.use(
     return Promise.reject(new Error(msg));
   }
 );
-// oohAPI.interceptors.response.use(
-//   (res) => res,
-//   (error: AxiosError) => {
-//     let msg = "Something went wrong...";
-
-//     if (error.message) {
-//       msg = error.message;
-//     }
-//     if (error.response?.data) {
-//       const data = error.response.data as { error?: string };
-//       msg = data.error ?? msg;
-
-//       if (/Session.*expired/i.test(msg)) {
-//         toast({
-//           title: "Session Expired",
-//           description: msg,
-//           variant: "destructive",
-//           itemID: "1",
-//         });
-//         logoutAndRedirect();
-//         return;
-//       }
-//     }
-//     return Promise.reject(new Error(msg));
-//   }
-// );
 
 export const catchError = (error: unknown) => {
   if (error instanceof Error) {
@@ -123,3 +99,46 @@ export const catchError = (error: unknown) => {
     });
   }
 };
+
+//INDEXED DB CONFIGURATIONS
+export const idb = openDB(
+  "sales-platform",
+  import.meta.env.VITE_CURRENT_VERSION,
+  {
+    upgrade(db) {
+      if (!db.objectStoreNames.contains("bookings")) {
+        db.createObjectStore("bookings", {
+          keyPath: "ID",
+          autoIncrement: true,
+        });
+      }
+    },
+  }
+);
+
+export async function saveQuery<TData>(
+  store: string,
+  key: QueryKey,
+  data: TData[]
+) {
+  const db = await idb;
+  await db.put(store, {
+    key: JSON.stringify(key),
+    data,
+    lastFetched: Date.now(),
+  });
+}
+
+type ReturnType<Data> = {
+  key: string;
+  data: Data[];
+  lastFetched: number;
+};
+
+export async function getQuery<Data>(
+  store: string,
+  key: QueryKey
+): Promise<ReturnType<Data>> {
+  const db = await idb;
+  return db.get(store, JSON.stringify(key));
+}

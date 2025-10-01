@@ -143,42 +143,10 @@ export const useCreateBooking = (site_code: string) => {
         created_at: format(new Date(), "yyyy-MM-dd HH:mm:ss"),
       };
 
-      // params.start = format(params.start, "MMM dd, yyyy");
-      // params.end = format(params.end, "MMM dd, yyyy");
-      // params.srp = formatAmount(params.srp);
-      // params.monthly_rate = formatAmount(params.monthly_rate);
-      // params.site_rental = formatAmount(params.site_rental);
-
-      // const webhookData = {
-      //   payload: {
-      //     app_id: "cli_a7d1c046a9385003",
-      //     app_secret: "OUKjhSpo4hHvJXd2Sf6k4eLRqEltfv4b",
-      //   },
-      //   type: "url_verification",
-      //   token: "tlBCMBcSK2OoJ2klJV2yefuk0rxHlD0N",
-      //   bookingData: JSON.stringify({
-      //     ...params,
-      //     address: site.address,
-      //     area: site.city,
-      //     facing: site.board_facing,
-      //     owner: site.site_owner,
-      //     size: site.size,
-      //   }),
-      // };
-
       const formdata = new FormData();
       formdata.append("data", JSON.stringify(forDatabase));
       const response = await spAPI.post<DefaultResponse>("booking", formdata);
       return response.data;
-      // if (response.data) {
-      //   if (response.data.acknowledged) {
-      //     const response = await oohAPI.post<DefaultResponse>(
-      //       "dashboard/sites/notify",
-      //       webhookData
-      //     );
-      //     return response.data;
-      //   }
-      // }
     },
     onSuccess: () => queryClient.refetchQueries({ queryKey: ["bookings"] }),
     onError: catchError,

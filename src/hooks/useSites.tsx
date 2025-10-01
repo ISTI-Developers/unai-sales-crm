@@ -6,7 +6,7 @@ import {
   SiteImage,
   LatestSites,
 } from "@/interfaces/sites.interface";
-import { catchError, spAPI } from "@/providers/api";
+import { catchError, getQuery, saveQuery, spAPI } from "@/providers/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { toast } from "./use-toast";
@@ -110,12 +110,14 @@ export const useAvailableSites = () => {
     queryKey: ["sites", "available"],
     queryFn: async () => {
       try {
+        localStorage.setItem("cachedBookings", "false");
         const response = await spAPI.get<AvailableSites[]>("sites", {
           params: {
             type: "available",
           },
         });
         if (response.data) {
+          await saveQuery("bookings", ["sites", "available"], response.data);
           if (!Array.isArray(response.data)) {
             throw new Error("System cannot connect to UNIS.");
           }
@@ -144,8 +146,15 @@ export const useAvailableSites = () => {
           });
         }
       } catch (error) {
-        catchError(error);
-        return null;
+        const cached = await getQuery("bookings", ["sites", "available"]);
+        if (cached) {
+          console.warn("Loaded from cache:", ["sites", "available"]);
+          localStorage.setItem("cachedBookings", "true");
+          return cached.data as AvailableSites[];
+        } else {
+          catchError(error);
+          return null
+        }
       }
     },
     select: (data) => data?.sort((a, b) => a.site.localeCompare(b.site)),
@@ -207,10 +216,10 @@ export const useOverrideContractEndDate = () => {
           return prev.map((site) =>
             site.site === variables.site_code
               ? {
-                  ...site,
-                  adjusted_end_date: format(variables.date, "yyyy-MM-dd"),
-                  adjustment_reason: variables.reason,
-                }
+                ...site,
+                adjusted_end_date: format(variables.date, "yyyy-MM-dd"),
+                adjustment_reason: variables.reason,
+              }
               : site
           );
         }
@@ -244,9 +253,9 @@ export const useUpdateRemarks = () => {
         return prev.map((site) =>
           site.site_code === variables.site_code
             ? {
-                ...site,
-                remarks: variables.remarks,
-              }
+              ...site,
+              remarks: variables.remarks,
+            }
             : site
         );
       });
@@ -280,9 +289,9 @@ export const useUpdatePrice = () => {
         return prev.map((site) =>
           site.site_code === variables.site_code
             ? {
-                ...site,
-                price: variables.priceValue,
-              }
+              ...site,
+              price: variables.priceValue,
+            }
             : site
         );
       });
