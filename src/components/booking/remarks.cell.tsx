@@ -15,7 +15,7 @@ const RemarksCell = ({ row, column }: CellContext<BookingTable, unknown>) => {
   const [remark, setRemark] = useState<string>(remarks ?? "");
   const [toggle, onToggle] = useState(false);
   const { user } = useAuth();
-  const { access } = useAccess(19);
+  const { access: add } = useAccess("booking.add");
 
   const onSubmit = () => {
     mutate(
@@ -29,10 +29,10 @@ const RemarksCell = ({ row, column }: CellContext<BookingTable, unknown>) => {
     );
   };
   const hasAccess = useMemo(() => {
-    if (!user || !access) return false;
+    if (!user || !add) return false;
 
-    return [1, 21].includes(user.ID as number) || access.edit;
-  }, [user, access]);
+    return [1, 21].includes(user.ID as number) || add;
+  }, [user, add]);
   return (
     <div className="min-w-[300px] text-[0.65rem] relative group flex flex-col gap-2">
       {!toggle ? (
@@ -75,7 +75,7 @@ const RemarksCell = ({ row, column }: CellContext<BookingTable, unknown>) => {
               variant="ghost"
               onClick={onSubmit}
               className="w-fit text-xs h-7 bg-emerald-400 hover:bg-emerald-500 text-white hover:text-white flex gap-4 disabled:cursor-not-allowed"
-              // className={cn("flex gap-4 ml-auto", loading && "pl-2.5")}
+            // className={cn("flex gap-4 ml-auto", loading && "pl-2.5")}
             >
               {/* {loading && <LoaderCircle className="animate-spin" />} */}
               Save

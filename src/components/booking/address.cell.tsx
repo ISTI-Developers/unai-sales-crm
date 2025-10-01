@@ -5,14 +5,26 @@ import { Badge } from "../ui/badge";
 import { cn } from "@/lib/utils";
 export const AddressCell = ({ row }: CellContext<BookingTable, unknown>) => {
   const item = row.original;
-
+  let endDate = item.end_date;
   let remainingDays = item.remaining_days;
-  if (item.adjusted_end_date) {
-    remainingDays = differenceInDays(
-      new Date(item.adjusted_end_date),
-      new Date()
-    );
-  }
+
+  const activeBooking = item.bookings.find(
+    (booking) => new Date(booking.date_from) <= new Date() && booking.booking_status !== "CANCELLED"
+  );
+  endDate = activeBooking ?
+    item.adjusted_end_date ?
+      new Date(activeBooking.date_from) < new Date(item.adjusted_end_date) ?
+        activeBooking.date_from :
+        item.adjusted_end_date :
+      activeBooking.date_to
+    : item.adjusted_end_date ?? endDate;
+
+  remainingDays = endDate ? differenceInDays(
+    new Date(endDate),
+    new Date()
+  ) : undefined;
+
+  remainingDays = remainingDays ? remainingDays >= 0 ? remainingDays : undefined : undefined;
   return (
     <div className="text-left space-y-1">
       <div className="flex gap-1 items-center">
@@ -30,7 +42,7 @@ export const AddressCell = ({ row }: CellContext<BookingTable, unknown>) => {
         </Badge>
       </div>
 
-      <p className="uppercase text-[0.6rem] leading-tight italic flex flex-col">
+      <p className="uppercase text-[0.5rem] leading-tight italic flex flex-col">
         <span>{item.address}</span>
         <span>{item.facing}</span>
       </p>
