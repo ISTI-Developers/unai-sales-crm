@@ -8,12 +8,12 @@ import { Button } from "../ui/button";
 import { Hash, Trash2 } from "lucide-react";
 import { icons } from "@/data/icons";
 import { useWidgetData } from "@/lib/fetch";
-import { useState } from "react";
+import { Dispatch, SetStateAction, useState } from "react";
 import DashboardChart from "./chart.dashboard";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
-const Editor = ({ widgets, isEditable, onDelete }: { widgets: WidgetData[]; isEditable: boolean; onDelete: (id: string) => void }) => {
+const Editor = ({ widgets, isEditable, onDelete, setWidgets }: { widgets: WidgetData[]; isEditable: boolean; onDelete: (id: string) => void; setWidgets: Dispatch<SetStateAction<WidgetData[]>> }) => {
     const [breakpoint, setBreakpoint] = useState("lg");
     const [cols, setCols] = useState(12);
     const ROW_HEIGHT = 35;
@@ -43,7 +43,26 @@ const Editor = ({ widgets, isEditable, onDelete }: { widgets: WidgetData[]; isEd
                 isDraggable={isEditable}
                 isResizable={false}
                 onLayoutChange={(_, allLayouts) => {
-                    console.log(allLayouts)
+                    setWidgets(prev =>
+                        prev.map(widget => {
+                            // if this widget exists in allLayouts, update it
+                            if (allLayouts) {
+                                return {
+                                    ...widget,
+                                    layouts: {
+                                        ...widget.layouts,
+                                        ...Object.fromEntries(
+                                            Object.entries(allLayouts).map(([bp, layout]) => [
+                                                bp,
+                                                layout.filter(l => l.i === widget.key) // only this widget’s layout
+                                            ])
+                                        )
+                                    }
+                                };
+                            }
+                            return widget;
+                        })
+                    );
                 }}
                 onBreakpointChange={(newBreakpoint, newCols) => {
                     setBreakpoint(newBreakpoint);

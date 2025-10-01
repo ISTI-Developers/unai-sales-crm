@@ -49,7 +49,7 @@ const Dashboard = () => {
                 }
             </AnimatePresence>
             <div className={cn("transition-all", onEdit ? "border rounded-md mt-2 overflow-auto" : "")}>
-                <Editor widgets={widgets} isEditable={onEdit} onDelete={(id) => setWidgets(prev => {
+                <Editor widgets={widgets} isEditable={onEdit} setWidgets={setWidgets} onDelete={(id) => setWidgets(prev => {
                     console.log(id, prev);
                     return prev.filter(w => w.key !== id)
                 })} />

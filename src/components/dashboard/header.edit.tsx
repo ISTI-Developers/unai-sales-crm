@@ -8,7 +8,6 @@ import { capitalize, cn } from "@/lib/utils"
 import { Label } from "../ui/label"
 import { Input } from "../ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
-import { MultiComboBox } from "../multicombobox"
 import { Layout, Layouts } from "react-grid-layout"
 import IconPicker, { ColorPicker } from "../ui/iconpicker"
 import { icons } from "@/data/icons"
@@ -16,6 +15,7 @@ import WidgetPreview from "./preview.widget"
 import MultiComboBoxWithAll from "../multicomboboxwithall"
 import { List } from "@/interfaces"
 import { useOptions } from "@/lib/fetch"
+import { useAuth } from "@/providers/auth.provider"
 
 const EditHeader = ({ onToggleEdit, widgets, onWidgetUpdate }: { onToggleEdit: (toggle: boolean) => void; widgets: Widget[]; onWidgetUpdate: (widget: WidgetData) => void }) => {
     const [open, onOpenChange] = useState(false)
@@ -52,6 +52,7 @@ const EditHeader = ({ onToggleEdit, widgets, onWidgetUpdate }: { onToggleEdit: (
 
         return { x: nextX, y: nextY, w: defaultW, h: defaultH };
     }
+    // but inside generateLayouts → return only the new widget’s layout
     function generateLayouts(id: string, type: WidgetType, existingLayouts: Layouts) {
         if (!type) return;
 
@@ -60,28 +61,13 @@ const EditHeader = ({ onToggleEdit, widgets, onWidgetUpdate }: { onToggleEdit: (
         const sm = TypeDimensions[type]['sm'];
         const xs = TypeDimensions[type]['xs'];
         const xxs = TypeDimensions[type]['xxs'];
-        return {
-            lg: [
-                ...existingLayouts.lg,
-                { i: id, ...getNextPosition(existingLayouts.lg, 12, ...lg) }
-            ],
-            md: [
-                ...existingLayouts.md,
-                { i: id, ...getNextPosition(existingLayouts.md, 9, ...md) }
-            ],
-            sm: [
-                ...existingLayouts.sm,
-                { i: id, ...getNextPosition(existingLayouts.sm, 6, ...sm) }
-            ],
-            xs: [
-                ...existingLayouts.sm,
-                { i: id, ...getNextPosition(existingLayouts.xs, 3, ...xs) }
-            ],
-            xxs: [
-                ...existingLayouts.sm,
-                { i: id, ...getNextPosition(existingLayouts.xxs, 1, ...xxs) }
-            ],
 
+        return {
+            lg: [{ i: id, ...getNextPosition(existingLayouts.lg, 12, ...lg) }],
+            md: [{ i: id, ...getNextPosition(existingLayouts.md, 9, ...md) }],
+            sm: [{ i: id, ...getNextPosition(existingLayouts.sm, 6, ...sm) }],
+            xs: [{ i: id, ...getNextPosition(existingLayouts.xs, 3, ...xs) }],
+            xxs: [{ i: id, ...getNextPosition(existingLayouts.xxs, 1, ...xxs) }],
         };
     }
     function mergeLayouts(widgets: Widget[]) {
@@ -218,7 +204,7 @@ const EditHeader = ({ onToggleEdit, widgets, onWidgetUpdate }: { onToggleEdit: (
 }
 
 function Configuration({ widget, setWidget }: { widget: WidgetData; setWidget: Dispatch<SetStateAction<WidgetData>> }) {
-
+    const { user } = useAuth();
     const filterOptions = useMemo(() => {
         if (widget.module === "") return undefined;
 
@@ -229,7 +215,7 @@ function Configuration({ widget, setWidget }: { widget: WidgetData; setWidget: D
         const options = sourceFilters[value as keyof typeof sourceFilters]
         if (!options) return;
 
-        const filter = Object.keys(options).map(option => ({ key: option, value: ["all"] }))
+        const filter = Object.keys(options).map(option => ({ key: option, value: [] }))
         setWidget(prev => ({ ...prev, module: value, filter: filter }))
     }
     return <>
@@ -255,7 +241,9 @@ function Configuration({ widget, setWidget }: { widget: WidgetData; setWidget: D
                 </SelectTrigger>
                 <SelectContent>
                     <SelectItem value='clients'>Clients</SelectItem>
-                    <SelectItem value='sites'>Sites</SelectItem>
+                    {(user && user.company?.code === "UNAI") &&
+                        <SelectItem value='sites'>Sites</SelectItem>
+                    }
                     <SelectItem value='reports'>Reports</SelectItem>
                 </SelectContent>
             </Select>
@@ -391,33 +379,26 @@ function ChartOptions({ field, onSelectChange }: { field?: string; onSelectChang
 }
 
 function FilterItem({ id, options, filters, onValueChange }: { id: string; options: string[]; filters: SourceFilter; onValueChange: (value: string[]) => void }) {
-
-    const setValue = (id: string) => {
-        const currentFilters = filters.value ?? [];
-
-        let updated: string[];
-
-        if (id === "all") {
-            // Toggle "all"
-            updated = currentFilters.includes("all") ? ["all"] : ["all"];
-        } else {
-            // Remove "all" if another filter is chosen
-            updated = currentFilters.filter(f => f !== "all");
-
-            if (updated.includes(id)) {
-                // Remove filter
-                updated = updated.filter(f => f !== id);
-            } else {
-                // Add filter
-                updated = [...updated, id];
-            }
-        }
-        onValueChange(updated)
+    const { user } = useAuth();
+    const setValue = (value: List[]) => {
+        onValueChange(value.map(val => val.value))
     };
+
+    const filteredOptions = useMemo(() => {
+        if (!user) return [];
+
+        if (user.role.role_id !== 1) {
+            return options.filter(option => !['company/BU'].includes(option))
+        }
+        if (user.company?.code !== "UNAI") {
+            return options.filter(option => !["team"].includes(option))
+        }
+        return options;
+    }, [user, options])
 
     return <div className="p-2">
         <Label htmlFor={id} className="capitalize text-xs">{id}</Label>
-        <MultiComboBox list={options.map(option => {
+        <MultiComboBoxWithAll options={filteredOptions.map(option => {
             return {
                 id: option,
                 value: option,
@@ -429,7 +410,7 @@ function FilterItem({ id, options, filters, onValueChange }: { id: string; optio
                 value: value,
                 label: capitalize(value)
             }
-        })} setValue={(id) => setValue(id)} title={id} />
+        })} onValueChange={setValue} title={id} isSingle={['ownership', 'options'].includes(id)} />
     </div >
 }
 

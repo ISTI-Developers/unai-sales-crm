@@ -82,14 +82,14 @@ export type Widget = Omit<WidgetData, "filter">;
 
 export const sourceFilters = {
   clients: {
-    ownership: ["all", "company/BU", "team", "own"],
-    status: ["all", "active", "pool", "hot", "on/off", "for elections"],
+    ownership: ["all clients", "company/BU", "team", "own"],
+    status: ["active", "pool", "hot", "on/off", "for elections"],
   },
   sites: {
-    options: ["all", "available", "booked", "projected revenue"],
+    options: ["all sites", "available", "booked", "projected revenue"],
   },
   reports: {
-    options: ["all", "current week"],
+    options: ["all reports", "current week"],
   },
 };
 

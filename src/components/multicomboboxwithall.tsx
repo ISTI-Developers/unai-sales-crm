@@ -11,16 +11,22 @@ interface List {
     label: string;
 }
 
-const MultiComboBoxWithAll = ({ title = "records", value, onValueChange, options, disabled }: { title?: string; value: List[]; onValueChange: (value: List[]) => void; options: List[], disabled?: boolean }) => {
+const MultiComboBoxWithAll = ({ title = "records", value, onValueChange, options, disabled, isSingle }: { title?: string; value: List[]; onValueChange: (value: List[]) => void; options: List[], disabled?: boolean; isSingle?: boolean }) => {
     const [open, setOpen] = useState(false);
 
     const onValueSelect = (id: string) => {
         let selectedOptions = value.map(v => v.id);
 
-        if (selectedOptions.includes(id)) {
-            selectedOptions = selectedOptions.filter(optId => optId !== id);
+        if (isSingle) {
+            // single mode → just replace with the one id
+            selectedOptions = [id];
         } else {
-            selectedOptions = [...selectedOptions, id];
+            // multi mode → toggle logic
+            if (selectedOptions.includes(id)) {
+                selectedOptions = selectedOptions.filter(optId => optId !== id);
+            } else {
+                selectedOptions = [...selectedOptions, id];
+            }
         }
 
         const updatedValue = options.filter(opt => selectedOptions.includes(opt.id));
@@ -50,7 +56,7 @@ const MultiComboBoxWithAll = ({ title = "records", value, onValueChange, options
                         <CommandEmpty>{title} not found</CommandEmpty>
                         <CommandGroup>
                             {options && <>
-                                <CommandItem value="all" onSelect={onSelectAll}>
+                                {!isSingle && <CommandItem value="all" onSelect={onSelectAll}>
                                     <Check
                                         className={cn(
                                             "mr-2 h-4 w-4",
@@ -59,8 +65,8 @@ const MultiComboBoxWithAll = ({ title = "records", value, onValueChange, options
                                                 : "opacity-0"
                                         )}
                                     />
-                                    All
-                                </CommandItem>
+                                    Check All
+                                </CommandItem>}
                                 {options.map(option => (
                                     <CommandItem key={option.id} value={option.id} onSelect={onValueSelect}>
                                         <Check
