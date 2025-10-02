@@ -108,8 +108,7 @@ export const idb = openDB(
     upgrade(db) {
       if (!db.objectStoreNames.contains("bookings")) {
         db.createObjectStore("bookings", {
-          keyPath: "ID",
-          autoIncrement: true,
+          keyPath: "key",
         });
       }
     },

@@ -117,11 +117,10 @@ export const useAvailableSites = () => {
           },
         });
         if (response.data) {
-          await saveQuery("bookings", ["sites", "available"], response.data);
           if (!Array.isArray(response.data)) {
             throw new Error("System cannot connect to UNIS.");
           }
-          return response.data.map((site) => {
+          const data = response.data.map((site) => {
             let rental = 0;
             if (site.net_contract_amount) {
               switch (site.payment_term_id) {
@@ -144,6 +143,8 @@ export const useAvailableSites = () => {
               site_rental: rental,
             };
           });
+          await saveQuery("bookings", ["sites", "available"], data);
+          return data;
         }
       } catch (error) {
         const cached = await getQuery("bookings", ["sites", "available"]);
