@@ -1,7 +1,7 @@
 import { ChartConfig } from "@/components/ui/chart";
 import { useClients } from "@/hooks/useClients";
 import { useCompanies, useSalesUnits } from "@/hooks/useCompanies";
-import { useSites } from "@/hooks/useSites";
+// import { useSites } from "@/hooks/useSites";
 import { List } from "@/interfaces";
 import { Client } from "@/interfaces/client.interface";
 import { User } from "@/interfaces/user.interface";
@@ -9,6 +9,11 @@ import { ChartData, SourceFilter, WidgetType } from "@/misc/dashboardLayoutMap";
 import axios from "axios";
 import { chartColors } from "./utils";
 import { useStatuses } from "@/hooks/useClientOptions";
+import { useAvailableSites, useSites } from "@/hooks/useSites";
+import { useBookings } from "@/hooks/useBookings";
+import { differenceInDays } from "date-fns";
+import { AvailableSites, Site } from "@/interfaces/sites.interface";
+import { useCurrentWeekReport } from "@/hooks/useDashboard";
 
 export async function fetchFromLark(url: string, options: RequestInit) {
   const response = await fetch(url, options);
@@ -50,21 +55,157 @@ export const useWidgetData = (
   type: WidgetType
 ) => {
   const { data: clients } = useClients();
+  const { data: sites } = useSites();
+  const { data: availability = [] } = useAvailableSites();
+  const { data: bookings } = useBookings();
+  const { data: reports } = useCurrentWeekReport();
 
   if (!source || !filters || !type) return;
 
   switch (source.toLowerCase()) {
-    case "clients":
+    case "clients": {
+      if (!clients) return;
+
+      const filteredClients = filterClients(clients, filters);
+
+      return [...new Set(filteredClients.map((c) => c.client_id))].length;
+      // if (type === "Metrics") {
+      // }
+    }
+    case "sites":
       {
-        if (!clients) return;
+        if (!sites || !availability || !bookings) return;
+        const [siteFilter] = filters;
+        const { value } = siteFilter;
 
-        const filteredClients = filterClients(clients, filters);
+        let filteredSites = sites.map((site) => ({
+          site_code: site.site,
+          area: site.city,
+          available: 1,
+          status: site.status,
+          region: site.region,
+          site_owner: site.site_owner,
+        }));
 
-        if (type === "Metrics") {
-          return [...new Set(filteredClients.map((c) => c.client_id))].length;
+        if (value.includes("active")) {
+          filteredSites = filteredSites.filter((site) => site.status === 1);
+        } else if (value.includes("inactive")) {
+          filteredSites = filteredSites.filter((site) => site.status === 0);
         }
+
+        if (value.some((v) => ["available", "booked"].includes(v))) {
+          const today = new Date();
+
+          // helpers
+          const getActiveBooking = (siteCode: string) =>
+            bookings.find(
+              (booking) =>
+                booking.site_code === siteCode &&
+                new Date(booking.date_from) <= today &&
+                booking.booking_status !== "CANCELLED"
+            );
+
+          const calculateEndDate = (site: AvailableSites) => {
+            const activeBooking = getActiveBooking(site.site);
+
+            if (activeBooking) {
+              if (site.adjusted_end_date) {
+                return new Date(activeBooking.date_from) <
+                  new Date(site.adjusted_end_date)
+                  ? activeBooking.date_from
+                  : site.adjusted_end_date;
+              }
+              return activeBooking.date_to;
+            }
+
+            return site.adjusted_end_date ?? site.end_date;
+          };
+
+          const toProcessedSite = (
+            site: Site,
+            overrides: Partial<{
+              site_code: string;
+              available: number;
+              region: string;
+              area: string;
+              status: number | string;
+              site_owner: string;
+            }> = {}
+          ) => ({
+            site_code: site.site_code ?? site.site,
+            region: site.region,
+            area: site.city,
+            available: 0,
+            status: site.status,
+            site_owner: site.site_owner,
+            ...overrides,
+          });
+
+          // compute sets
+          const availableSites = new Set(availability.map((s) => s.site));
+
+          const availableByDefault = sites.filter(
+            (site) => !availableSites.has(site.site_code)
+          );
+
+          const availableByBooking = availability.map((site) => {
+            const endDate = calculateEndDate(site);
+            return {
+              ...site,
+              end_date: endDate,
+              remaining_days: endDate
+                ? differenceInDays(new Date(endDate), today)
+                : 0,
+              days_vacant: endDate
+                ? differenceInDays(today, new Date(endDate))
+                : 0,
+            };
+          });
+
+          // process default sites
+          const processedSiteDefault = availableByDefault.map((site) =>
+            toProcessedSite(site, { available: 1 })
+          );
+
+          const processedSiteBooking = availableByBooking
+            .map((site) => {
+              const item = sites.find((s) => s.site_code === site.site);
+              if (!item) return null; // skip if site not in filteredSites
+
+              return toProcessedSite(item, {
+                site_code: site.site,
+                available: site.remaining_days <= 60 ? 1 : 0,
+                status: item.status,
+                site_owner: item.site_owner,
+              });
+            })
+            .filter(Boolean); // remove nulls
+
+          const mergedSites = [
+            ...processedSiteBooking,
+            ...processedSiteDefault,
+          ];
+
+          // keep last occurrence if duplicates
+          const uniqueSites = Array.from(
+            new Map(mergedSites.map((site) => [site?.site_code, site])).values()
+          );
+          filteredSites = uniqueSites.filter(
+            (site) => site?.available === (value.includes("available") ? 1 : 0)
+          ) as typeof filteredSites;
+
+          console.log(filteredSites);
+        }
+
+        return filteredSites.length;
       }
       break;
+    case "reports": {
+      if (!reports) return;
+
+      return reports.length;
+      return 10;
+    }
   }
 };
 
@@ -84,7 +225,7 @@ const filterClients = (clients: Client[], filter: SourceFilter[]) => {
   let filteredClients = structuredClone(clients);
 
   // 🔹 Ownership filter
-  if (!ownVal.includes("all")) {
+  if (!ownVal.some((val) => val.includes("all"))) {
     filteredClients = filteredClients.filter((client) => {
       return ownVal.some((val) => {
         if (val === "company/BU") return client.company_id === companyID;
@@ -96,12 +237,16 @@ const filterClients = (clients: Client[], filter: SourceFilter[]) => {
   }
 
   // 🔹 Status filter
-  if (!statVal.includes("all")) {
+  if (!statVal.some((val) => val.includes("all"))) {
     filteredClients = filteredClients.filter((client) => {
       return statVal.some(
         (val) => client.status_name.toLowerCase() === val.toLowerCase()
       );
     });
+  }
+
+  if (![1].includes(user.role.role_id)) {
+    return filteredClients.filter((client) => client.company_id === companyID);
   }
 
   return filteredClients;
@@ -177,7 +322,7 @@ export const useData = (
   map: ChartData[]
 ) => {
   const { data: clients } = useClients();
-  const { data: sites } = useSites();
+  // const { data: sites } = useSites();
 
   if (source === "clients") {
     if (!clients) return;

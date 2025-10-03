@@ -86,7 +86,14 @@ export const sourceFilters = {
     status: ["active", "pool", "hot", "on/off", "for elections"],
   },
   sites: {
-    options: ["all sites", "available", "booked", "projected revenue"],
+    options: [
+      "all sites",
+      "active",
+      "inactive",
+      "available",
+      "booked",
+      // "projected revenue",
+    ],
   },
   reports: {
     options: ["all reports", "current week"],

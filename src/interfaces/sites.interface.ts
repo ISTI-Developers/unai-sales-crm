@@ -21,6 +21,7 @@ export interface Site {
   imageURL: string;
   remarks: string | null;
   bound: string;
+  status: number;
 }
 
 export interface SiteDetailswithMapping extends Site {

@@ -215,7 +215,11 @@ function Configuration({ widget, setWidget }: { widget: WidgetData; setWidget: D
         const options = sourceFilters[value as keyof typeof sourceFilters]
         if (!options) return;
 
-        const filter = Object.keys(options).map(option => ({ key: option, value: [] }))
+        const filter = Object.keys(options).map(option => {
+            const sourceOptions: string[] = options[option as keyof typeof options];
+            const isDefaultAll = ['status'].includes(option)
+            return { key: option, value: isDefaultAll ? sourceOptions : sourceOptions.slice(0, 1) }
+        })
         setWidget(prev => ({ ...prev, module: value, filter: filter }))
     }
     return <>
