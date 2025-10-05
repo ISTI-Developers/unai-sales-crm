@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react'
-import DashboardCard from '../DashboardCard'
 import { Booking, useBookings } from '@/hooks/useBookings'
 import { Skeleton } from '../ui/skeleton';
 import { addDays, differenceInDays, differenceInMonths, format, isToday } from 'date-fns';
@@ -44,8 +43,8 @@ const BookingsCard = () => {
 
     }, [data, isLoading, dates, sites])
     return (
-        <DashboardCard className="relative h-full max-h-[350px] lg:min-h-[300px] xl:max-h-none p-0 md:col-[1/4] md:row-[3/4] xl:col-[7/10] xl:row-[1/3] lg:flex lg:flex-col overflow-y-auto">
-            <div className="flex items-center justify-between gap-1.5 p-4 sticky top-0 bg-white">
+        <>
+            <div className="flex items-center justify-between gap-1.5 sticky top-0 bg-white">
                 <p>Site Bookings</p>
                 <Select value={dates} onValueChange={setDates}>
                     <SelectTrigger className='w-fit capitalize'>
@@ -71,7 +70,7 @@ const BookingsCard = () => {
                     </>
                 )}
             </div>
-        </DashboardCard>
+        </>
     )
 }
 

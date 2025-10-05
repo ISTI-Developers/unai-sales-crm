@@ -10,7 +10,6 @@ import { catchError, getQuery, saveQuery, spAPI } from "@/providers/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { toast } from "./use-toast";
-import { User } from "@/interfaces/user.interface";
 
 export const useSites = () => {
   return useQuery({
@@ -113,14 +112,13 @@ export const useAvailableSites = () => {
     queryKey: ["sites", "available"],
     queryFn: async () => {
       try {
-        console.log("still running")
         localStorage.setItem("cachedBookings", "false");
         const response = await spAPI.get<AvailableSites[]>("sites", {
           params: {
             type: "available",
           },
         });
-        console.log(response);
+
         if (response.data) {
           if (!Array.isArray(response.data)) {
             throw new Error("System cannot connect to UNIS.");
@@ -165,7 +163,7 @@ export const useAvailableSites = () => {
     select: (data) => data?.sort((a, b) => a.site.localeCompare(b.site)),
     throwOnError: true,
     staleTime: 60000,
-    // enabled: companyID ? companyID === "1" : false,
+    enabled: companyID ? companyID === "1" : false,
   });
 };
 

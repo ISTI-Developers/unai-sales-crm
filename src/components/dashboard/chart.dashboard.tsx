@@ -28,7 +28,7 @@ interface Data {
 }
 const PieContainer = ({ config, data, widget }: { config: ChartConfig; data: Data[], widget: ChartWidget }) => {
     return <>
-        <ChartContainer config={config} className="w-full max-h-[160px]">
+        <ChartContainer config={config} className="w-full max-h-[200px]">
             <PieChart accessibilityLayer>
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Pie data={data} dataKey={widget.chartOptions.dataKey}
@@ -57,8 +57,8 @@ const PieContainer = ({ config, data, widget }: { config: ChartConfig; data: Dat
 }
 
 const BarContainer = ({ config, data, widget }: { config: ChartConfig; data: Data[], widget: ChartWidget }) => {
-    return <ChartContainer config={config}>
-        <BarChart accessibilityLayer data={data}>
+    return <ChartContainer config={config} className="max-h-[300px] w-full">
+        <BarChart accessibilityLayer data={data} margin={{bottom: 50}}>
             <CartesianGrid vertical={false} />
             <XAxis
                 dataKey={widget.chartOptions.nameKey}

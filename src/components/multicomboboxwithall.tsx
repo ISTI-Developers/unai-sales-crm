@@ -42,9 +42,7 @@ const MultiComboBoxWithAll = ({ title = "records", value, onValueChange, options
                 <Button variant="outline" className="w-full h-8 text-start justify-between max-w-full overflow-hidden">
                     {value.length > 0 ?
                         <div className="flex gap-1 text-[0.65rem]">
-                            {value.length > 2 ? `Selected ${value.length} options` : value.map(val => {
-                                return <p key={val.value}>{val.label}</p>
-                            })}
+                            {value.length > 2 ? `Selected ${value.length} options` : value.map(v => v.label).join(", ")}
                         </div> :
                         <><span>Select {capitalize(title, "_")}</span>
                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" /></>}

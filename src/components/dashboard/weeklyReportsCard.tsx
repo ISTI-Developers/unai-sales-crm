@@ -2,7 +2,6 @@ import { generateWeeks } from "@/data/reports.columns";
 import useReportSummary from "@/data/reportSummary.data";
 import { addHours, format, getISOWeek, isToday } from "date-fns";
 import { useMemo } from "react";
-import DashboardCard from "../DashboardCard";
 import { Skeleton } from "../ui/skeleton";
 
 const WeeklyReportsCard = () => {
@@ -11,12 +10,12 @@ const WeeklyReportsCard = () => {
   const { thisWeeksReports, reportsSummaryConfig, isWeeklyReportLoading } =
     useReportSummary();
   return (
-    <DashboardCard className="space-y-4 md:row-[3/4] md:col-[4/7] xl:row-[3/5] xl:col-[7/10] max-h-[500px] xl:max-h-full overflow-y-auto p-0">
-      <h1 className="sticky top-0 bg-white w-full p-4 z-0">{weeks[currentWeek - 1]} Activities</h1>
-      <div className="flex flex-col gap-6 p-6 pt-0">
+    <>
+      <h1 className="sticky top-0 bg-white w-full z-0">{weeks[currentWeek - 1]} Activities</h1>
+      <div className="flex flex-col gap-6 pt-2">
         {isWeeklyReportLoading ? (
           <>{Array(10).fill(0).map(() => {
-            return <Skeleton className="w-full h-32"/>
+            return <Skeleton className="w-full h-32" />
           })}</>
         ) : (
           <>
@@ -27,10 +26,10 @@ const WeeklyReportsCard = () => {
                 timestamp = format(dateSubmitted, "p");
               }
               console.log(reportsSummaryConfig[
-                  report.sales_unit
-                    .split(" ")
-                    .join("_") as keyof typeof reportsSummaryConfig
-                ])
+                report.sales_unit
+                  .split(" ")
+                  .join("_") as keyof typeof reportsSummaryConfig
+              ])
               const color =
                 reportsSummaryConfig[
                   report.sales_unit
@@ -71,7 +70,7 @@ const WeeklyReportsCard = () => {
           </>
         )}
       </div>
-    </DashboardCard>
+    </>
   );
 };
 

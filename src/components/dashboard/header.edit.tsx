@@ -32,9 +32,22 @@ const EditHeader = ({ onToggleEdit, widgets, onWidgetUpdate }: { onToggleEdit: (
         },
     });
     function generateWidgetId(type: WidgetType, existing: Widget[]) {
-        const count = existing.filter(w => w.type === type).length;
-        return type ? `${type.toLowerCase()}_${count + 1}` : '';
+        if (!type) return "";
+
+        // filter widgets by type
+        const sameType = existing.filter(w => w.type === type);
+
+        // extract numeric suffixes
+        const lastId = sameType
+            .map(w => {
+                const match = w.key.match(/_(\d+)$/);
+                return match ? parseInt(match[1], 10) : 0;
+            })
+            .reduce((max, n) => Math.max(max, n), 0);
+
+        return `${type.toLowerCase()}_${lastId + 1}`;
     }
+
     function getNextPosition(layouts: Layout[], cols: number, defaultW: number, defaultH: number) {
         if (layouts.length === 0) {
             return { x: 0, y: 0, w: defaultW, h: defaultH };
@@ -91,6 +104,7 @@ const EditHeader = ({ onToggleEdit, widgets, onWidgetUpdate }: { onToggleEdit: (
                 label: type,
                 content: 100,
                 icon: WidgetIconMap[type as keyof typeof WidgetIconMap],
+                module: type === "Area" ? "reports" : "",
                 chartOptions: type === "Bar" || type === "Pie" || type === "Area" ? {
                     field: undefined,
                     chartConfig: {},
@@ -208,8 +222,14 @@ function Configuration({ widget, setWidget }: { widget: WidgetData; setWidget: D
     const filterOptions = useMemo(() => {
         if (widget.module === "") return undefined;
 
-        return sourceFilters[widget.module as keyof typeof sourceFilters];
-    }, [widget.module])
+        const filters = sourceFilters[widget.module as keyof typeof sourceFilters];
+
+        if (widget.type === "Bar" || widget.type === "Pie" || widget.type === "Area") {
+            return
+        }
+
+        return filters;
+    }, [widget])
 
     const onSourceSelect = (value: string) => {
         const options = sourceFilters[value as keyof typeof sourceFilters]
@@ -220,7 +240,7 @@ function Configuration({ widget, setWidget }: { widget: WidgetData; setWidget: D
             const isDefaultAll = ['status'].includes(option)
             return { key: option, value: isDefaultAll ? sourceOptions : sourceOptions.slice(0, 1) }
         })
-        setWidget(prev => ({ ...prev, module: value, filter: filter }))
+        setWidget(prev => ({ ...prev, label: value === "reports" ? "Current Week Reports" : capitalize(value), module: value, filter: filter }))
     }
     return <>
         <div>
@@ -237,7 +257,7 @@ function Configuration({ widget, setWidget }: { widget: WidgetData; setWidget: D
                 <ColorPicker color={widget.color} setColor={(color) => setWidget(prev => ({ ...prev, color: color }))} />
             </div>
         </div>
-        <div>
+        {widget.type === "Area" ? <p className="text-xs pt-4 text-gray-500">This widget type is for reports only.</p> : <>  <div>
             <Label htmlFor="Source" className="text-xs">Source</Label>
             <Select value={widget.module} onValueChange={onSourceSelect}>
                 <SelectTrigger id="source" className="h-8 bg-slate-200 shadow-none">
@@ -248,51 +268,53 @@ function Configuration({ widget, setWidget }: { widget: WidgetData; setWidget: D
                     {(user && user.company?.code === "UNAI") &&
                         <SelectItem value='sites'>Sites</SelectItem>
                     }
-                    <SelectItem value='reports'>Reports</SelectItem>
+                    {widget.type === "Metrics" &&
+                        <SelectItem value='reports'>Reports</SelectItem>
+                    }
                 </SelectContent>
             </Select>
         </div>
-        <div>
-            <Label htmlFor="filters" className="text-xs">Filters</Label>
-            {filterOptions ?
-                <div className="bg-slate-200 min-h-[50px] rounded-md flex flex-col">
-                    {Object.keys(filterOptions).map(option => {
+            <div>
+                <Label htmlFor="filters" className="text-xs">Filters</Label>
+                {filterOptions ?
+                    <div className="bg-slate-200 min-h-[50px] rounded-md flex flex-col">
+                        {Object.keys(filterOptions).map(option => {
 
-                        const filters = widget.filter.find(filter => filter.key === option);
-                        if (!filters) return;
+                            const filters = widget.filter.find(filter => filter.key === option);
+                            if (!filters) return;
 
-                        return <FilterItem key={option} id={option} filters={filters} onValueChange={(value) => {
-                            setWidget(prev => {
-                                const exists = prev.filter.find(filter => filter.key === option);
+                            return <FilterItem key={option} id={option} filters={filters} onValueChange={(value) => {
+                                setWidget(prev => {
+                                    const exists = prev.filter.find(filter => filter.key === option);
 
-                                return {
-                                    ...prev,
-                                    filter: exists ? [
-                                        ...prev.filter.map(filter => {
-                                            if (filter.key === option) {
-                                                return {
-                                                    key: option,
-                                                    value: value
+                                    return {
+                                        ...prev,
+                                        filter: exists ? [
+                                            ...prev.filter.map(filter => {
+                                                if (filter.key === option) {
+                                                    return {
+                                                        key: option,
+                                                        value: value
+                                                    }
                                                 }
-                                            }
 
-                                            return filter;
-                                        })
-                                    ] : prev.filter
-                                }
-                            })
-                        }} options={filterOptions[option as keyof typeof filterOptions]} />
-                    })}
-                </div>
-                :
-                <div className="bg-slate-200 min-h-[50px] rounded-md flex items-center justify-center text-center text-xs text-slate-600">
-                    Please select a source to view available filters.
-                </div>
-            }
-        </div>
-        {(widget.type === "Bar" || widget.type === "Pie" || widget.type === "Area") && (
-            <ChartConfiguration widget={widget as ChartWidget} setWidget={setWidget} />
-        )}
+                                                return filter;
+                                            })
+                                        ] : prev.filter
+                                    }
+                                })
+                            }} options={filterOptions[option as keyof typeof filterOptions]} />
+                        })}
+                    </div>
+                    :
+                    <div className="bg-slate-200 min-h-[50px] rounded-md flex items-center justify-center text-center text-xs text-slate-600">
+                        Please select a source to view available filters.
+                    </div>
+                }
+            </div>
+            {(widget.type === "Bar" || widget.type === "Pie") && (
+                <ChartConfiguration widget={widget as ChartWidget} setWidget={setWidget} />
+            )}</>}
 
     </>
 }
@@ -300,6 +322,15 @@ function Configuration({ widget, setWidget }: { widget: WidgetData; setWidget: D
 function ChartConfiguration({ widget, setWidget }: { widget: ChartWidget; setWidget: Dispatch<SetStateAction<WidgetData>> }) {
     const fieldOptions = useMemo(() => {
         if (!widget.module) return [];
+
+
+        if (widget.filter[0].value.includes("company/BU")) {
+            return chartFieldOptions['clients'].filter(opt => opt !== "company")
+        } else if (widget.filter[0].value.includes("team")) {
+            return chartFieldOptions['clients'].filter(opt => !['company', 'sales_unit'].includes(opt))
+        } else if (widget.filter[0].value.includes("own")) {
+            return chartFieldOptions['clients'].filter(opt => !['company', 'sales_unit', 'account_executive'].includes(opt))
+        }
 
         return chartFieldOptions[widget.module];
     }, [widget])
@@ -337,7 +368,7 @@ function ChartConfiguration({ widget, setWidget }: { widget: ChartWidget; setWid
                         Please select a source to view available field configurations.
                     </div>}
                 {!(fieldOptions.length === 0) &&
-                    <ChartOptions key={widget.chartOptions.field} field={widget.chartOptions.field} onSelectChange={(value) => {
+                    <ChartOptions key={widget.chartOptions.field} module={widget.module} field={widget.chartOptions.field} onSelectChange={(value) => {
                         const config = value.reduce((acc, item, index) => {
                             if (!acc[item.label]) {
                                 acc[item.label] = {
@@ -367,10 +398,9 @@ function ChartConfiguration({ widget, setWidget }: { widget: ChartWidget; setWid
 
 }
 
-function ChartOptions({ field, onSelectChange }: { field?: string; onSelectChange: (value: List[]) => void }) {
+function ChartOptions({ field, onSelectChange, module }: { field?: string; onSelectChange: (value: List[]) => void; module: string }) {
     const [value, setValue] = useState<List[]>([])
-    const options = useOptions(field);
-
+    const options = useOptions(module, field)
     const onValueChange = (value: List[]) => {
         setValue(value)
         onSelectChange(value)

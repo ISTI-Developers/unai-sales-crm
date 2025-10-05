@@ -50,7 +50,7 @@ export const useLogin = () => {
           params: { type: "login" },
         });
         console.log("Local Response:", localResponse.data);
-    
+
         return {
           local: localResponse.data,
         };
@@ -62,9 +62,8 @@ export const useLogin = () => {
     onSuccess: (data) => {
       if (data.local) {
         setUser(data.local);
-        // localStorage.setItem("OOHToken", data.ooh.token);
-        // localStorage.setItem("OOHID", data.ooh.id);
         localStorage.setItem("currentUser", JSON.stringify(data.local));
+        localStorage.setItem("companyID", String(data.local.company?.ID));
         sessionStorage.setItem("loginTime", String(new Date().getTime()));
         if (data.local.token) {
           localStorage.setItem("token", data.local.token);

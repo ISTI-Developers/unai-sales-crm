@@ -10,14 +10,17 @@ import { icons } from "@/data/icons";
 import { useWidgetData } from "@/lib/fetch";
 import { Dispatch, SetStateAction, useState } from "react";
 import DashboardChart from "./chart.dashboard";
+import BookingsCard from "./bookingsCard";
+import WeeklyReportsCard from "./weeklyReportsCard";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
 const Editor = ({ widgets, isEditable, onDelete, setWidgets }: { widgets: WidgetData[]; isEditable: boolean; onDelete: (id: string) => void; setWidgets: Dispatch<SetStateAction<WidgetData[]>> }) => {
     const [breakpoint, setBreakpoint] = useState("lg");
-    const [cols, setCols] = useState(12);
+    const [cols, setCols] = useState(16);
     const ROW_HEIGHT = 35;
-    const COLS = { lg: 12, md: 9, sm: 6, xs: 3, xxs: 1 };
+    const COLS = { lg: 16, md: 9, sm: 6, xs: 3, xxs: 1 };
+
     return (
         <div
             className="relative"
@@ -89,7 +92,7 @@ const Editor = ({ widgets, isEditable, onDelete, setWidgets }: { widgets: Widget
 export const WidgetCard = ({ widget, isPreview }: { widget: WidgetData; isPreview?: boolean }) => {
     const data = useWidgetData(widget.module, widget.filter, widget.type);
     return <>
-        {widget.type !== 'Area' && <div className="flex items-center justify-between gap-1.5">
+        {(widget.type !== 'Area' && widget.type !== "List") && <div className="flex items-center justify-between gap-1.5">
             <p className="font-semibold">{widget.label}</p>
             <div
                 className="rounded-full p-2"
@@ -109,7 +112,7 @@ export const WidgetCard = ({ widget, isPreview }: { widget: WidgetData; isPrevie
         {widget.type === "Metrics" ?
             <p className="text-4xl 2xl:text-5xl font-light ">{isPreview ? widget.content : data ?? 0}</p>
             : widget.type === "List" ?
-                isPreview ? <>List Preview</> : <>List Container</> :
+                isPreview ? <>List Preview</> : <WeeklyReportsCard /> :
                 <div>
                     {isPreview ?
                         <>Chart Preview</> :

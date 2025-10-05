@@ -1,7 +1,7 @@
 import Editor from "@/components/dashboard/editor";
 import { cn } from "@/lib/utils";
 import Container from "@/misc/Container";
-import { WidgetData } from "@/misc/dashboardLayoutMap";
+import { defaultLayout, WidgetData } from "@/misc/dashboardLayoutMap";
 import { AnimatePresence, motion } from "framer-motion";
 import { lazy, Suspense, useState } from "react";
 
@@ -14,7 +14,7 @@ const EditHeader = lazy(
 );
 const Dashboard = () => {
     const [onEdit, onToggleEdit] = useState(false)
-    const [widgets, setWidgets] = useState<WidgetData[]>([])
+    const [widgets, setWidgets] = useState<WidgetData[]>(defaultLayout)
 
     return (
         <Container className="p-0 gap-0 px-2 pt-2">
@@ -50,7 +50,6 @@ const Dashboard = () => {
             </AnimatePresence>
             <div className={cn("transition-all", onEdit ? "border rounded-md mt-2 overflow-auto" : "")}>
                 <Editor widgets={widgets} isEditable={onEdit} setWidgets={setWidgets} onDelete={(id) => setWidgets(prev => {
-                    console.log(id, prev);
                     return prev.filter(w => w.key !== id)
                 })} />
             </div>
