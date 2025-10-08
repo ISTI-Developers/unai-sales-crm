@@ -5,7 +5,9 @@ import axios, { AxiosError } from "axios";
 import { openDB } from "idb";
 
 const mainURL = import.meta.env.VITE_SERVER;
+const OOHURL = import.meta.env.VITE_OOH_SERVER;
 export const spAPI = axios.create({ baseURL: mainURL, timeout: 120000 });
+export const ooh = axios.create({ baseURL: OOHURL, timeout: 120000 });
 
 spAPI.interceptors.request.use(
   (config) => {
@@ -33,6 +35,14 @@ spAPI.interceptors.request.use(
   },
   (error) => Promise.reject(error)
 );
+ooh.interceptors.request.use(
+  (config) => {
+    const token = import.meta.env.VITE_OOH_KEY;
+    config.headers["x-api-key"] = token;
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 export function logoutAndRedirect() {
   localStorage.removeItem("currentUser");
@@ -44,6 +54,26 @@ export function logoutAndRedirect() {
   sessionStorage.removeItem("loginTime");
   window.location.href = "/login";
 }
+ooh.interceptors.response.use(
+  (res) => res,
+  (error: AxiosError) => {
+    let msg = "Something went wrong...";
+    if (error.message) {
+      msg = error.message;
+    }
+
+    if (msg === "Network Error") {
+      toast({
+        title: "Network Error",
+        description:
+          "The host could not connect to the server. Please message the IT team",
+        variant: "destructive",
+        itemID: "1",
+      });
+    }
+    return Promise.reject(new Error(msg));
+  }
+);
 spAPI.interceptors.response.use(
   (res) => res,
   (error: AxiosError) => {

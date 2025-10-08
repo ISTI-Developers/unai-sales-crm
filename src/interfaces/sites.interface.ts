@@ -105,3 +105,8 @@ export interface LatestSites {
   date_created: string;
   facing: string;
 }
+
+export interface SiteImpressions {
+  area: string;
+  impressions: number;
+}

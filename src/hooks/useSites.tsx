@@ -5,8 +5,9 @@ import {
   Site,
   SiteImage,
   LatestSites,
+  SiteImpressions,
 } from "@/interfaces/sites.interface";
-import { catchError, getQuery, saveQuery, spAPI } from "@/providers/api";
+import { catchError, getQuery, ooh, saveQuery, spAPI } from "@/providers/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { toast } from "./use-toast";
@@ -25,6 +26,25 @@ export const useSites = () => {
     staleTime: 60000,
   });
 };
+
+export const useSiteImpressions = (site: Site) => {
+  return useQuery({
+    queryKey: ["sites", site.ID, site.latitude, site.longitude],
+    queryFn: async () => {
+      const sitesRes = await ooh.get<SiteImpressions>("api/generate", {
+        params: {
+          lat: site.latitude,
+          lng: site.longitude
+        }
+      });
+
+      return sitesRes.data;
+    },
+    staleTime: 60000,
+    enabled: !!site.ID
+  });
+};
+
 
 export const useSiteCities = () => {
   return useQuery({
@@ -163,7 +183,7 @@ export const useAvailableSites = () => {
     select: (data) => data?.sort((a, b) => a.site.localeCompare(b.site)),
     throwOnError: true,
     staleTime: 60000,
-    enabled: companyID ? companyID === "1" : false,
+    enabled: companyID ? companyID === "5" : false,
   });
 };
 

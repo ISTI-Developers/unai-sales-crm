@@ -1,7 +1,7 @@
 import { DeckSite, useDeck } from "@/providers/deck.provider";
 import BasicSection from "./basic.section";
 import LocationSection from "./location.section";
-import { useSiteImages } from "@/hooks/useSites";
+import { useSiteImages, useSiteImpressions } from "@/hooks/useSites";
 import ImagesSection from "./images.section";
 import { useEffect, useState } from "react";
 import { fetchImage } from "@/lib/fetch";
@@ -12,6 +12,7 @@ import { useActiveUNISURL } from "@/hooks/useSettings";
 
 const SiteItem = ({ site }: { site: DeckSite }) => {
   const { data: images } = useSiteImages(site.site_code);
+  const { data: impressions } = useSiteImpressions(site);
   const { data: unisURL, isLoading } = useActiveUNISURL();
   const [siteImages, setSiteImages] = useState<SiteImage[]>([]);
   const { setSelectedOptions, setSelectedSites } = useDeck();
@@ -77,6 +78,7 @@ const SiteItem = ({ site }: { site: DeckSite }) => {
         </Button>
       </header>
       <div className="p-4 flex flex-col gap-4 pt-0">
+        {JSON.stringify(impressions)}
         <BasicSection data={site} />
         <LocationSection data={site} />
         <ImagesSection site_code={site.site_code} data={siteImages} />
