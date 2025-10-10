@@ -78,8 +78,10 @@ const SiteItem = ({ site }: { site: DeckSite }) => {
         </Button>
       </header>
       <div className="p-4 flex flex-col gap-4 pt-0">
-        {JSON.stringify(impressions)}
-        <BasicSection data={site} />
+        <BasicSection data={{
+          ...site,
+          traffic_count: impressions ? Math.round(impressions.impressions) : site.traffic_count
+        }} />
         <LocationSection data={site} />
         <ImagesSection site_code={site.site_code} data={siteImages} />
       </div>
