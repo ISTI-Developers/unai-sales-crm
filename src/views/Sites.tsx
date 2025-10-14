@@ -35,9 +35,9 @@ const Main = () => {
     <AnimatePresence>
       <Page className="w-full">
         <Tabs defaultValue="list">
-          <TabsList className="bg-white rounded-none h-6 w-full justify-start border-b">
-            <TabsTrigger value="list" className="text-xs uppercase rounded-none">Sites</TabsTrigger>
-            <TabsTrigger value="maps" className="text-xs uppercase rounded-none">Map View</TabsTrigger>
+          <TabsList className="w-full justify-start px-1">
+            <TabsTrigger value="list" className="text-xs uppercase data-[state=active]:bg-zinc-200">Sites</TabsTrigger>
+            <TabsTrigger value="maps" className="text-xs uppercase data-[state=active]:bg-zinc-200">Map View</TabsTrigger>
           </TabsList>
           <TabsContent value="list" className="pt-2">
             {isLoading

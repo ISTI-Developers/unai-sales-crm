@@ -7,7 +7,7 @@ const ImagesSection = ({ data }: { data?: SiteImage[] }) => {
       <div className="flex flex-wrap flex-1 gap-4 w-full max-h-[32.5vh] justify-center overflow-y-auto">
         {data &&
           data.map((item) => {
-            const src = `https://unis.unitedneon.com/unis/${item.upload_path}`;
+            const src = `${import.meta.env.VITE_UNIS_URL}${item.upload_path}`;
             return (
               <img
                 key={item.upload_id}

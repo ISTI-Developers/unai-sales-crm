@@ -10,6 +10,14 @@ import {
 
 const Changelog = () => {
   const changes = {
+    "1.7.5": [
+      "Fixed the issue on booking dates"
+    ],
+    "1.7.4": [
+      "New roles management",
+      "Added new site maps!",
+      "Different views for bookings on the way!"
+    ],
     "1.7.3": [
       "Added restrictions for editing clients.",
       "Updated booking cancellation message."

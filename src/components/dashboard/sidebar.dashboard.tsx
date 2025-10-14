@@ -83,7 +83,7 @@ const NavList = () => {
       </div>
       <Separator className="bg-main-100 h-0.5" />
       <ul className="py-4 flex flex-col gap-2">
-        {links.map(
+        {links.filter(link => import.meta.env.MODE !== "development" ? link.handler !== "/new" : link).map(
           (
             { id, handler, title, icon: Icon, hasSeparator, isActive },
             index

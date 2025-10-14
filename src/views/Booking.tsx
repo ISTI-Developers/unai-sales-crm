@@ -1,3 +1,4 @@
+import construction from "@/assets/UnderConstruction.svg";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { columns } from "@/data/booking.columns";
@@ -129,10 +130,10 @@ const Main = () => {
     <AnimatePresence>
       <Page>
         <Tabs defaultValue="all">
-          <TabsList className="bg-white rounded-none h-6 w-full justify-start border-b">
-            <TabsTrigger value="all" className="text-xs uppercase rounded-none">Site Availability</TabsTrigger>
-            <TabsTrigger value="bookings" className="text-xs uppercase rounded-none">All Bookings</TabsTrigger>
-            <TabsTrigger value="pre" className="text-xs uppercase rounded-none">Pre-Site Bookings</TabsTrigger>
+          <TabsList className="w-full justify-start px-1 gap-1">
+            <TabsTrigger value="all" className="text-xs uppercase data-[state=active]:bg-zinc-200">Site Availability</TabsTrigger>
+            <TabsTrigger value="bookings" className="text-xs uppercase data-[state=active]:bg-zinc-200">Site Bookings</TabsTrigger>
+            <TabsTrigger value="pre" className="text-xs uppercase data-[state=active]:bg-zinc-200">Other (pre-site) Bookings</TabsTrigger>
           </TabsList>
           <TabsContent value="all">
             <DataTable columns={columns.filter(column => {
@@ -141,7 +142,11 @@ const Main = () => {
             })} data={availableSites} size={100} />
           </TabsContent>
           <TabsContent value="bookings">
-
+            <img
+              src={construction}
+              title="Worker illustrations by Storyset"
+              className="w-full max-w-[40vw] mx-auto"
+            />
           </TabsContent>
           <TabsContent value="pre">
             <div className="flex gap-4">
@@ -161,43 +166,6 @@ const Main = () => {
 
           </TabsContent>
         </Tabs>
-        {/* {isLoading
-          ? fetchStatus
-          : data && (
-            <>
-              <DataTable columns={columns} data={availableSites} size={100}>
-                <div className="flex gap-4">
-                  <Dialog key="pre-site">
-                    <DialogTrigger asChild>
-                      <Button variant="outline">
-                        View Pre-site Bookings
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-6xl">
-                      <DialogHeader>
-                        <DialogTitle>Pre-Site Bookings</DialogTitle>
-                        <DialogDescription>
-                          Bookings listed below needs to be tagged when a new
-                          site is available.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <Suspense fallback={<>Loading...</>}>
-                        <PresiteBookings />
-                      </Suspense>
-                    </DialogContent>
-                  </Dialog>
-                  {add && (
-                    <Button asChild variant="outline">
-                      <Link to={"./new"}>
-                        <Plus />
-                        <span>Add Booking</span>
-                      </Link>
-                    </Button>
-                  )}
-                </div>
-              </DataTable>
-            </>
-          )} */}
       </Page>
     </AnimatePresence>
   );

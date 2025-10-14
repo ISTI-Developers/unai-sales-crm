@@ -33,6 +33,7 @@ const useLinks = () => {
 
     const { permissions } = currentUserRole;
 
+    if(!permissions) return [];
     return linkDefinitions
       .filter((def) => {
         const matchRole = permissions.find((permission) => {

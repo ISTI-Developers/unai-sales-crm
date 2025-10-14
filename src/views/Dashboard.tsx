@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import Container from "@/misc/Container";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import DashboardCard from "@/components/DashboardCard";
 
 // Lazy-loaded components
 const DashboardHeader = lazy(
@@ -59,7 +60,9 @@ const Dashboard = () => {
           <Suspense
             fallback={<Skeleton className="w-full h-full md:col-[1/4] md:row-[3/4]" />}
           >
-            <BookingsCard />
+            <DashboardCard className="relative h-full max-h-[350px] lg:min-h-[300px] xl:max-h-none p-0 md:col-[1/4] md:row-[3/4] xl:col-[7/10] xl:row-[1/3] lg:flex lg:flex-col overflow-y-auto p-4">
+              <BookingsCard />
+            </DashboardCard>
           </Suspense>
           <Suspense
             fallback={<Skeleton className="w-full h-full md:row-[3/4] md:col-[1/5] xl:col-[1/7]" />}
@@ -69,7 +72,9 @@ const Dashboard = () => {
           <Suspense
             fallback={<Skeleton className="w-full h-full md:row-[3/4] md:col-[5/7] xl:row-[1/4] xl:col-[7/10]" />}
           >
-            <WeeklyReportsCard />
+            <DashboardCard className="space-y-4 md:row-[3/4] md:col-[4/7] xl:row-[3/5] xl:col-[7/10] max-h-[500px] xl:max-h-full overflow-y-auto p-4">
+              <WeeklyReportsCard />
+            </DashboardCard>
           </Suspense>
         </div>
       </ScrollArea>

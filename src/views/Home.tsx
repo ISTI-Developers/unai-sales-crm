@@ -60,7 +60,7 @@ const HomeRoutes = () => {
   return (
     links.length > 0 && (
       <Routes>
-        {links.map((route) =>
+        {links.filter(link => import.meta.env.MODE !== "development" ? link.handler !== "/new" : link).map((route) =>
           route.element ? (
             <Route
               key={route.handler}

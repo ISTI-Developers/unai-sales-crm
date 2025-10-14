@@ -21,7 +21,7 @@ import { DatePicker } from "../ui/datepicker";
 import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
 import { BookingTable } from "@/interfaces/sites.interface";
-import { useCreateBooking } from "@/hooks/useBookings";
+import { Booking, useCreateBooking } from "@/hooks/useBookings";
 import { toast } from "@/hooks/use-toast";
 import { useSite } from "@/hooks/useSites";
 import { addDays, differenceInDays } from "date-fns";
@@ -49,11 +49,13 @@ const CreateBookingDialog = ({
     const bookings = site.bookings;
     const endDate = site.end_date;
     if (bookings.length > 0) {
-      const activeBooking = bookings.reduce((latest, current) =>
-        new Date(current.date_to) > new Date(latest.date_to) ? current : latest
+      const activeBooking = bookings.filter(b => b.booking_status !== "CANCELLED");
+
+      const ongoingBooking = activeBooking.reduce((latest, current) =>
+        new Date(current.date_to) > new Date(latest.date_to) ? current : latest, {} as Booking
       );
-      if (activeBooking) {
-        return addDays(new Date(activeBooking.date_to), 1);
+      if (Object.keys(ongoingBooking).length > 0) {
+        return addDays(new Date(ongoingBooking.date_to), 1);
       }
     }
     if (site.adjusted_end_date) {
@@ -92,7 +94,7 @@ const CreateBookingDialog = ({
   }, [data, user, isLoading, fetchStatus]);
 
   const options = useMemo(() => {
-    return [...salesUnits, { id: v4(), value: "Others", label: "Others" }];
+    return [...salesUnits, { id: v4(), value: "Other (JV Partner)", label: "Other (JV Partner)" }, { id: v4(), value: "Others (In-house account)", label: "Others (In-house account)" }];
   }, [salesUnits]);
 
   const onChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -133,6 +135,7 @@ const CreateBookingDialog = ({
   return (
     <DialogContent aria-describedby={undefined}>
       <DialogHeader>
+        {console.log(defaultDate)}
         <DialogTitle>Create Booking for {site.site}</DialogTitle>
       </DialogHeader>
       <form className="space-y-4" onSubmit={onSubmit}>
