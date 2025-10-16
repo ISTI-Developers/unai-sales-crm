@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useAllClientOptions } from '@/hooks/useClientOptions';
-import { useClient, useUpdateClient } from '@/hooks/useClients';
+import { useAccess, useClient, useUpdateClient } from '@/hooks/useClients';
 import { useCompanies, useCompanySalesUnits } from '@/hooks/useCompanies';
 import { useMediums } from '@/hooks/useMediums';
 import { List } from '@/interfaces';
@@ -35,6 +35,8 @@ const UpdateClient = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [client, setClient] = useState<ClientForm | null>(null);
+  const { access: editAll } = useAccess("clients.editAll")
+  const { access: editCompany } = useAccess("clients.editCompany")
 
   const onInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     setClient(prev => {
@@ -257,8 +259,8 @@ const UpdateClient = () => {
   const hasEditAccess = useMemo(() => {
     if (!user) return false;
 
-    return user.role.role_id in [1, 3, 10, 11];
-  }, [user]);
+    return user.role.role_id in [1, 3, 10, 11] || editAll || editCompany;
+  }, [editAll, editCompany, user]);
 
   return client && (
     <Page className="flex flex-col gap-4">
