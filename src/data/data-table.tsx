@@ -30,7 +30,9 @@ interface DataTableProps<TData, TValue> {
   data: TData[];
   size?: number;
   children?: ReactNode;
+  className?: string;
   getSubRows?: (row: TData) => TData[] | undefined;
+  getRowClassName?: (row: TData) => string;
 }
 
 export function DataTable<TData, TValue>({
@@ -38,7 +40,9 @@ export function DataTable<TData, TValue>({
   data,
   size = 10,
   children,
+  className,
   getSubRows,
+  getRowClassName
 }: DataTableProps<TData, TValue>) {
   const { pathname } = useLocation();
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -91,7 +95,7 @@ export function DataTable<TData, TValue>({
   }, [columnFilters, pathname]);
   return (
     <div className="flex flex-col gap-2 max-h-[calc(100vh-9rem)]">
-      <div className="flex justify-between items-center">
+      <div className={cn("flex justify-between items-center", className)}>
         <TableOptions
           data={data}
           columnFilters={columnFilters}
@@ -132,13 +136,12 @@ export function DataTable<TData, TValue>({
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => {
-
                 const backgroundColor = row.depth > 0 ? `bg-zinc-${row.depth}00` : '';
 
                 return <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className={cn(backgroundColor)}
+                  className={cn(backgroundColor, getRowClassName?.(row.original))}
                 >
                   {row.getVisibleCells().map((cell, index) => (
                     <TableCell

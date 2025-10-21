@@ -1,4 +1,4 @@
-import { useBookings } from "@/hooks/useBookings";
+import { Booking, useBookings } from "@/hooks/useBookings";
 import {
   useAvailableSites,
   useSitelandmarks,
@@ -96,7 +96,7 @@ export function DeckProvider({ children }: ProviderProps) {
   const { data: landmarks } = useSitelandmarks();
   const { data: rawSites } = useSites();
   const { data, isLoading } = useAvailableSites();
-  const { data: bookings, isLoading: isBookingsLoading } = useBookings()
+  const { data: bookings } = useBookings()
 
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<Filters>({
@@ -110,38 +110,132 @@ export function DeckProvider({ children }: ProviderProps) {
   const [toAll, setToAll] = useState(true);
   const [printStatus, setPrintStatus] = useState("");
 
+
+
   const sites: DeckSite[] = useMemo(() => {
-    if (isLoading || !data || !rawSites) return [];
+    if (isLoading || !data || !rawSites || !bookings) return [];
 
-    // const inUNISbutNotInDB = data.filter(item => !rawSites.some(site => site.site_code == item.site));
+    const availableSites = new Set(data.map(d => d.site));
 
-    // console.log(inUNISbutNotInDB);
+    const inStoredButNotInAvailable = rawSites.filter(
+      site => !availableSites.has(site.site_code)
+    );
+    const getSiteBookings = (site_code: string) => {
+      const siteBookings = bookings.filter(booking => booking.site_code === site_code);
 
-    const siteData = rawSites.map((site) => {
-      const thisSite = data.find((item) => site.site_code === item.site);
+      const activeBookings = siteBookings.filter(
+        (booking) => {
+          const from = new Date(booking.date_from);
+          const to = new Date(booking.date_to);
+
+          // Include upcoming OR currently active bookings
+          return (
+            booking.booking_status !== "CANCELLED" &&
+            (from >= new Date() || (from <= new Date() && to >= new Date()))
+          );
+        }).sort((a, b) => new Date(a.date_from).getTime() - new Date(b.date_from).getTime())
+      return activeBookings;
+    }
+    // 🧠 Utility to get site availability
+    const getAvailability = (siteBookings: Booking[]) => {
+      if (!siteBookings.length) return null;
+
+      const now = new Date();
+
+      // Sort by start date
+      const sorted = [...siteBookings].sort(
+        (a, b) => new Date(a.date_from).getTime() - new Date(b.date_from).getTime()
+      );
+
+      // Find ongoing (now is within date range)
+      const ongoing = sorted.find(
+        b => new Date(b.date_from) <= now && new Date(b.date_to) >= now
+      );
+
+      // Find next booking that starts *after now*
+      const next = sorted.find(b => new Date(b.date_from) > now);
+
+      // ✅ If there's a next booking, always prioritize its end date
+      if (next) {
+        console.log(next.site_code, "Next booking found:", next.date_from, "→", next.date_to);
+        return next.date_to;
+      }
+
+      // Otherwise fallback to ongoing’s end
+      if (ongoing) {
+        console.log(ongoing.site_code, "Ongoing only:", ongoing.date_from, "→", ongoing.date_to);
+        return ongoing.date_to;
+      }
+
+      return null;
+    };
+
+    // 🟩 Sites currently active / available
+    const mappedAvailableSites = data
+      .map(item => {
+        const site = rawSites.find(s => s.site_code === item.site);
+        if (!site) return null;
+
+
+        const siteBookings = getSiteBookings(item.site);
+        const available = getAvailability(siteBookings);
+
+        if (site.site_code === "1SLXPNQ013-1AB01") {
+          console.log(siteBookings, item.end_date)
+        }
+        return {
+          ...site,
+          availability:
+            available ??
+            item.adjusted_end_date ??
+            item.end_date ??
+            null,
+        } as DeckSite;
+      })
+      .filter((item) => item !== null);
+
+    // 🟦 Sites in storage but not in active list
+    const mappedSites = inStoredButNotInAvailable.map(item => {
+      const siteBookings = getSiteBookings(item.site_code);
+      const available = getAvailability(siteBookings);
+
       return {
-        ...site,
-        availability:
-          thisSite && (thisSite.adjusted_end_date || thisSite.end_date)
-            ? thisSite.adjusted_end_date ?? thisSite.end_date
-            : null,
+        ...item,
+        availability: available ? format(addDays(new Date(available), 1), "yyyy-MM-dd") : null,
       } as DeckSite;
     });
-    return siteData;
-  }, [data, isLoading, rawSites]);
+
+    const finalSites = [...mappedAvailableSites ?? [], ...mappedSites];
+
+    return finalSites;
+  }, [data, isLoading, rawSites, bookings]);
+
 
   const searchedSites: DeckSite[] = useMemo(() => {
-    if (!search.trim()) return sites;
-
     const query = search.trim().toLowerCase();
-    return sites.filter(({ site_code, address, city }) => {
-      return (
-        site_code.toLowerCase().includes(query) ||
-        address.toLowerCase().includes(query) ||
-        city.toLowerCase().includes(query)
+    if (!query) return sites;
+
+    // Detect pattern like: 4cebceb039-1aa01
+    const SITE_CODE_PATTERN = /\b\d[a-z]{6}\d{3}-\d[a-z]{2}\d{2}\b/;
+
+    // Check if query looks like one or multiple site codes
+    const isSiteCodeSearch = SITE_CODE_PATTERN.test(query);
+
+    if (isSiteCodeSearch) {
+      const siteCodes = query.split(/\s+/); // split by any spaces
+      return sites.filter(({ site_code }) =>
+        siteCodes.includes(site_code.toLowerCase())
       );
-    });
+    }
+
+    // Otherwise, do a regular text-based filter
+    return sites.filter(({ site_code, address, city }) =>
+      [site_code, address, city].some((field) =>
+        field.toLowerCase().includes(query)
+      )
+    );
   }, [sites, search]);
+
 
   const filteredSites: DeckSite[] = useMemo(() => {
     return searchedSites
@@ -230,32 +324,9 @@ export function DeckProvider({ children }: ProviderProps) {
     landmarks,
   ]);
 
-  const updatedSitesWithBookings: DeckSite[] = useMemo(() => {
-    if (!bookings || isBookingsLoading) return filteredSites;
-
-    const siteBookings = bookings.filter(booking => booking.booking_status !== "CANCELLED");
-
-    return filteredSites.map(site => {
-      const hasBookings = siteBookings.filter(booking => booking.site_code === site.site_code);
-
-      if (hasBookings.length > 0) {
-        const activeBooking = hasBookings.find(
-          (booking) => new Date(booking.date_from) <= new Date()
-        );
-        if (activeBooking) {
-          return {
-            ...site,
-            availability: format(addDays(new Date(activeBooking.date_to), 1), "yyyy-MM-dd")
-          }
-        }
-        return site;
-      }
-      return site
-    })
-  }, [filteredSites, bookings, isBookingsLoading])
 
   const value = {
-    sites: updatedSitesWithBookings,
+    sites: filteredSites,
     availability,
     search,
     filters,

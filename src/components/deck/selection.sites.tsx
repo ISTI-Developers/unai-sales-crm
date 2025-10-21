@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import { useDeck } from "@/providers/deck.provider";
-import { addDays, format, isBefore } from "date-fns";
+import { format, isBefore } from "date-fns";
 import { Badge } from "../ui/badge";
 const SiteSelection = () => {
   const { sites, selectedSites, setSelectedSites, setSelectedOptions } =
@@ -10,7 +10,7 @@ const SiteSelection = () => {
     <div className="h-[calc(100vh-13.375rem)] overflow-y-auto space-y-2 rounded-b-lg">
       {sites.map((site) => {
         const formattedAvailability = site.availability
-          ? isBefore(new Date(site.availability), new Date()) ? "OPEN" : format(addDays(new Date(site.availability), 1), "MMM d, yyyy")
+          ? isBefore(new Date(site.availability), new Date()) ? "OPEN" : format(new Date(site.availability), "MMM d, yyyy")
           : "OPEN";
         const hasSelected = selectedSites.findIndex(
           (item) => item.site_code === site.site_code

@@ -11,7 +11,6 @@ import { BookingTable } from "@/interfaces/sites.interface";
 import {
   Booking,
   useCancelBooking,
-  useSiteBookings,
   useUpdateBooking,
 } from "@/hooks/useBookings";
 import { formatAmount, formatTermDetails } from "@/lib/format";
@@ -38,14 +37,13 @@ import { Input } from "../ui/input";
 import { differenceInDays } from "date-fns";
 
 const ViewBookingDialog = ({ site }: { site: BookingTable }) => {
-  const { data, isLoading } = useSiteBookings(site.site);
   const [show, onShow] = useState(false);
   const headers = ["status", "client", "AE", "SRP", "term details", "action"];
 
   const bookings = useMemo(() => {
-    if (!data || isLoading) return [];
+    if (!site) return [];
 
-    return data
+    return site.bookings
       .filter((item) => (!show ? item.booking_status !== "CANCELLED" : true))
       .sort((a, b) => {
         // Put CANCELLED at the end
@@ -64,7 +62,7 @@ const ViewBookingDialog = ({ site }: { site: BookingTable }) => {
           new Date(a.date_from).getTime() - new Date(b.date_from).getTime()
         );
       });
-  }, [data, isLoading, show]);
+  }, [site, show]);
   return (
     <DialogContent className="max-w-5xl">
       <DialogHeader>
@@ -77,7 +75,7 @@ const ViewBookingDialog = ({ site }: { site: BookingTable }) => {
         </DialogDescription>
       </DialogHeader>
       <div>
-        {isLoading || !data ? (
+        {!site.bookings ? (
           <>Listing bookings...</>
         ) : (
           <>
@@ -202,7 +200,7 @@ const BookingItem = ({ item, show }: { item: Booking; show: boolean }) => {
     </TableRow>
   );
 };
-const EditBookingDialog = ({ item }: { item: Booking }) => {
+export const EditBookingDialog = ({ item }: { item: Booking }) => {
   const { mutate: updateBooking } = useUpdateBooking();
   const [booking, setBooking] = useState({
     ...item,

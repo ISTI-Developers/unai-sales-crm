@@ -79,22 +79,11 @@ export interface AvailableSites {
   site_rental?: number;
 }
 
-export interface BookingTable {
-  structure: string;
+export interface BookingTable extends Omit<AvailableSites, "category"> {
   bookings: Booking[];
-  site: string;
-  address: string;
   site_rental: number;
   facing: string;
-  date_from: string | undefined;
-  end_date: string | undefined;
-  product: string | undefined;
-  client: string | undefined;
-  remaining_days: number | undefined;
-  days_vacant: number | null | undefined;
-  remarks: string | null;
-  adjusted_end_date?: string;
-  adjustment_reason?: string;
+  remarks?: string;
   booking_id?: number;
 }
 
