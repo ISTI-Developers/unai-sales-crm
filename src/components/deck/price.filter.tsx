@@ -57,6 +57,7 @@ const PriceFilter = () => {
               placeholder="From"
               className="bg-white"
             />
+            <span>-</span>
             <Input
               id={`max-${index}`}
               type="number"

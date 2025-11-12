@@ -45,7 +45,7 @@ const SitePreview = () => {
   }, [selectedSites]);
 
   return (
-    <div className="w-full flex flex-col gap-2">
+    <div className="flex flex-col gap-2 max-w-[60vw] xl:max-w-[65vw]">
       {/* Badge nav */}
       <div
         className={cn(
@@ -72,7 +72,7 @@ const SitePreview = () => {
       </div>
 
       {/* Scrollable site sections */}
-      <div className="h-[calc(100vh-12.5rem)] overflow-y-auto space-y-4 rounded-lg scroll-container">
+      <div className="h-[calc(100vh-12.5rem)] overflow-y-auto space-y-4 rounded-lg">
         {selectedSites.map((site) => (
           <div
             key={site.site_code}

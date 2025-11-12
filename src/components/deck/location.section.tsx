@@ -1,4 +1,4 @@
-import { APIProvider, Map, Marker } from "@vis.gl/react-google-maps";
+import { AdvancedMarker, APIProvider, Map } from "@vis.gl/react-google-maps";
 import { Container } from "./container.deck";
 import Field from "../field";
 import { useEffect, useMemo, useState } from "react";
@@ -8,120 +8,174 @@ import { useSitelandmarks } from "@/hooks/useSites";
 import { cn, Coordinate, haversineDistance } from "@/lib/utils";
 import { Badge } from "../ui/badge";
 import { Landmarks } from "@/interfaces/sites.interface";
-import { CircleCheck } from "lucide-react";
+import { Check, CircleCheck, Pen } from "lucide-react";
 import { motion } from "framer-motion";
+import { getRecord, saveRecord } from "@/providers/api";
+import { Button } from "../ui/button";
 const LocationSection = ({ data }: { data: DeckSite | null }) => {
-  const [zoom, setZoom] = useState(16);
+
+  const url = import.meta.env.VITE_BASE_MAP_URL;
+
   const { options, selectedOptions: configs, setMaps } = useDeck();
 
-  useEffect(() => {
-    if (!data) return;
+  const [zoom, setZoom] = useState(16);
+  const [center, setCenter] = useState<google.maps.LatLngLiteral>()
 
-    let isCancelled = false;
+  const [isEditing, setEdit] = useState(false);
+
+  const mapURL = useMemo(() => {
+    if (!data || !center) return;
+
+    const params = new URLSearchParams({
+      center: `${center.lat},${center.lng}`,
+      zoom: String(zoom),
+      size: "350x350",
+      key: import.meta.env.VITE_GCP_API,
+    });
+
+    if (options.landmark_visibility?.show) {
+      const siteConfig = configs.find(
+        (config) => config.site_code === data.site_code
+      );
+      if (siteConfig?.landmarks?.length) {
+        siteConfig.landmarks.forEach((landmark, index) => {
+          const { latitude, longitude } = landmark;
+          params.append(
+            "markers",
+            `color:blue|label:${index + 1}|${latitude},${longitude}`
+          );
+        });
+      }
+    }
+
+    params.append(
+      "markers",
+      `icon:https://salespf.unmg.com.ph/billboard_64.png|${center.lat},${center.lng}`
+    );
+
+    return `${url}?${params.toString()}`;
+  }, [data, center, zoom, options.landmark_visibility?.show, url, configs])
+
+
+
+  useEffect(() => {
+    if (!data || !mapURL) return;
+
+    const controller = new AbortController();
+    const { signal } = controller;
 
     const setup = async () => {
-      const baseURL = "https://maps.googleapis.com/maps/api/staticmap";
-      const params = new URLSearchParams({
-        center: `${data.latitude},${data.longitude}`,
-        zoom: String(zoom),
-        size: "300x300",
-        key: import.meta.env.VITE_GCP_API,
-      });
-
-      // Add marker for site
-      params.append(
-        "markers",
-        `color:red|icon:https://ooh.scmiph.com/assets/classic-sm.png|${data.latitude},${data.longitude}`
-      );
-
-      // If landmarks are enabled
-      if (options.landmark_visibility?.show) {
-        const siteConfig = configs.find(
-          (config) => config.site_code === data.site_code
-        );
-        if (siteConfig?.landmarks?.length) {
-          siteConfig.landmarks.forEach((landmark, index) => {
-            const { latitude, longitude } = landmark;
-            params.append(
-              "markers",
-              `color:blue|label:${index + 1}|${latitude},${longitude}`
-            );
-          });
-        }
-      }
-
-      const mapURL = `${baseURL}?${params.toString()}`;
-
       try {
-        // fetch as blob
-        const res = await fetch(mapURL);
-        const blob = await res.blob();
+        // 🧠 Try getting cached version first
+        const cached = await getRecord<string>("maps", data.site_code);
+        const isFresh = cached && (Date.now() - cached.lastFetched) / 1000 < 86400;
 
-        // convert blob to base64 data URL
-        const dataUrl = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
-        });
+        let map: string;
 
-        if (!isCancelled) {
-          setMaps((prev) => {
-            const newMap = {
-              site_code: data.site_code,
-              map: dataUrl, // ✅ correct data:image/png;base64,... format
-            };
+        if (isFresh) {
+          map = cached.data;
+        } else {
+          const res = await fetch(mapURL, { signal });
+          if (!res.ok) throw new Error(`Failed to fetch map: ${res.status}`);
 
-            const exists = prev.some((m) => m.site_code === data.site_code);
-            return exists
-              ? prev.map((m) => (m.site_code === data.site_code ? newMap : m))
-              : [...prev, newMap];
+          const blob = await res.blob();
+
+          // Convert blob → base64 Data URL
+          map = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
           });
+
+          await saveRecord("maps", data.site_code, map);
         }
-      } catch (err) {
-        console.error("Failed to fetch/convert map:", err);
+
+        // 🧩 Skip updating state if request was aborted mid-process
+        if (signal.aborted) return;
+
+        setMaps((prev) => {
+          const newMap = { site_code: data.site_code, map };
+          const exists = prev.some((m) => m.site_code === data.site_code);
+
+          return exists
+            ? prev.map((m) => (m.site_code === data.site_code ? newMap : m))
+            : [...prev, newMap];
+        });
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          if (err.name === "AbortError") {
+            console.log("Map fetch aborted for", data.site_code);
+          } else {
+            console.error("Failed to fetch/convert map:", err);
+          }
+        }
       }
     };
 
     setup();
 
     return () => {
-      isCancelled = true;
+      controller.abort();
     };
-  }, [configs, data, options.landmark_visibility?.show, zoom]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, mapURL]);
 
 
+  useEffect(() => {
+    if (!data) return;
+
+    setCenter({
+      lat: Number(data.latitude),
+      lng: Number(data.longitude)
+    })
+  }, [data])
 
   return (
     <Container className="bg-white">
       {data ? (
-        <APIProvider apiKey={import.meta.env.VITE_GCP_API}>
-          <div className="grid grid-cols-2 gap-6 justify-between">
-            <Details data={data} />
-            <div className="relative h-[250px] rounded-md overflow-hidden w-full">
-              <Map
-                zoom={zoom}
-                center={{
-                  lat: Number(data.latitude),
-                  lng: Number(data.longitude),
-                }}
-                mapTypeControl={false}
-                mapId="bbe301bc60bb084c"
-                fullscreenControl={false}
-                controlled
-                onZoomChanged={(event) => setZoom(event.detail.zoom)}
-              // onBoundsChanged={onMapGenerate}
-              >
-                <Marker
-                  position={{
-                    lat: Number(data.latitude),
-                    lng: Number(data.longitude),
-                  }}
-                />
-              </Map>
-            </div>
+        // <APIProvider apiKey={import.meta.env.VITE_GCP_API}>
+        <div className="grid xl:grid-cols-[repeat(2,auto)] gap-6 justify-between relative">
+          <Details data={data} />
+          {isEditing ?
+            <div className="w-full">
+              <APIProvider apiKey={import.meta.env.VITE_GCP_API}>
+                <div className="relative h-[200px] xl:h-[300px] rounded-xl overflow-hidden w-[300px]">
+                  <Map
+                    zoom={zoom}
+                    center={center}
+                    mapTypeControl={false}
+                    mapId="bbe301bc60bb084c"
+                    fullscreenControl={false}
+                    onZoomChanged={(event) => setZoom(event.detail.zoom)}
+                    onBoundsChanged={(event) => setCenter(event.detail.center)}
+                  >
+                    <AdvancedMarker
+                      position={center}
+                    >
+                      <img
+                        src="/billboard_64.png"
+                        className={cn("z-[10] transition-all duration-150 ")}
+                        title={data.site_code}
+                      />
+                    </AdvancedMarker>
+                  </Map>
+                </div>
+              </APIProvider>
+            </div> :
+            mapURL &&
+            <img src={mapURL} alt="map preview" className="max-w-[200px] xl:max-w-[300px] rounded-xl" loading="lazy" />}
+          <div className="absolute bottom-0 right-0 p-2">
+            {isEditing &&
+              <Button className="rounded-full bg-emerald-100 hover:bg-emerald-100 hover:text-emerald-600 text-emerald-600 border-emerald-600 border-2" size="icon" variant="outline" onClick={() => setEdit(false)}><Check /></Button>
+            }
+            {!isEditing &&
+              <Button className="rounded-full bg-yellow-100 hover:bg-yellow-100 hover:text-yellow-600 text-yellow-600 border-yellow-600 border-2" size="icon" variant="outline" onClick={() => setEdit(true)}><Pen /></Button>
+            }
+            {/* <Button>Save</Button> */}
           </div>
-        </APIProvider>
+        </div>
+        // </APIProvider>
       ) : (
         <>Loading...</>
       )}
@@ -130,18 +184,18 @@ const LocationSection = ({ data }: { data: DeckSite | null }) => {
 };
 
 const Details = ({ data }: { data: DeckSite }) => {
-  const fields = ["region", "city", "address"];
+  const fields = ["region", "city", "address", "ideal_view"];
   return (
     data && (
       <div>
-        <div className="grid gap-2 text-[0.65rem] h-fit leading-none w-full pb-2">
+        <div className="grid gap-2 text-[0.65rem] h-fit uppercase leading-none w-full pb-2">
           {fields.map((field) => (
             <Field
               key={field}
               id={field}
               label={field === "city" ? "area" : field}
               labelClasses="text-xs leading-none"
-              value={data[field] as string}
+              value={field === "ideal_view" ? <a href={data[field]} className="break-words text-[0.6rem] underline text-main-100 lowercase max-w-[300px]" target="_blank">{data[field]}</a> : data[field] as string}
             />
           ))}
         </div>
@@ -187,9 +241,9 @@ const NearbyLandmarks = ({
       prev.map((site) => {
         if (site.site_code !== site_code) return site;
 
-        const isSelected = site.landmarks.some((l) => l.l_id === landmark.l_id);
+        const isSelected = site.landmarks.some((l) => l.ID === landmark.ID);
         const updatedLandmarks = isSelected
-          ? site.landmarks.filter((l) => l.l_id !== landmark.l_id)
+          ? site.landmarks.filter((l) => l.ID !== landmark.ID)
           : [...site.landmarks, landmark];
 
         return {
@@ -217,13 +271,26 @@ const NearbyLandmarks = ({
     setSelectedOptions((prev) =>
       prev.map((site) => {
         if (site.site_code !== site_code) return site;
+
+        const currentLandmarks = site.landmarks.map((l) => l.ID).sort().join(",");
+        const newLandmarks = landmarks
+          .slice(0, 5)
+          .map((l) => l.ID)
+          .sort()
+          .join(",");
+
+        // only update if different
+        if (currentLandmarks === newLandmarks) return site;
+
         return {
           ...site,
-          landmarks: [...landmarks.slice(0, 5)],
+          landmarks: landmarks.slice(0, 5),
         };
       })
     );
-  }, []);
+    console.count('rendering')
+  }, [site_code]);
+
 
   return (
     <div className="space-y-2">
@@ -235,7 +302,7 @@ const NearbyLandmarks = ({
               <motion.div
                 whileTap={{ scale: 0.9 }} // this is the "pop" effect
                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                key={landmark.l_id}
+                key={landmark.ID}
               >
                 <Badge
                   onClick={() => onLandmarkSelection(landmark)}

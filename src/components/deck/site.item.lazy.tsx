@@ -7,6 +7,7 @@ const LazySiteItem = ({ site }: { site: DeckSite }) => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {

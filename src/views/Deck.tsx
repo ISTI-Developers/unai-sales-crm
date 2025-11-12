@@ -4,13 +4,12 @@ import Options from "@/components/deck/options";
 import SitePreview from "@/components/deck/preview.sites";
 import SearchFilter from "@/components/deck/search.filter";
 import SiteSelection from "@/components/deck/selection.sites";
+import { Progress } from "@/components/ui/progress";
 import { useAvailableSites } from "@/hooks/useSites";
 import Container from "@/misc/Container";
 import Page from "@/misc/Page";
 import { DeckProvider, useDeck } from "@/providers/deck.provider";
 import { AnimatePresence, motion } from "framer-motion";
-import { LoaderCircle } from "lucide-react";
-import { useState } from "react";
 import { Helmet } from "react-helmet";
 
 const Deck = () => {
@@ -27,26 +26,26 @@ const Deck = () => {
 };
 
 const Main = () => {
-  const { printStatus } = useDeck();
+  const { printStatus, isGenerating, selectedSites, page } = useDeck();
   const { isLoading, isError } = useAvailableSites();
-  const [page, setPage] = useState(0);
+
 
   if (isError) return <>Error fetching</>;
 
   if (isLoading) return <>Fetching available sites...</>;
-
-  const isPrintReady = printStatus === "Deck is ready!" || printStatus === "";
   return (
     <>
       <AnimatePresence>
         <Page className="relative overflow-x-hidden space-y-2 overflow-hidden">
-          {!isPrintReady && (
+          {isGenerating && (
             <div className="fixed top-0 left-0 w-full h-full flex flex-col text-sm items-center justify-center bg-black bg-opacity-30 z-20 pointer-events-auto text-white backdrop-blur-sm">
-              <LoaderCircle className="animate-spin" size={40} />
-              <p>Generating your billboard deck. Please wait.</p>
+              <Progress value={(printStatus.length / selectedSites.length) * 100} className="max-w-sm bg-white" />
+              {printStatus.length !== selectedSites.length ?
+                <p className="animate-pulse">Generating slides...</p> : <p className="animate-pulse">Donwloading your deck...</p>
+              }
             </div>
           )}
-          <Header page={page} setPage={setPage} />
+          <Header />
           <AnimatePresence>
             {page === 0 ? (
               <motion.div
@@ -70,7 +69,7 @@ const Main = () => {
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: "-50%", opacity: 0 }}
                 transition={{ duration: 0.3, ease: "easeInOut" }}
-                className="relative grid grid-cols-[3fr_7fr] gap-4"
+                className="relative grid grid-cols-[4fr_6fr] gap-4"
               >
                 <Options />
                 <SitePreview />

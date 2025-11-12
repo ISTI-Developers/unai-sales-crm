@@ -27,6 +27,7 @@ const SearchFilter = () => {
   }, [search, filters, availability]);
 
   const canClearAll = useMemo(() => {
+    if (sites.length === 0) return false;
     return (
       sites.length === selectedSites.length ||
       (sites.length !== selectedSites.length && selectedSites.length > 0) ||
@@ -47,7 +48,7 @@ const SearchFilter = () => {
   return (
     <>
       <div className="flex gap-2 bg-white py-2">
-        <Search setValue={setSearch} className="max-w-full" />
+        <Search setValue={setSearch} className="max-w-full h-8" />
 
         <AnimatePresence>
           {showSelectOrClearOption && (
@@ -62,6 +63,7 @@ const SearchFilter = () => {
                 <Button
                   variant="ghost"
                   className="bg-main-100 text-white hover:bg-main-500 hover:text-white"
+                  size="sm"
                   onClick={() => {
                     setSelectedSites([...sites]);
                     setSelectedOptions([
@@ -79,6 +81,7 @@ const SearchFilter = () => {
               ) : (
                 <Button
                   variant="destructive"
+                  size="sm"
                   onClick={() => {
                     setSelectedSites([]);
                     setSelectedOptions([]);

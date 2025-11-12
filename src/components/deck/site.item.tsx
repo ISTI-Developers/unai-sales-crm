@@ -1,7 +1,7 @@
 import { DeckSite, useDeck } from "@/providers/deck.provider";
 import BasicSection from "./basic.section";
 import LocationSection from "./location.section";
-import { useSiteImages, useSiteImpressions } from "@/hooks/useSites";
+import { useSiteImages } from "@/hooks/useSites";
 import ImagesSection from "./images.section";
 import { useEffect, useState } from "react";
 import { fetchImage } from "@/lib/fetch";
@@ -12,10 +12,10 @@ import { useActiveUNISURL } from "@/hooks/useSettings";
 
 const SiteItem = ({ site }: { site: DeckSite }) => {
   const { data: images } = useSiteImages(site.site_code);
-  const { data: impressions } = useSiteImpressions(site);
+  // const { data: impressions } = useSiteImpressions(site);
   const { data: unisURL, isLoading } = useActiveUNISURL();
   const [siteImages, setSiteImages] = useState<SiteImage[]>([]);
-  const { setSelectedOptions, setSelectedSites } = useDeck();
+  const { setSelectedOptions, setSelectedSites, page } = useDeck();
 
   const onDelete = () => {
     setSelectedOptions((prev) => {
@@ -26,6 +26,7 @@ const SiteItem = ({ site }: { site: DeckSite }) => {
     });
   };
   useEffect(() => {
+    
     if (!unisURL) return;
     let isCancelled = false;
     const objectUrls: string[] = []; // Track all created object URLs
@@ -59,7 +60,7 @@ const SiteItem = ({ site }: { site: DeckSite }) => {
       isCancelled = true;
       objectUrls.forEach((url) => URL.revokeObjectURL(url)); // Clean up blob URLs
     };
-  }, [images, unisURL, isLoading]);
+  }, [images, unisURL, isLoading, page]);
   return (
     <div
       className="bg-slate-100 rounded-xl flex flex-col gap-4"
@@ -78,10 +79,7 @@ const SiteItem = ({ site }: { site: DeckSite }) => {
         </Button>
       </header>
       <div className="p-4 flex flex-col gap-4 pt-0">
-        <BasicSection data={{
-          ...site,
-          traffic_count: impressions ? Math.round(impressions.impressions) : site.traffic_count
-        }} />
+        <BasicSection data={site} />
         <LocationSection data={site} />
         <ImagesSection site_code={site.site_code} data={siteImages} />
       </div>

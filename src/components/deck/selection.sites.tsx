@@ -59,11 +59,12 @@ const SiteSelection = () => {
             <div
               className={cn("w-full relative group grid grid-cols-[1fr_auto]")}
             >
-              <p className="font-semibold flex gap-1 items-center">
-                <span>{site.site_code}</span>
+              <p className="font-bold flex gap-1 items-center">
+                {site.site_code}
               </p>
-              <p className="text-xs italic font-normal">{site.address}</p>
-              <span className="text-[0.65rem] italic text-end">
+              <p className="text-xs italic font-normal row-[2/3]">{site.address}</p>
+              <p className="text-[0.65rem] text-end text-black/60 row-[2/3] col-[2/3]">{site.client?.toLowerCase().includes("null") ? "N/A" : site.client ?? "N/A"}</p>
+              <span className="text-[0.65rem] italic col-[1/2] row-[3/4]">
                 {site.board_facing}
               </span>
               <p className="text-xs font-semibold col-[2/3] row-[1] text-end">

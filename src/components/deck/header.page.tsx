@@ -1,4 +1,3 @@
-import { Dispatch, SetStateAction } from "react";
 import { Button } from "../ui/button";
 import { useDeck } from "@/providers/deck.provider";
 import { Loader2 } from "lucide-react";
@@ -8,19 +7,14 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
-type HeaderProps = {
-  page: number;
-  setPage: Dispatch<SetStateAction<number>>;
-};
+const Header = () => {
+  const { selectedSites, isGenerating, page, setPage } = useDeck();
 
-const Header = ({ page, setPage }: HeaderProps) => {
   const isPageOne = page === 1;
   const isPageZero = page === 0;
 
   const { print } = useGeneratePowerpoint();
-  const { selectedSites, printStatus } = useDeck();
 
-  const isPrintReady = printStatus === "Deck is ready!" || printStatus === "";
 
   return (
     <div className="w-full bg-white z-[2] flex items-center gap-4 justify-between pl-2">
@@ -94,9 +88,9 @@ const Header = ({ page, setPage }: HeaderProps) => {
           onClick={print}
           variant="ghost"
           className="bg-emerald-200 text-emerald-500 hover:bg-emerald-500 hover:text-emerald-800 disabled:px-2 shadow"
-          disabled={!isPrintReady}
+          disabled={isGenerating}
         >
-          {printStatus !== "" && printStatus !== "Deck is ready!" ? (
+          {isGenerating ? (
             <Loader2
               className="animate-spin mr-2 w-4 h-4"
               aria-label="Loading"

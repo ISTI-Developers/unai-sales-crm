@@ -1,5 +1,5 @@
 import Field from "../field";
-import { capitalize } from "@/lib/utils";
+import { capitalize, cn } from "@/lib/utils";
 import { DeckSite, useDeck } from "@/providers/deck.provider";
 import { Container } from "./container.deck";
 import { useMemo } from "react";
@@ -12,24 +12,25 @@ import {
   TableHeader,
   TableRow,
 } from "../ui/table";
+import { format, isBefore } from "date-fns";
 
 const BasicSection = ({ data }: { data: DeckSite | null }) => {
   const fields = [
-    "type",
     "site_owner",
-    "size",
     "traffic_count",
-    "board_facing",
-    "bound",
+    "size",
     "vicinity_population",
-    "remarks",
+    "board_facing",
     "availability",
+    "bound",
     "price",
+    "remarks",
+    // "ideal_view",
   ];
   return (
     <Container>
       {data ? (
-        <section className="grid grid-cols-2 gap-2 text-xs">
+        <section className="grid grid-cols-2 gap-2 text-xs w-full">
           {fields.map((field) => (
             <Field
               key={field}
@@ -41,13 +42,15 @@ const BasicSection = ({ data }: { data: DeckSite | null }) => {
                   <PriceField site={data} />
                 ) : field === "availability" ? (
                   <AvailabilityField site={data} />
-                ) : ['vicinity_population', 'traffic_count'].includes(field) ?
-                  Intl.NumberFormat("en-PH", {
-                    style: "decimal"
-                  }).format(Number(data[field] ?? 0))
-                  : (
-                    capitalize((data[field] as string) ?? "---")
-                  )
+                ) : field === "ideal_view" ?
+                  <a href={data[field]} className="break-words text-[0.6rem] underline text-main-100" target="_blank">{data[field]}</a>
+                  : ['vicinity_population', 'traffic_count'].includes(field) ?
+                    Intl.NumberFormat("en-PH", {
+                      style: "decimal"
+                    }).format(Number(data[field] ?? 0))
+                    : (
+                      capitalize((data[field] as string) ?? "---")
+                    )
               }
             />
           ))}
@@ -66,6 +69,8 @@ const PriceField = ({ site }: { site: DeckSite }) => {
 
   const updatedPrice = useMemo(() => {
     if (Object.keys(options).length === 0) return Number(site.price);
+
+    console.log(site.price);
 
     let tempPrice = Number(site.price);
 
@@ -101,13 +106,14 @@ const PriceField = ({ site }: { site: DeckSite }) => {
 
   const ratesPerMonth = useMemo(() => {
     if (!options.rate_generator) return null;
-    let tempPrice = updatedPrice;
+
     return options.rate_generator.map((config) => {
       const { discount, duration, type } = config;
-      tempPrice =
+      console.log(updatedPrice, duration, discount);
+      const tempPrice =
         discount === 0
           ? updatedPrice
-          : applyPriceAdjustment(tempPrice, {
+          : applyPriceAdjustment(updatedPrice, {
             amount: discount,
             type: type as "percent" | "flat",
           });
@@ -116,7 +122,6 @@ const PriceField = ({ site }: { site: DeckSite }) => {
         price: tempPrice,
       };
     });
-    return null;
   }, [options.rate_generator, updatedPrice]);
 
   return (
@@ -155,7 +160,14 @@ const PriceField = ({ site }: { site: DeckSite }) => {
   );
 };
 const AvailabilityField = ({ site }: { site: DeckSite }) => {
-  return <div>{site.availability}</div>;
+  const availability = useMemo(() => {
+    if (!site.availability) return "OPEN";
+
+    if (isBefore(new Date(site.availability), new Date())) return "OPEN";
+
+    return format(new Date(site.availability), "PP")
+  }, [site.availability])
+  return <div className={cn("text-red-500 font-semibold", availability === "OPEN" ? "font-bold" : "")}>{availability}</div>;
 };
 
 export default BasicSection;

@@ -13,35 +13,57 @@ const ImagesSection = ({
   data?: SiteImage[];
 }) => {
   const { selectedOptions, setSelectedOptions } = useDeck();
+
+  // 🔹 On mount: restore cached selection
   useEffect(() => {
     if (!data || data.length === 0) return;
 
-    const targetSite = selectedOptions.find(
-      (site) => site.site_code === site_code
-    );
+    const cached = localStorage.getItem(`${site_code}_selected`);
+    if (cached) {
+      const storedID = JSON.parse(cached) as string;
+      const selectedImage = data.find(img => img.upload_id === Number(storedID));
 
-    if (!targetSite) return;
-
-    if (!targetSite.images) {
       setSelectedOptions((prev) =>
         prev.map((site) =>
           site.site_code === site_code
-            ? {
-              ...site,
-              images: data[0],
-            }
+            ? { ...site, images: selectedImage }
+            : site
+        )
+      );
+    } else {
+      // fallback: use first image as default
+      setSelectedOptions((prev) =>
+        prev.map((site) =>
+          site.site_code === site_code
+            ? { ...site, images: data[0] }
             : site
         )
       );
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, selectedOptions, site_code]);
+  }, [site_code, data]);
+
+  useEffect(() => {
+    console.count("render")
+    const targetSite = selectedOptions.find(
+      (site) => site.site_code === site_code
+    );
+    if (targetSite?.images) {
+      localStorage.setItem(
+        `${site_code}_selected`,
+        String(targetSite.images.upload_id)
+      );
+    }
+  }, [selectedOptions, site_code]);
 
   return (
     <Container>
       <ScrollArea className="max-h-[30vh] overflow-y-auto">
         <div className="flex flex-wrap flex-1 gap-4 w-full justify-center items-center text-black">
-          {data ? data.length !== 0 ? data.map(item => (<ImageItem key={item.upload_id} item={item} site_code={site_code} />)) : "Loading images..." : "No images found."}
+          {data && data.length > 0
+            ? data.map((item) => (
+              <ImageItem key={item.upload_id} item={item} site_code={site_code} />
+            ))
+            : "No images found."}
         </div>
       </ScrollArea>
     </Container>
