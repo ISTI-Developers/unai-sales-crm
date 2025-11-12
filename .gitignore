@@ -13,6 +13,8 @@ dist-ssr
 *.local
 *copy*
 *.copy.*
+stats.html
+gil_puyat.tsx
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
