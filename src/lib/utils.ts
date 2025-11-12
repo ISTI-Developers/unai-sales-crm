@@ -120,6 +120,29 @@ export const haversineDistance = (coords1: Coordinate, coords2: Coordinate) => {
   return R * c;
 };
 export const customOrder = ["HOT", "ACTIVE", "ON/OFF", "FOR ELECTIONS", "POOL"];
+
+export const pastelColors = [
+  "#fecaca",
+  "#f87171",
+  "#dc2626",
+  "#991b1b",
+  "#450a0a",
+  "#fde68a",
+  "#fbbf24",
+  "#d97706",
+  "#92400e",
+  "#451a03",
+  "#d9f99d",
+  "#a3e635",
+  "#65a30d",
+  "#3f6212",
+  "#1a2e05",
+  "#a7f3d0",
+  "#34d399",
+  "#059669",
+  "#065f46",
+  "#022c22",
+];
 export const colors = [
   "#756f65",
   "#7cb613",

@@ -2,7 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAccess } from "@/hooks/useClients";
 import { ClientInformation } from "@/interfaces/client.interface"
-import { lazy, Suspense, useState } from "react";
+import { useAuth } from "@/providers/auth.provider";
+import { lazy, Suspense, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom"
 
 const ClientHistory = lazy(() => import("@/components/clients/history.clients"));
@@ -12,11 +13,22 @@ const ReportsTab = lazy(() => import("@/pages/clients/reports.tab"));
 
 const ClientTabs = ({ client, canEdit }: { client: ClientInformation, canEdit: boolean }) => {
     const params = useParams();
+    const { user } = useAuth();
     const [activeTab, setTab] = useState(params?.tab ?? "client");
     const { access: view } = useAccess("clients.viewContactInformation");
-    const { access: viewAll } = useAccess("clients.viewAll");
-    const { access: edit } = useAccess("clients.editContact");
-    const { access: editAll } = useAccess("clients.editAll");
+
+    const isViewable = useMemo(() => {
+        if (!user) return false;
+
+        if ([1, 3, 10, 11].includes(user.role.role_id)) {
+            return true;
+        }
+
+        if (client.sales_unit_id === user.sales_unit?.sales_unit_id) {
+            return view;
+        }
+        return false;
+    }, [client.sales_unit_id, user, view])
 
     const tabs = [
         {
@@ -28,7 +40,7 @@ const ClientTabs = ({ client, canEdit }: { client: ClientInformation, canEdit: b
         },
         {
             value: "contact",
-            content: view || viewAll ?
+            content: isViewable ?
                 <Suspense fallback={<>Loading...</>}>
                     <ContactTab data={{
                         address: client.address,
@@ -49,7 +61,7 @@ const ClientTabs = ({ client, canEdit }: { client: ClientInformation, canEdit: b
         {
             value: "reports",
             content: <Suspense fallback={<>Loading...</>}>
-                <ReportsTab clientID={client.client_id} canEdit={edit || editAll} />
+                <ReportsTab clientID={client.client_id} canEdit={isViewable} />
             </Suspense>
         },
         {

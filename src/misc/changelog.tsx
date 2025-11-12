@@ -10,30 +10,24 @@ import {
 
 const Changelog = () => {
   const changes = {
-    "1.7.5": [
-      "Fixed the issue on booking dates"
+    "1.8.2": [
+      "fix client name on reports page.",
+      "fix the restriction of remarks and price accesses.",
+      "adjust of layout of dashboard for ops account.",
+      "added activate/ deactivate / dismantle functions for sites.",
+      "added filter of site owner on sites.",
     ],
-    "1.7.4": [
-      "New roles management",
-      "Added new site maps!",
-      "Different views for bookings on the way!"
+    "1.8.1": [
+      "Fixed the display of contract adjustments",
+      "Changed the behavior of booking dates based on selected booking status.",
+      ""
     ],
-    "1.7.3": [
-      "Added restrictions for editing clients.",
-      "Updated booking cancellation message."
+    "1.8": [
+      "New design for dashboard.",
+      "Setup the role access of OPS.",
+      "Add and Edit of Sites.",
+      "Added a display for current week in Reports page."
     ],
-    "1.7.2": [
-      "Added the client name to the brand on booking page."
-    ],
-    "1.7.1": [
-      "Implemented multiple accounts on clients table and individual client information page. Multiple clients for editing is still in progress",
-      "Fixed the image issue from Deck Generator and formatted the amounts and site availability.",
-      "You can now create reports from the Client Information page"
-    ],
-    "1.7.0": [
-      "Created edit booking form and added booking cancellation reason.",
-      "Fixed the view for days vacant."
-    ]
   };
   return (
     <Dialog>

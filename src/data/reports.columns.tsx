@@ -84,13 +84,13 @@ const renderColumn = (id: string) => ({
     }
     return id === "account_executive" ? (
       <Tooltip delayDuration={100}>
-        <TooltipTrigger className="uppercase text-xs font-semibold">
+        <TooltipTrigger className="uppercase text-[0.65rem] font-semibold">
           {name}
         </TooltipTrigger>
         <TooltipContent>{capitalize(column)}</TooltipContent>
       </Tooltip>
     ) : (
-      <p className="text-center">{name}</p>
+      <p className="text-center text-[0.65rem]">{name}</p>
     );
   },
   filterFn: "not" as FilterFnOption<ReportTable>,
@@ -110,7 +110,7 @@ export const useWeekColumns = () => {
         return (
           <Tooltip>
             <TooltipTrigger asChild>
-              <p className="max-w-[10vw] text-xs">
+              <p className="max-w-[200px] text-[0.65rem] leading-3">
                 {words.length > 5
                   ? `${words.slice(0, 5).join(" ")} ...`
                   : client}
@@ -157,7 +157,7 @@ export const useWeekColumns = () => {
             variant={statusMap[status.toLowerCase()]}
             className={cn(
               statusClasses[status.toLowerCase()],
-              "uppercase text-[0.5rem] px-1.5 h-5 rounded-full"
+              "uppercase text-[0.5rem] px-1 h-5 rounded-full"
             )}
           >
             {status}
@@ -562,6 +562,7 @@ const ReportForm = ({
         value={report}
         onChange={(e) => setReport(e.target.value)}
         placeholder="Enter your activities here..."
+
       />
       <div className="w-fit mr-auto flex flex-col items-start gap-4">
         {previewUrl && (

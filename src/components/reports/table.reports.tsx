@@ -1,5 +1,4 @@
 import { cn } from "@/lib/utils";
-import { ScrollArea, ScrollBar } from "../ui/scroll-area";
 import {
   Table,
   TableBody,
@@ -47,10 +46,10 @@ export function ReportsTable<TData, TValue>({
       return visibleWeeks
         ? visibleWeeks
         : weeks.reduce<Record<string, boolean>>((acc, week, index) => {
-            const weekIndex = getISOWeek(new Date()) - 1;
-            acc[week] = weekIndex === index;
-            return acc;
-          }, {});
+          const weekIndex = getISOWeek(new Date()) - 1;
+          acc[week] = weekIndex === index;
+          return acc;
+        }, {});
     }
   );
 
@@ -101,38 +100,40 @@ export function ReportsTable<TData, TValue>({
         filters={columnFilters}
       />
       <SelectedFilters />
-
-      <ScrollArea className="w-full whitespace-nowrap rounded-md border">
+      <div className="w-full whitespace-nowrap rounded-md border">
         <div
           className={cn(
-            "overflow-auto",
+            "overflow-y-auto max-w-full relative",
             filters.length === 0
               ? "max-h-[calc(100vh-13.25rem)]"
               : "max-h-[calc(100vh-15.75rem)]"
           )}
           ref={parentRef}
         >
-          <Table>
+          <Table className="border-collapse">
             <TableHeader className="sticky top-0 z-[3]">
               {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
+                <TableRow key={headerGroup.id} className="bg-main-400 hover:bg-main-400">
                   {headerGroup.headers.map((header, index) => {
                     const columnID = header.column.id;
+                    const isSticky = index < 4
+                    const lefts = [0, 100, 155, 235]
                     return (
                       <TableHead
                         key={header.id}
                         className={cn(
-                          "bg-main-400 text-white shadow text-xs uppercase font-bold w-fit",
+                          "bg-main-400 text-white shadow text-[0.65rem] uppercase font-bold w-fit",
                           columnID !== "client" ? "text-center" : "",
-                          index === 0 ? "sticky left-0" : ""
+                          isSticky ? "sticky" : ""
                         )}
+                        style={{ left: lefts[index] }}
                       >
                         {header.isPlaceholder
                           ? null
                           : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
                       </TableHead>
                     );
                   })}
@@ -170,23 +171,28 @@ export function ReportsTable<TData, TValue>({
                       <TableRow
                         key={row.id}
                         data-state={row.getIsSelected() && "selected"}
+                        className="hover:bg-white "
                       >
-                        {row.getVisibleCells().map((cell) => {
+                        {row.getVisibleCells().map((cell, index) => {
                           const columnID = cell.column.id;
+                          const isSticky = index < 4
+                          const lefts = [0, 100, 155, 235]
                           return (
                             <TableCell
                               key={cell.id}
                               className={cn(
                                 columnID === "client"
-                                  ? "sticky left-0 bg-slate-50 uppercase px-2 font-semibold w-[15vw] whitespace-break-spaces z-[2]"
+                                ? "uppercase px-2 font-semibold max-w-[100px] whitespace-break-spaces"
                                   : [
-                                      "sales_unit",
-                                      "account_executive",
-                                      "status",
-                                    ].includes(columnID)
-                                  ? "bg-slate-50 text-center max-w-[10vw] w-fit"
-                                  : "text-left min-w-[400px] p-0"
+                                    "sales_unit",
+                                    "account_executive",
+                                    "status",
+                                  ].includes(columnID)
+                                    ? "text-center max-w-[10vw] w-fit"
+                                    : "text-left min-w-[200px] max-w-[400px] p-0",
+                                isSticky ? "sticky z-[2] bg-white" : ""
                               )}
+                              style={{ left: lefts[index] }}
                             >
                               {flexRender(
                                 cell.column.columnDef.cell,
@@ -232,8 +238,7 @@ export function ReportsTable<TData, TValue>({
             </TableBody>
           </Table>
         </div>
-        <ScrollBar orientation="horizontal" />
-      </ScrollArea>
+      </div>
       <div className="flex items-center justify-end space-x-2">
         <Button
           variant="outline"

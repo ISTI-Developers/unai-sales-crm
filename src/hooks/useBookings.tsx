@@ -5,6 +5,7 @@ import { useSite } from "./useSites";
 import { format } from "date-fns";
 import { DefaultResponse, List } from "@/interfaces";
 import { toast } from "./use-toast";
+import { SiteBooking } from "@/data/sitebookings.columns";
 export interface Booking {
   ID: number;
   site_code: string;
@@ -107,7 +108,22 @@ export const usePreBookings = () => {
   });
 };
 
-export const useSiteBookings = (site_code?: string) => {
+export const useSiteBookings = () => {
+  return useQuery({
+    queryKey: ["bookings", "site", "tab"],
+    queryFn: async () => {
+      const response = await spAPI.get<SiteBooking[]>("booking", {
+        params: {
+          site_bookings: true,
+        },
+      });
+      return response.data;
+    },
+    staleTime: 60000,
+  })
+}
+
+export const useSiteBooking = (site_code?: string) => {
   return useQuery({
     queryKey: ["bookings", "site", site_code],
     queryFn: async () => {
@@ -235,7 +251,7 @@ export const useCancelBooking = () => {
         return response.data;
       }
     },
-    onSuccess: (data, {booking_id}) => {
+    onSuccess: (data, { booking_id }) => {
       if (data) {
         toast({
           title: "Booking cancelled",

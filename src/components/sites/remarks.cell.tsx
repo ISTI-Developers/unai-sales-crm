@@ -15,7 +15,7 @@ const RemarksCell = ({ row, column }: CellContext<Site, unknown>) => {
   const [remark, setRemark] = useState<string>(remarks ?? "");
   const [toggle, onToggle] = useState(false);
   const { user } = useAuth();
-  const { access } = useAccess(19);
+  const { access } = useAccess("sites.edit");
 
   const onSubmit = () => {
     mutate(
@@ -31,14 +31,14 @@ const RemarksCell = ({ row, column }: CellContext<Site, unknown>) => {
   const hasAccess = useMemo(() => {
     if (!user || !access) return false;
 
-    return [1, 21].includes(user.ID as number) || access.edit;
+    return [1, 21].includes(user.ID as number) || user.role.role_id === 13
   }, [user, access]);
   return (
-    <div className="min-w-[300px] text-[0.65rem] relative group flex flex-col gap-2">
+    <div className="w-[300px] text-[0.65rem] relative group flex flex-col gap-2">
       {!toggle ? (
         <>
           <p className="text-start">
-            {remarks !== remark ? remarks ?? "---" : remark}
+            {remarks !== remark ? remarks || "---" : remark}
           </p>
           {hasAccess && (
             <Button
@@ -77,7 +77,7 @@ const RemarksCell = ({ row, column }: CellContext<Site, unknown>) => {
               variant="ghost"
               onClick={onSubmit}
               className="w-fit text-xs h-7 bg-emerald-400 hover:bg-emerald-500 text-white hover:text-white flex gap-4 disabled:cursor-not-allowed"
-              // className={cn("flex gap-4 ml-auto", loading && "pl-2.5")}
+            // className={cn("flex gap-4 ml-auto", loading && "pl-2.5")}
             >
               {/* {loading && <LoaderCircle className="animate-spin" />} */}
               Save

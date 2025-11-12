@@ -44,6 +44,7 @@ export function DatePicker({
             } as DateBefore
           }
           startMonth={min}
+          defaultMonth={date}
           endMonth={addYears(new Date(), 5)}
           selected={date}
           captionLayout="dropdown"

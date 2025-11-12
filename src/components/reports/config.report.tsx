@@ -13,7 +13,8 @@ import { ColumnFiltersState, Table } from "@tanstack/react-table";
 import { useReports } from "@/providers/reports.provider";
 import { useState } from "react";
 import { capitalize } from "@/lib/utils";
-
+import { generateWeeks } from "@/data/reports.columns";
+import { getISOWeek } from "date-fns";
 interface Config<TData> {
   setValue: (value: string) => void;
   table: Table<TData>;
@@ -85,6 +86,10 @@ function TableConfigurations<TData>({
         </DropdownMenuContent>
       </DropdownMenu>
       <ReportFilters data={data} table={table} filters={filters} />
+      <div className="ml-auto flex items-center gap-1 text-[0.6rem]">
+        <p>Current Week:</p>
+        <p className="text-[0.6rem] font-semibold">{generateWeeks()[getISOWeek(new Date()) - 1]}</p>
+      </div>
     </div>
   );
 }

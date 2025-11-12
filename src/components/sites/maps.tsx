@@ -301,7 +301,7 @@ function SitePreview(site: Site) {
             <p>Landmarks</p>
             {isLoading ? <>Loading landmarks</> : landmarks && landmarks.length > 0 ? <ul className="max-h-[200px] overflow-y-auto scrollbar-none">
                 {landmarks.map(landmark => {
-                    return <li key={landmark.l_id} className="text-[0.65rem] list-disc ml-3">
+                    return <li key={landmark.ID} className="text-[0.65rem] list-disc ml-3">
                         {landmark.display_name}
                     </li>
                 })}

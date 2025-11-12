@@ -11,6 +11,13 @@ export function formatAmount(
   }).format(Number(amount));
 }
 
+export function formatNumber(num: string | number) {
+  return Intl.NumberFormat("en-PH", {
+    style: "decimal",
+    maximumFractionDigits: 4,
+  }).format(num);
+}
+
 export function formatTermDetails(
   dateFrom: string | Date,
   dateTo: string | Date,

@@ -4,7 +4,6 @@ import bg from "@/assets/finalbg.png";
 import mockup from "@/assets/mockup.png";
 import {
   applyPriceAdjustment,
-  cropImageFromURL,
   formatAmount,
   Inches,
 } from "@/lib/format";
@@ -20,16 +19,32 @@ export const useGeneratePowerpoint = () => {
     toAll: applyToAll,
     maps,
     setPrintStatus,
+    setGenerateStatus
   } = useDeck();
 
+  const start = new Date().getTime();
+
   const margin = 0.4;
+
+  function downloadPptxFromArrayBuffer(buffer: string | ArrayBuffer | Blob | Uint8Array<ArrayBufferLike>, fileName = "presentation.pptx") {
+    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.presentationml.presentation" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   const print = async () => {
     if (sites.length === 0) return;
     if (maps.length === 0) return;
 
     try {
+      console.log("Start:", start)
+      setGenerateStatus(true)
       const presentation = new PptxGenJS();
+
       presentation.defineLayout({
         name: "Widescreen",
         width: Inches(33.858),
@@ -38,7 +53,6 @@ export const useGeneratePowerpoint = () => {
       presentation.layout = "Widescreen";
 
       for (const site of sites) {
-        setPrintStatus(`Generating deck for ${site.site_code}`);
         const slide = presentation.addSlide();
         slide.background = { path: bg };
         const siteConfig = config.find(
@@ -84,11 +98,11 @@ export const useGeneratePowerpoint = () => {
         const contentSection = headerHeight + Inches(0.8);
 
         const availability = site.availability
-          ? isBefore(new Date(site.availability), new Date()) ? "OPEN" : format(new Date(site.availability), "MMMM d, yyyy")
+          ? isBefore(new Date(site.availability), new Date()) ? "OPEN" : format(new Date(site.availability), "MMM d, yyyy")
           : "OPEN";
 
         slide.addText(area, {
-          w: Inches(33.23),
+          w: Inches(33.33),
           h: headerHeight,
           x: 0,
           y: 0,
@@ -115,21 +129,17 @@ export const useGeneratePowerpoint = () => {
           color: "d22735",
           fontFace: "Century Gothic",
           bold: true,
-          fontSize: 14,
+          fontSize: 12,
         });
 
         const imageURL = image ? image.url : mockup;
 
-        const siteImage = await cropImageFromURL(imageURL, 150, 150).then(
-          (url) => url
-        );
-
         slide.addImage({
-          data: siteImage,
+          data: imageURL,
           x: Inches(0.8),
-          y: contentSection,
+          y: ((Inches(19.05) - Inches(1.93)) / 4) + Inches(0.275),
           w: Inches(20.09),
-          h: Inches(15.35),
+          h: Inches(11.9),
         });
 
         const colWidth = Inches(5.9);
@@ -319,7 +329,7 @@ export const useGeneratePowerpoint = () => {
           });
           if (landmarkArray.length > 0) {
             const landmarkHeight =
-              landmarkArray.join(" | ").length > 65
+              landmarkArray.join(" • ").length > 65
                 ? textHeight + lineHeight
                 : lineHeight;
             slide.addText(landmarkArray.join(" | "), {
@@ -480,12 +490,22 @@ export const useGeneratePowerpoint = () => {
             fill: { color: "#F2F2F2" },
           });
         }
+        setPrintStatus(prev => ([...prev, 0]));
+        await new Promise(requestAnimationFrame)
       }
 
-      setPrintStatus("Generated decks, now printing...");
-      presentation.writeFile({ fileName: "Sales Deck" }).then(() => {
-        setPrintStatus("Deck is ready!");
-      });
+      try {
+        const response = await presentation.write({ outputType: "arraybuffer", compression: false })
+        downloadPptxFromArrayBuffer(response, "Sales Deck")
+        console.log(response, "Success!")
+        console.log("End:", new Date().getTime() - start)
+      } catch (e) {
+        console.log(e)
+      } finally {
+        setGenerateStatus(false)
+        setPrintStatus([])
+
+      }
     } catch (e) {
       catchError(e);
     }

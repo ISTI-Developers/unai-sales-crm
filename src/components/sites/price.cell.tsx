@@ -6,9 +6,8 @@ import { cn } from "@/lib/utils";
 import { PenLine } from "lucide-react";
 import { useUpdatePrice } from "@/hooks/useSites";
 import { useAuth } from "@/providers/auth.provider";
-import { useAccess } from "@/hooks/useClients";
-import { Input } from "../ui/input";
 import { formatAmount } from "@/lib/format";
+import InputNumber from "../ui/number-input";
 
 const PriceCell = ({ row, column }: CellContext<Site, unknown>) => {
     const { mutate } = useUpdatePrice();
@@ -16,7 +15,6 @@ const PriceCell = ({ row, column }: CellContext<Site, unknown>) => {
     const [price, setPrice] = useState<string>(priceValue ?? "");
     const [toggle, onToggle] = useState(false);
     const { user } = useAuth();
-    const { access } = useAccess(19);
 
     const onSubmit = () => {
         mutate(
@@ -30,10 +28,10 @@ const PriceCell = ({ row, column }: CellContext<Site, unknown>) => {
         );
     };
     const hasAccess = useMemo(() => {
-        if (!user || !access) return false;
+        if (!user) return false;
 
-        return [1, 21].includes(user.ID as number) || access.edit;
-    }, [user, access]);
+        return [1, 21].includes(user.ID as number)
+    }, [user]);
     return (
         <div className="text-[0.65rem] relative group flex flex-col gap-2">
             {!toggle ? (
@@ -56,7 +54,7 @@ const PriceCell = ({ row, column }: CellContext<Site, unknown>) => {
                 </>
             ) : (
                 <>
-                    <Input onChange={(e) => setPrice(e.target.value)} value={price} className="text-xs" />
+                    <InputNumber onChange={(e) => setPrice(e.target.value)} value={price} className="text-xs" />
                     <div className="flex gap-2 items-center ml-auto">
                         <Button
                             type="reset"

@@ -37,3 +37,8 @@ export interface Access {
   edit: boolean;
   delete: boolean;
 }
+
+export interface WorkplaceRes<T = unknown> {
+  success: boolean;
+  data: T;
+}

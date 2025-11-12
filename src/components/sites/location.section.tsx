@@ -47,19 +47,19 @@ const LocationSection = ({ data }: { data: SiteDetailswithMapping | null }) => {
             <Map
               zoom={zoom}
               center={{
-                lat: Number(data.latitude),
-                lng: Number(data.longitude),
+                lat: !isNaN(Number(data.latitude)) ? Number(data.latitude) : 0,
+                lng: !isNaN(Number(data.longitude)) ? Number(data.longitude) : 0,
               }}
               mapTypeControl={false}
               mapId="bbe301bc60bb084c"
               controlled
               onZoomChanged={(event) => setZoom(event.detail.zoom)}
-              // onBoundsChanged={onMapGenerate}
+            // onBoundsChanged={onMapGenerate}
             >
               <Marker
                 position={{
-                  lat: Number(data.latitude),
-                  lng: Number(data.longitude),
+                  lat: !isNaN(Number(data.latitude)) ? Number(data.latitude) : 0,
+                  lng: !isNaN(Number(data.longitude)) ? Number(data.longitude) : 0,
                 }}
               />
             </Map>

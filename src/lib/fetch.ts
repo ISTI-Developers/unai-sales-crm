@@ -31,8 +31,14 @@ export const fetchImage: (
       responseType: "blob", // This ensures binary data is received
     });
 
-    const imgUrl = URL.createObjectURL(response.data);
-    return imgUrl;
+    const blob = response.data;
+
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = (err) => reject(err);
+      reader.readAsDataURL(blob);
+    });
   } catch (error) {
     console.error("Error fetching image:", error);
   }
@@ -189,7 +195,6 @@ export const useData = (
   map: ChartData[]
 ) => {
   const { data: clients } = useClients();
-  const { data: reports } = useCurrentWeekReport();
   const data = useWidgetData(
     "sites",
     [{ key: "options", value: ["all sites"] }],

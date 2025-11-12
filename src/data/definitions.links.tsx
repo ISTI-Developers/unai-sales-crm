@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 import { lazy } from "react";
 
-const DashboardNew = lazy(() => import("@/views/DynamicDashboard"));
 const Dashboard = lazy(() => import("@/views/Dashboard"));
 const Sites = lazy(() => import("@/views/Sites"));
 const Clients = lazy(() => import("@/views/Clients"));
@@ -50,12 +49,6 @@ export const linkDefinitions: LinkDefinitions[] = [
     icon: LayoutDashboard,
     hasSeparator: true,
     element: Dashboard,
-  }, {
-    title: "dashboard",
-    handler: "/new",
-    icon: LayoutDashboard,
-    hasSeparator: true,
-    element: DashboardNew,
   },
   {
     title: "sites",

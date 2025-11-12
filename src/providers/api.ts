@@ -6,8 +6,11 @@ import { openDB } from "idb";
 
 const mainURL = import.meta.env.VITE_SERVER;
 const OOHURL = import.meta.env.VITE_OOH_SERVER;
+const WPURL = import.meta.env.VITE_WP_UNIS;
+
 export const spAPI = axios.create({ baseURL: mainURL, timeout: 120000 });
 export const ooh = axios.create({ baseURL: OOHURL, timeout: 120000 });
+export const wp = axios.create({ baseURL: WPURL, timeout: 120000 });
 
 spAPI.interceptors.request.use(
   (config) => {
@@ -44,6 +47,15 @@ ooh.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+wp.interceptors.request.use(
+  (config) => {
+    const token = import.meta.env.VITE_OOH_KEY;
+    config.headers["x-api-key"] = token;
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
 export function logoutAndRedirect() {
   localStorage.removeItem("currentUser");
   localStorage.removeItem("last_location");
@@ -55,6 +67,26 @@ export function logoutAndRedirect() {
   window.location.href = "/login";
 }
 ooh.interceptors.response.use(
+  (res) => res,
+  (error: AxiosError) => {
+    let msg = "Something went wrong...";
+    if (error.message) {
+      msg = error.message;
+    }
+
+    if (msg === "Network Error") {
+      toast({
+        title: "Network Error",
+        description:
+          "The host could not connect to the server. Please message the IT team",
+        variant: "destructive",
+        itemID: "1",
+      });
+    }
+    return Promise.reject(new Error(msg));
+  }
+);
+wp.interceptors.response.use(
   (res) => res,
   (error: AxiosError) => {
     let msg = "Something went wrong...";
@@ -141,6 +173,11 @@ export const idb = openDB(
           keyPath: "key",
         });
       }
+      if (!db.objectStoreNames.contains("maps")) {
+        db.createObjectStore("maps", {
+          keyPath: "key",
+        });
+      }
     },
   }
 );
@@ -157,6 +194,33 @@ export async function saveQuery<TData>(
     lastFetched: Date.now(),
   });
 }
+export async function saveRecord<TData>(
+  store: string,
+  key: string,
+  data: TData,
+  options?: unknown
+) {
+  const db = await idb;
+  await db.put(store, {
+    key,
+    data,
+    options: options ? JSON.stringify(options) : undefined,
+    lastFetched: Date.now(),
+  });
+}
+export async function getRecord<Data>(
+  store: string,
+  key: string
+): Promise<RecordType<Data>> {
+  const db = await idb;
+  return db.get(store, key);
+}
+type RecordType<Data> = {
+  key: string;
+  data: Data;
+  lastFetched: number;
+  options?: unknown;
+};
 
 type ReturnType<Data> = {
   key: string;
