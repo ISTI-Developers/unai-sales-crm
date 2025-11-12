@@ -3,7 +3,7 @@ import { BookUser, TrendingDown, TrendingUp } from "lucide-react";
 import { Skeleton } from "../ui/skeleton";
 import { useClients } from "@/hooks/useClients";
 import { useMemo } from "react";
-import { addHours, getMonth } from "date-fns";
+import { addHours, getMonth, getYear } from "date-fns";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { cn } from "@/lib/utils";
 
@@ -13,7 +13,7 @@ function ClientCard() {
   const count = useMemo(() => {
     if (!data || isLoading) return { total: 0, trend: 0 };
 
-    const trendCount = data.filter(item => getMonth(addHours(new Date(item.created_at), import.meta.env.VITE_TIME_ADJUST)) === getMonth(new Date())).length
+    const trendCount = data.filter(item => getMonth(addHours(new Date(item.created_at), import.meta.env.VITE_TIME_ADJUST)) === getMonth(new Date()) && getYear(new Date(item.created_at)) === getYear(new Date())).length
     const totalCount = data.length;
 
     return {

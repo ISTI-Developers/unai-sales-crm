@@ -9,6 +9,7 @@ import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { formatAmount } from '@/lib/format';
 import { Calendar, MapPin, PhilippinePeso, Quote, User, Users } from 'lucide-react';
+import { Card, CardContent, CardTitle } from '../ui/card';
 
 type BookingCard = (Booking & { facing: string, address: string, size: string });
 const BookingsCard = () => {
@@ -43,8 +44,8 @@ const BookingsCard = () => {
 
     }, [data, isLoading, dates, sites])
     return (
-        <>
-            <div className="flex items-center justify-between gap-1.5 sticky top-0 bg-white">
+        <Card className='p-4 rounded-lg'>
+            <CardTitle className="flex items-center justify-between gap-1.5 sticky top-0 bg-white font-normal">
                 <p>Site Bookings</p>
                 <Select value={dates} onValueChange={setDates}>
                     <SelectTrigger className='w-fit capitalize'>
@@ -56,8 +57,8 @@ const BookingsCard = () => {
                         })}
                     </SelectContent>
                 </Select>
-            </div>
-            <div className='px-4 pt-2 flex flex-col gap-2'>
+            </CardTitle>
+            <CardContent className='px-4 pt-2 flex flex-col gap-2 max-h-[300px] overflow-y-auto'>
                 {isLoading ? (
                     <Skeleton className="w-full h-12" />
                 ) : (
@@ -69,8 +70,8 @@ const BookingsCard = () => {
                         }) : <p className='text-center pb-4 text-zinc-600'>No bookings found.</p>}
                     </>
                 )}
-            </div>
-        </>
+            </CardContent>
+        </Card>
     )
 }
 

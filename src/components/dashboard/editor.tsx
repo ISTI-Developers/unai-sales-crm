@@ -10,8 +10,7 @@ import { icons } from "@/data/icons";
 import { useWidgetData } from "@/lib/fetch";
 import { Dispatch, SetStateAction, useState } from "react";
 import DashboardChart from "./chart.dashboard";
-import BookingsCard from "./bookingsCard";
-import WeeklyReportsCard from "./weeklyReportsCard";
+import ListCardWidget from "./listCardWidget";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -110,9 +109,9 @@ export const WidgetCard = ({ widget, isPreview }: { widget: WidgetData; isPrevie
 
         </div>}
         {widget.type === "Metrics" ?
-            <p className="text-4xl 2xl:text-5xl font-light ">{isPreview ? widget.content : data ?? 0}</p>
+            <div className="text-4xl 2xl:text-5xl font-light ">{isPreview ? widget.content : data as number ?? 0}</div>
             : widget.type === "List" ?
-                isPreview ? <>List Preview</> : <WeeklyReportsCard /> :
+                isPreview ? <>List Preview</> : <ListCardWidget widget={widget} /> :
                 <div>
                     {isPreview ?
                         <>Chart Preview</> :

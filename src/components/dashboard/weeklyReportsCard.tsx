@@ -1,18 +1,14 @@
-import { generateWeeks } from "@/data/reports.columns";
+
 import useReportSummary from "@/data/reportSummary.data";
-import { addHours, format, getISOWeek, isToday } from "date-fns";
-import { useMemo } from "react";
+import { addHours, format, isToday } from "date-fns";
 import { Skeleton } from "../ui/skeleton";
 
 const WeeklyReportsCard = () => {
-  const weeks = useMemo(() => generateWeeks(), []);
-  const currentWeek = getISOWeek(new Date());
   const { thisWeeksReports, reportsSummaryConfig, isWeeklyReportLoading } =
     useReportSummary();
   return (
     <>
-      <h1 className="sticky top-0 bg-white w-full z-0">{weeks[currentWeek - 1]} Activities</h1>
-      <div className="flex flex-col gap-6 pt-2">
+      <div className="flex flex-col gap-6 pt-2 max-h-[300px] overflow-y-auto">
         {isWeeklyReportLoading ? (
           <>{Array(10).fill(0).map(() => {
             return <Skeleton className="w-full h-32" />
@@ -52,13 +48,13 @@ const WeeklyReportsCard = () => {
                     {report.ae}
                   </p>
                   <p className="font-semibold uppercase text-sm">
-                    {report.client.substring(0, 24)}
-                    {report.client.length > 24 && "..."}
+                    {report.client.substring(0, 30)}
+                    {report.client.length > 30 && "..."}
                   </p>
 
                   <p className="col-[2/3] text-xs">
-                    {report.report.substring(0, 50)}
-                    {report.report.length > 50 && "..."}
+                    {report.report.substring(0, 60)}
+                    {report.report.length > 60 && "..."}
                   </p>
 
                   <p className="absolute top-0 right-0 text-xs text-slate-400/50">
