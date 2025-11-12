@@ -25,7 +25,7 @@ export interface Site {
 }
 
 export interface SiteDetailswithMapping extends Site {
-  [key: string]: string | number | null;
+  [key: string]: string | number | null | undefined;
 }
 export interface SiteImage {
   upload_id: number;
@@ -45,15 +45,25 @@ export interface City {
 }
 
 export interface Landmarks {
-  l_id: string;
+  ID: number;
   display_name: string;
-  address: string;
+  // address: string;
   latitude: string;
   longitude: string;
   types: string[] | string;
-  record_at: string;
+  // record_at: string;
 }
 
+export interface ContractOverride {
+  ID: number;
+  site_code: string;
+  brand: string;
+  original_end_date: string;
+  adjusted_end_date: string;
+  adjustment_reason: string;
+  created_at: string;
+  modified_at: string;
+}
 export interface AvailableSites {
   structure: string;
   site: string;
@@ -88,13 +98,26 @@ export interface BookingTable extends Omit<AvailableSites, "category"> {
 }
 
 export interface LatestSites {
+  structure_id: number;
   structure_code: string;
   site_code: string;
+  city: string;
+  region: string;
   address: string;
-  date_created: string;
+  latitude: number;
+  longitude: number;
+  site_owner: string;
   facing: string;
+  size: string;
+  vicinity_population: string;
+  traffic_count: string;
+  bound: string | null;
+  date_created: string;
 }
-
+export interface NewSite
+  extends Omit<LatestSites, "structure_id" | "date_created"> {
+  ideal_view: string;
+}
 export interface SiteImpressions {
   area: string;
   impressions: number;

@@ -3,6 +3,7 @@ import { ActionCell } from "@/components/sites/action.cell";
 import { Site } from "@/interfaces/sites.interface";
 import { ColumnDef } from "@tanstack/react-table";
 import PriceCell from "@/components/sites/price.cell";
+import StatusCell from "@/components/sites/status.cell";
 
 export const columns: ColumnDef<Site>[] = [
   {
@@ -20,6 +21,12 @@ export const columns: ColumnDef<Site>[] = [
         </div>
       );
     },
+  },
+  {
+    accessorFn: (row) => row.site_owner,
+    accessorKey: "site_owner",
+    header: () => null,
+    cell: () => null,
   },
   {
     accessorKey: "site_code",
@@ -44,10 +51,11 @@ export const columns: ColumnDef<Site>[] = [
     header: "Size",
     cell: ({ row }) => {
       const item: string = row.getValue("size");
-      return <p className="text-[0.65rem]">{item}</p>;
+      return <p className="text-[0.65rem] whitespace-nowrap">{item}</p>;
     },
   },
   {
+    id: "price",
     accessorKey: "price",
     header: "SRP",
     cell: PriceCell
@@ -56,6 +64,11 @@ export const columns: ColumnDef<Site>[] = [
     accessorKey: "remarks",
     header: "Remarks",
     cell: RemarksCell,
+  },
+  {
+    accessorKey: "status",
+    header: "Status",
+    cell: StatusCell
   },
   {
     header: "Actions",

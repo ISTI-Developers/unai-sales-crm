@@ -6,11 +6,14 @@ import {
   SiteImage,
   LatestSites,
   SiteImpressions,
+  ContractOverride,
 } from "@/interfaces/sites.interface";
-import { catchError, getQuery, ooh, saveQuery, spAPI } from "@/providers/api";
+import { catchError, getQuery, ooh, saveQuery, spAPI, wp } from "@/providers/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { toast } from "./use-toast";
+import { WorkplaceRes } from "@/interfaces";
+import landmarks from "@/data/landmarks.json"
 
 export const useSites = () => {
   return useQuery({
@@ -41,7 +44,9 @@ export const useSiteImpressions = (site: Site) => {
       return sitesRes.data;
     },
     staleTime: 60000,
-    enabled: !!site.ID
+    enabled: !!site.ID,
+    retry: false,
+
   });
 };
 
@@ -50,13 +55,10 @@ export const useSiteCities = () => {
   return useQuery({
     queryKey: ["areas"],
     queryFn: async () => {
-      const response = await spAPI.get<City[]>("sites", {
-        params: {
-          type: "areas",
-        },
-      });
-
-      return response.data;
+      const response = await wp.get<WorkplaceRes<City[]>>("areas");
+      if (response.data) {
+        return response.data.data;
+      }
     },
     staleTime: 60000,
   });
@@ -66,12 +68,8 @@ export const useSitelandmarks = () => {
   return useQuery({
     queryKey: ["landmarks"],
     queryFn: async () => {
-      const response = await spAPI.get<Landmarks[]>("sites", {
-        params: {
-          type: "landmarks",
-        },
-      });
-      const modLms = response.data.map((lm) => {
+      const response: Landmarks[] = landmarks;
+      const modLms = response.map((lm) => {
         let types = lm.types;
 
         if (typeof types === "string") {
@@ -79,6 +77,7 @@ export const useSitelandmarks = () => {
           types = types.replace("}", "");
           types = types.split(",");
         }
+
 
         return {
           ...lm,
@@ -89,8 +88,26 @@ export const useSitelandmarks = () => {
       return modLms;
     },
     staleTime: 60000,
+    gcTime: 1000 * 60 * 30,
   });
 };
+
+export const useSiteLastInserted = () => {
+  return useQuery({
+    queryKey: ["sites", "last_inserted_at"],
+    queryFn: async () => {
+      const response = await spAPI.get<string>("sites", {
+        params: {
+          type: "last_date",
+        },
+      });
+      return response.data;
+    },
+    staleTime: 360000,
+    gcTime: 1000 * 60 * 30,
+  });
+};
+
 
 export const useSite = (id?: string) => {
   const { data, ...query } = useSites();
@@ -106,22 +123,18 @@ export const useSiteImages = (id?: string) => {
   return useQuery({
     queryKey: ["sites", "images", id],
     queryFn: async () => {
-      const response = await spAPI.get<SiteImage[]>("sites", {
-        params: {
-          images: id,
-        },
-      });
-
+      const response = await wp.get<WorkplaceRes<SiteImage[]>>(`images/${id}`);
       return response.data;
     },
     select: (data) =>
-      data?.sort(
+      data?.data.sort(
         (a, b) =>
           new Date(b.date_uploaded).getTime() -
           new Date(a.date_uploaded).getTime()
       ),
     enabled: !!id,
     staleTime: 60000,
+    retry: 3
   });
 };
 
@@ -133,41 +146,40 @@ export const useAvailableSites = () => {
     queryFn: async () => {
       try {
         localStorage.setItem("cachedBookings", "false");
-        const response = await spAPI.get<AvailableSites[]>("sites", {
+        const response = await wp.get<WorkplaceRes<AvailableSites[]>>("available", {
           params: {
             type: "available",
           },
         });
 
         if (response.data) {
-          if (!Array.isArray(response.data)) {
-            throw new Error("System cannot connect to UNIS.");
-          }
-          const data = response.data.map((site) => {
-            let rental = 0;
-            if (site.net_contract_amount) {
-              switch (site.payment_term_id) {
-                case 1:
-                  rental = site.net_contract_amount;
-                  break;
-                case 2:
-                case 5:
-                  rental = site.net_contract_amount / 12;
-                  break;
-                case 3:
-                  rental = site.net_contract_amount / 6;
-                  break;
-                case 4:
-                  rental = site.net_contract_amount / 3;
+          if (response.data.data.length) {
+            const data = response.data.data.map((site) => {
+              let rental = 0;
+              if (site.net_contract_amount) {
+                switch (Number(site.payment_term_id)) {
+                  case 1:
+                    rental = site.net_contract_amount;
+                    break;
+                  case 2:
+                  case 5:
+                    rental = site.net_contract_amount / 12;
+                    break;
+                  case 3:
+                    rental = site.net_contract_amount / 6;
+                    break;
+                  case 4:
+                    rental = site.net_contract_amount / 3;
+                }
               }
-            }
-            return {
-              ...site,
-              site_rental: rental,
-            };
-          });
-          await saveQuery("bookings", ["sites", "available"], data);
-          return data;
+              return {
+                ...site,
+                site_rental: rental,
+              };
+            });
+            await saveQuery("bookings", ["sites", "available"], data);
+            return data;
+          }
         }
       } catch (error) {
         const cached = await getQuery("bookings", ["sites", "available"]);
@@ -187,21 +199,34 @@ export const useAvailableSites = () => {
   });
 };
 
-export const useLatestSites = () => {
+export const useOverridenSiteEndDates = () => {
+  return useQuery({
+    queryKey: ["sites", "override"],
+    queryFn: async () => {
+      const response = await spAPI.get<ContractOverride[]>("sites", {
+        params: {
+          type: "override",
+        },
+      });
+      return response.data;
+    },
+    staleTime: 360000,
+    gcTime: 1000 * 60 * 30,
+  });
+}
+
+export const useLatestSites = (date?: string) => {
   return useQuery({
     queryKey: ["sites", "latest"],
     queryFn: async () => {
       try {
-        const response = await spAPI.get<LatestSites[]>("sites", {
+        const response = await wp.get<WorkplaceRes<LatestSites[]>>("latest", {
           params: {
-            type: "latest",
-          },
-        });
-        if (response.data) {
-          if (!Array.isArray(response.data)) {
-            throw new Error("System cannot connect to UNIS.");
+            date: date
           }
-          return response.data;
+        });
+        if (response.data.success) {
+          return response.data.data;
         }
       } catch (error) {
         catchError(error);
@@ -210,6 +235,7 @@ export const useLatestSites = () => {
     },
     throwOnError: true,
     staleTime: 60000,
+    enabled: !!date,
   });
 };
 
@@ -255,6 +281,53 @@ export const useOverrideContractEndDate = () => {
         variant: "success",
       });
     },
+  });
+};
+
+export const useInsertSite = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { columns: string[]; values: string[] }) => {
+      const formdata = new FormData();
+
+      formdata.append("data", JSON.stringify(data))
+      formdata.append("type", "new site")
+      const response = await spAPI.post("sites", formdata);
+
+      if (response.data) {
+        return response.data;
+      }
+    },
+    onSuccess: () => {
+      queryClient.refetchQueries({ queryKey: ['sites'] })
+      toast({
+        description: "Site imported successfully",
+        variant: "success",
+      });
+    },
+    onError: catchError,
+  });
+}
+export const useUpdateSite = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { columns: string[]; values: string[], site_id: number, type: string }) => {
+      const response = await spAPI.put("sites", {
+        ...data,
+      });
+
+      if (response.data) {
+        return response.data;
+      }
+    },
+    onSuccess: () => {
+      queryClient.refetchQueries({ queryKey: ['sites'] })
+      toast({
+        description: "Site updated successfully",
+        variant: "success",
+      });
+    },
+    onError: catchError,
   });
 };
 export const useUpdateRemarks = () => {
@@ -328,3 +401,32 @@ export const useUpdatePrice = () => {
     onError: catchError,
   });
 };
+
+export const useManageSite = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { site_code: string; action: string, newStatus: number }) => {
+      const response = await spAPI.put("sites", {
+        ...data,
+        type: "manage",
+      });
+
+      if (response.data) {
+        return response.data;
+      }
+    },
+    onSuccess: (_, variables) => {
+      queryClient.refetchQueries({ queryKey: ['sites'] })
+      const message = variables.action === "reactivate" ?
+        "Site has been reactivated." :
+        variables.action === "deactivate" ?
+          "Site has been deactivated" :
+          "Site has been dismantled/deleted."
+      toast({
+        description: message,
+        variant: "success",
+      });
+    },
+    onError: catchError,
+  });
+}
