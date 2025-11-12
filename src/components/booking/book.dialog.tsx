@@ -1,4 +1,4 @@
-import { ChangeEvent, FormEvent, ReactNode, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, ReactNode, useEffect, useMemo, useState } from "react";
 import {
   DialogContent,
   DialogFooter,
@@ -29,6 +29,7 @@ import { List } from "@/interfaces";
 import { MultiComboBox } from "../multicombobox";
 import { v4 } from "uuid";
 import { Loader2 } from "lucide-react";
+import InputNumber from "../ui/number-input";
 
 const CreateBookingDialog = ({
   onOpenChange,
@@ -45,35 +46,13 @@ const CreateBookingDialog = ({
   const { data: site_info } = useSite(site.site);
   const [send, onSend] = useState(false);
 
-  const defaultDate = useMemo(() => {
-    const bookings = site.bookings;
-    const endDate = site.end_date;
-    if (bookings.length > 0) {
-      const activeBooking = bookings.filter(b => b.booking_status !== "CANCELLED");
-
-      const ongoingBooking = activeBooking.reduce((latest, current) =>
-        new Date(current.date_to) > new Date(latest.date_to) ? current : latest, {} as Booking
-      );
-      if (Object.keys(ongoingBooking).length > 0) {
-        return addDays(new Date(ongoingBooking.date_to), 1);
-      }
-    }
-    if (site.adjusted_end_date) {
-      return addDays(new Date(site.adjusted_end_date), 1);
-    }
-    if (endDate) {
-      return new Date(endDate);
-    }
-
-    return new Date();
-  }, [site]);
   const [booking, setBooking] = useState({
     srp: String(site_info?.price ?? 0),
     booking_status: remainingDays && remainingDays > 60 ? "RENEWAL" : "NEW",
     client: remainingDays && remainingDays > 60 ? site.product ? `${site.client}(${site.product})` : "" : "",
     account_executive: [] as List[],
     start: new Date(site.date_from ?? new Date()),
-    end: defaultDate,
+    end: new Date(),
     monthly_rate: "0",
     remarks: "",
   });
@@ -129,32 +108,83 @@ const CreateBookingDialog = ({
   };
 
   const canSubmit = useMemo(() => {
-    return booking.client.length > 0 && booking.account_executive.length > 0 && Number(booking.monthly_rate) > 0 && differenceInDays(booking.end, booking.start) > 1;
+    return booking.client.length > 0 && booking.account_executive.length > 0 && differenceInDays(booking.end, booking.start) > 1;
   }, [booking])
+
+  useEffect(() => {
+    let endDate: string | Date | undefined = site.end_date;
+    const bookings = site.bookings;
+
+    if (bookings.length > 0) {
+      const activeBooking = bookings.filter(b => b.booking_status !== "CANCELLED");
+
+      const ongoingBooking = activeBooking.reduce((latest, current) =>
+        new Date(current.date_to) > new Date(latest.date_to) ? current : latest, {} as Booking
+      );
+      if (Object.keys(ongoingBooking).length > 0) {
+        endDate = addDays(new Date(ongoingBooking.date_to), 1);
+      }
+    }
+    if (site.adjusted_end_date) {
+      endDate = addDays(new Date(site.adjusted_end_date), 1);
+    }
+    if (endDate) {
+      endDate = addDays(new Date(endDate), 1);
+    }
+
+    setBooking(prev => {
+      if (!prev) return prev;
+
+      return {
+        ...prev,
+        end: (endDate as Date) ?? new Date()
+      }
+    })
+  }, [site])
+
+  useEffect(() => {
+    const statusesStartsFromEndDate = ["NEW", "RENEWAL", "QUEUEING", "SPECIAL EXECUTION"];
+    if (statusesStartsFromEndDate.includes(booking.booking_status)) {
+      setBooking(prev => {
+        if (!prev) return prev;
+
+        return {
+          ...prev,
+          start: prev.end,
+        }
+      })
+    } else {
+      setBooking(prev => {
+        if (!prev) return prev;
+
+        return {
+          ...prev,
+          start: new Date(site.date_from ?? new Date()),
+        }
+      })
+    }
+
+  }, [site.date_from, booking.booking_status])
 
   return (
     <DialogContent aria-describedby={undefined}>
       <DialogHeader>
-        {console.log(defaultDate)}
         <DialogTitle>Create Booking for {site.site}</DialogTitle>
       </DialogHeader>
       <form className="space-y-4" onSubmit={onSubmit}>
         <FormGroup>
           <Label htmlFor="srp">SRP</Label>
-          <Input
-            id="srp"
+          <InputNumber id="srp"
             value={booking.srp}
             required
             onChange={onChange}
-            disabled={send}
-          />
+            disabled={send} />
         </FormGroup>
         <FormGroup>
           <Label htmlFor="booking_status">Booking Status</Label>
           <Select
             disabled={send}
             onOpenChange={(open) => {
-              console.log(open);
               if (!open) {
                 document.body.style.pointerEvents = "auto";
               }
@@ -173,7 +203,7 @@ const CreateBookingDialog = ({
             </SelectTrigger>
             <SelectContent>
               {(remainingDays && remainingDays > 60
-                ? ["RENEWAL", "QUEUEING", "PRE-TERMINATION", "CHANGE OF CONTRACT PERIOD"]
+                ? ["RENEWAL", "QUEUEING", "PRE-TERMINATION", "CHANGE OF CONTRACT PERIOD/DURATION"]
                 : [
                   "NEW",
                   "RENEWAL",
@@ -181,7 +211,7 @@ const CreateBookingDialog = ({
                   "RELOCATION",
                   "PRE-TERMINATION",
                   "SPECIAL EXECUTION",
-                  "CHANGE OF CONTRACT PERIOD",
+                  "CHANGE OF CONTRACT PERIOD/DURATION",
                 ]
               ).map((opt) => (
                 <SelectItem className="hover:bg-slate-50" value={opt} key={opt}>
@@ -236,7 +266,7 @@ const CreateBookingDialog = ({
           <Label className="mr-auto">Duration</Label>
           <div className="flex justify-evenly items-center gap-4">
             <DatePicker
-              disabled={send}
+              disabled={send || booking.booking_status === "PRE-TERMINATION"}
               date={booking.start}
               min={booking.start}
               onDateChange={(value) => {
@@ -265,7 +295,7 @@ const CreateBookingDialog = ({
         </FormGroup>
         <FormGroup>
           <Label htmlFor="monthly_rate">Monthly Rate</Label>
-          <Input
+          <InputNumber
             disabled={send}
             id="monthly_rate"
             value={booking.monthly_rate}

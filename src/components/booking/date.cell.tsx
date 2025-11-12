@@ -50,24 +50,33 @@ const DateCell = ({ row }: CellContext<BookingTable, unknown>) => {
     );
   };
 
-  const initialDate = useMemo(() => {
-    if (!endDate) return null;
-    const activeBooking = bookings.find(
+  const originalBookingDate = useMemo(() => {
+    if (!endDate) return undefined;
+    const ongoingBookings = bookings.filter(
       (booking) => new Date(booking.date_from) <= new Date() && booking.booking_status !== "CANCELLED"
     );
 
+    const activeBooking = ongoingBookings.find(booking => booking.booking_status !== "QUEUEING");
+
     if (activeBooking) {
-      if (adjustment) {
-        if (new Date(activeBooking.date_to) < new Date(adjustment)) {
-          return new Date(activeBooking.date_to)
-        }
-        return new Date(adjustment)
-      }
       return new Date(activeBooking.date_to)
     }
 
-    return new Date(adjustment ?? endDate);
-  }, [adjustment, bookings, endDate]);
+    return new Date(endDate);
+  }, [bookings, endDate])
+
+  const initialDate = useMemo(() => {
+    if (!originalBookingDate) return undefined;
+
+    if (adjustment) {
+      if (originalBookingDate > new Date(adjustment)) {
+        return originalBookingDate;
+      }
+      return new Date(adjustment)
+    }
+
+    return new Date(originalBookingDate);
+  }, [adjustment, originalBookingDate]);
 
   return (
     <div className="relative group text-[0.6rem] whitespace-nowrap pr-4 transition-all">
@@ -96,8 +105,8 @@ const DateCell = ({ row }: CellContext<BookingTable, unknown>) => {
               </DialogTrigger>
             </TooltipTrigger>
             {adjustment && (
-              <TooltipContent className="bg-main-100/30 backdrop-blur-sm border-2 border-white/10 p-2 rounded">
-                <span className="mix-blend-color-dodge text-white font-semibold">
+              <TooltipContent className="max-w-[300px] text-wrap">
+                <span>
                   {row.original.adjustment_reason}
                 </span>
               </TooltipContent>
@@ -108,16 +117,16 @@ const DateCell = ({ row }: CellContext<BookingTable, unknown>) => {
                   <DialogTitle>Override for {row.original.site}</DialogTitle>
                   <div className="flex flex-col lg:flex-row items-center gap-4">
                     <div className="w-1/2">
-                      <Label>Original Date: </Label>
+                      <Label>Original Booking End Date: </Label>
                       <p className="text-sm">
-                        {initialDate ? format(initialDate, "PPP") : "---"}
+                        {originalBookingDate ? format(originalBookingDate, "PPP") : "---"}
                       </p>
                     </div>
                     <div className="w-1/2">
-                      <Label>Adjusted Date: </Label>
+                      <Label>Adjusted End Date: </Label>
                       <DatePicker
                         date={data.date}
-                        min={initialDate}
+                        min={originalBookingDate}
                         onDateChange={(date) =>
                           setData((prev) => {
                             return {

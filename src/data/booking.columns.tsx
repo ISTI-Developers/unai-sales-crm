@@ -6,10 +6,37 @@ import { Booking } from "@/hooks/useBookings";
 import { BookingTable } from "@/interfaces/sites.interface";
 import { formatAmount } from "@/lib/format";
 import { ColumnDef } from "@tanstack/react-table";
-import { differenceInDays } from "date-fns";
+import { addDays, differenceInDays } from "date-fns";
 
 export const columns: ColumnDef<BookingTable>[] = [
   {
+    accessorFn: (row) => {
+      const item = row;
+      let endDate = item.end_date;
+      let remainingDays = item.remaining_days;
+
+      const activeBooking = item.bookings.find(
+        (b) => new Date(b.date_from) <= new Date() && b.booking_status !== "CANCELLED"
+      );
+
+      endDate = activeBooking
+        ? item.adjusted_end_date
+          ? new Date(activeBooking.date_from) < new Date(item.adjusted_end_date)
+            ? activeBooking.date_from
+            : item.adjusted_end_date
+          : activeBooking.date_to
+        : item.adjusted_end_date ?? endDate;
+
+      remainingDays = endDate
+        ? differenceInDays(new Date(endDate), new Date())
+        : undefined;
+
+      const status =
+        !remainingDays || remainingDays <= 60 ? "Available" : "Booked";
+
+      // Return a clean, filterable string
+      return `${item.structure} | ${status} | ${item.address} | ${item.facing}`;
+    },
     accessorKey: "structure",
     header: "Structure",
     cell: AddressCell,
@@ -57,27 +84,36 @@ export const columns: ColumnDef<BookingTable>[] = [
     },
   },
   {
-    accessorKey: "product",
-    header: "client",
-    cell: ({ row }) => {
-      const bookings: Booking[] = row.original.bookings;
-      const client: string = row.original.client ?? "";
-      let item: string = row.getValue("product");
+    id: "client", // required when using accessorFn
+    header: "Client",
+    accessorFn: (row) => {
+      const bookings: Booking[] = row.bookings;
+      const client: string = row.client ?? "";
+      let item = row.product ?? "";
 
+      // build display label
       item = `${client} ${item ? `(${item})` : "---"}`;
+
+      // check for active bookings
       if (
-        bookings.filter((booking) => booking.booking_status !== "CANCELLED")
-          .length > 0
+        bookings.some((b) => b.booking_status !== "CANCELLED")
       ) {
-        const activeBooking = bookings.find(
-          (booking) => new Date(booking.date_from) <= new Date()
+        const ongoingBookings = bookings.filter(
+          (booking) => new Date(booking.date_from) <= new Date() && booking.booking_status !== "CANCELLED"
         );
+
+        const activeBooking = ongoingBookings.find(booking => booking.booking_status !== "QUEUEING");
         if (activeBooking) {
           item = activeBooking.client;
         }
       }
-      return <p className="text-[.6rem] text-start">{item ?? "---"}</p>;
+
+      return item ?? "---";
     },
+    cell: ({ getValue }) => (
+      <p className="text-[.6rem] text-start">{getValue<string>()}</p>
+    ),
+    filterFn: "includesString", // optional but makes it text-filterable
   },
   {
     accessorKey: "end_date",
@@ -92,9 +128,11 @@ export const columns: ColumnDef<BookingTable>[] = [
       let endDate = item.end_date;
       let remainingDays = item.remaining_days;
 
-      const activeBooking = item.bookings.find(
+      const ongoingBookings = item.bookings.filter(
         (booking) => new Date(booking.date_from) <= new Date() && booking.booking_status !== "CANCELLED"
       );
+
+      const activeBooking = ongoingBookings.find(booking => booking.booking_status !== "QUEUEING");
       endDate = activeBooking ?
         item.adjusted_end_date ?
           new Date(activeBooking.date_from) < new Date(item.adjusted_end_date) ?
@@ -104,7 +142,7 @@ export const columns: ColumnDef<BookingTable>[] = [
         : item.adjusted_end_date ?? endDate;
 
       remainingDays = endDate ? differenceInDays(
-        new Date(endDate),
+        addDays(new Date(endDate), 1),
         new Date()
       ) : undefined;
 
@@ -126,9 +164,11 @@ export const columns: ColumnDef<BookingTable>[] = [
       let endDate = item.end_date;
       let daysVacant = item.days_vacant ?? 0;
 
-      const activeBooking = item.bookings.find(
+      const ongoingBookings = item.bookings.filter(
         (booking) => new Date(booking.date_from) <= new Date() && booking.booking_status !== "CANCELLED"
       );
+
+      const activeBooking = ongoingBookings.find(booking => booking.booking_status !== "QUEUEING");
       endDate = activeBooking ?
         item.adjusted_end_date ?
           new Date(activeBooking.date_from) < new Date(item.adjusted_end_date) ?

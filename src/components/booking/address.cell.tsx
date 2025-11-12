@@ -8,9 +8,12 @@ export const AddressCell = ({ row }: CellContext<BookingTable, unknown>) => {
   let endDate = item.end_date;
   let remainingDays = item.remaining_days;
 
-  const activeBooking = item.bookings.find(
+  const ongoingBookings = item.bookings.filter(
     (booking) => new Date(booking.date_from) <= new Date() && booking.booking_status !== "CANCELLED"
   );
+  
+  const activeBooking = ongoingBookings.find(booking => booking.booking_status !== "QUEUEING");
+  
   endDate = activeBooking ?
     item.adjusted_end_date ?
       new Date(activeBooking.date_from) < new Date(item.adjusted_end_date) ?

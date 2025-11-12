@@ -103,9 +103,6 @@ const AddNewBooking = () => {
           </Link>
         </Button>
       </header>
-      <main>
-        <form action=""></form>
-      </main>
       <form onSubmit={onSubmit} autoComplete="off" className="grid gap-4">
         <FormSection title="Site Information">
           <FormField id="area">
