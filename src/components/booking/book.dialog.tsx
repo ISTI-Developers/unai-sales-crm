@@ -30,6 +30,7 @@ import { MultiComboBox } from "../multicombobox";
 import { v4 } from "uuid";
 import { Loader2 } from "lucide-react";
 import InputNumber from "../ui/number-input";
+import { Notification, sendNotification } from "@/hooks/useNotifications";
 
 const CreateBookingDialog = ({
   onOpenChange,
@@ -92,8 +93,31 @@ const CreateBookingDialog = ({
         old_client: site.product ? `${site.client}(${site.product})` : "---",
       },
       {
-        onSuccess: (data) => {
+        onSuccess: async (data, variables) => {
           if (data?.acknowledged) {
+
+            if (import.meta.env.MODE === "development") {
+
+              let body = `Site ${site.site} has a new booking.`;
+
+              if (variables.booking_status === "CANCELLED") {
+                body = `Site ${site.site}'s booking has been cancelled.`
+              } else if (variables.booking_status === "QUEUEING") {
+                body = `A reservation for site ${site.site} has been made.`
+              } else if (variables.booking_status === "RENEWAL") {
+                body = `Site ${site.site}'s booking has been renewed.`
+              }
+
+              const response = await notifyBooking(body, data.id!);
+              if (response) {
+                toast({
+                  variant: "success",
+                  title: "Booking created!",
+                  description: "Successfully created a booking!",
+                });
+              }
+            }
+          } else {
             toast({
               variant: "success",
               title: "Booking created!",
@@ -107,10 +131,23 @@ const CreateBookingDialog = ({
     );
   };
 
+  const notifyBooking = async (body: string, id: number) => {
+    const notification: Notification = {
+      title: "Site Bookings Alert!",
+      recipients: [...salesUnits.map(u => Number(u.id)), 1],
+      body: body,
+      tag: "booking",
+      data: {
+        url: `/booking?t=bookings&b=${id}`,
+      },
+    }
+
+    return await sendNotification(notification);
+  }
+
   const canSubmit = useMemo(() => {
     return booking.client.length > 0 && booking.account_executive.length > 0 && differenceInDays(booking.end, booking.start) > 1;
   }, [booking])
-
   useEffect(() => {
     let endDate: string | Date | undefined = site.end_date;
     const bookings = site.bookings;

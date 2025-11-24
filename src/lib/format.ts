@@ -15,7 +15,7 @@ export function formatNumber(num: string | number) {
   return Intl.NumberFormat("en-PH", {
     style: "decimal",
     maximumFractionDigits: 4,
-  }).format(num);
+  }).format(Number(num));
 }
 
 export function formatTermDetails(

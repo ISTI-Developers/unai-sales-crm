@@ -90,7 +90,6 @@ export const columns: ColumnDef<SiteBooking>[] = [
             const { access } = useAccess("booking.viewBookings");
             const booking: SiteBooking = row.original;
 
-            console.log(access);
             return <p className="text-[0.6rem] flex flex-col leading-snug">
                 <span>{`${booking.term_duration} ${!access ? `` : `@ ${booking.monthly_rate}`}`}</span>
                 {access && <span className="text-[0.5rem]">{`(from SRP of ${booking.srp})`}</span>}

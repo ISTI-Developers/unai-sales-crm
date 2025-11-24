@@ -14,7 +14,7 @@ const ClientAccountDistribution = () => {
         if (!clients || isLoading || !user) return undefined;
         const roleID = Number(user.role.role_id);
         const companyID = Number(user.company?.ID);
-        if ([1, 10, 11].includes(roleID)) {
+        if ([1, 3, 10, 11].includes(roleID)) {
             return clients;
         }
         const companyClients = clients.filter(d => d.company_id === companyID);
@@ -31,7 +31,7 @@ const ClientAccountDistribution = () => {
 
         // ✅ Group clients by unit
         const groupedClients = filteredClients.reduce((prev, curr) => {
-            const unit = [1, 10, 11].includes(user.role.role_id) ? curr.sales_unit : (curr.account_code || "Unknown").toUpperCase(); // fallback
+            const unit = [1, 3, 10, 11].includes(user.role.role_id) ? curr.sales_unit : (curr.account_code || "Unknown").toUpperCase(); // fallback
             if (!prev[unit]) prev[unit] = [];
             prev[unit].push(curr);
             return prev;

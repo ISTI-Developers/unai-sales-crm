@@ -190,19 +190,21 @@ export function DeckProvider({ children }: ProviderProps) {
         const siteBookings = getSiteBookings(item.site);
         const available = getAvailability(siteBookings);
 
-        let availability = item.end_date ?? null;
+        let availability = item.end_date ? format(addDays(new Date(item.end_date),1),"MMM d, yyyy") : null;
 
         if (available && !adjustment) {
-          availability = available;
+          availability = format(addDays(new Date(available), 1), "MMM d, yyyy");
         }
         if (adjustment && !available && item.end_date) {
           if (new Date(adjustment.adjusted_end_date) > new Date(item.end_date)) {
-            availability = adjustment.adjusted_end_date;
+            availability = format(addDays(new Date(adjustment.adjusted_end_date), 1), "MMM d, yyyy");
           }
         }
         if (adjustment && available) {
           if (new Date(adjustment.adjusted_end_date) > new Date(available)) {
-            availability = adjustment.adjusted_end_date;
+            availability = format(addDays(new Date(adjustment.adjusted_end_date), 1), "MMM d, yyyy");
+          } else {
+            availability = format(addDays(new Date(available), 1), "MMM d, yyyy");
           }
         }
 
@@ -227,7 +229,10 @@ export function DeckProvider({ children }: ProviderProps) {
 
     const finalSites = [...mappedAvailableSites ?? [], ...mappedSites];
 
-    return finalSites;
+    const uniqueSites = [
+      ...new Map(finalSites.map(item => [item.ID, item])).values()
+    ];
+    return uniqueSites;
   }, [isLoading, data, rawSites, bookings, adjustments]);
 
 

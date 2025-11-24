@@ -138,6 +138,24 @@ export const useSiteImages = (id?: string) => {
   });
 };
 
+export const useImageFiles = (link?: string) => {
+  return useQuery({
+    queryKey: ["sites", "images", link],
+    queryFn: async () => {
+      const response = await wp.get(`files?path=${link}`, {
+        responseType: "blob", // This ensures binary data is received
+      });
+      const blob = response.data;
+      return await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = (err) => reject(err);
+        reader.readAsDataURL(blob);
+      });
+    },
+    enabled: !!link,
+  })
+}
 export const useAvailableSites = () => {
   const companyID = localStorage.getItem("companyID");
 

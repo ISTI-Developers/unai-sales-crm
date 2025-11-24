@@ -9,9 +9,9 @@ import { getQuery } from "@/providers/api";
 import { useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence } from "framer-motion";
 import { Plus } from "lucide-react";
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Helmet } from "react-helmet";
-import { Link, Navigate, Route, Routes } from "react-router-dom";
+import { Link, Navigate, Route, Routes, useSearchParams } from "react-router-dom";
 
 const AddNewBooking = lazy(() => import("@/pages/booking/add.booking"));
 const PresiteBookings = lazy(
@@ -44,11 +44,22 @@ const Booking = () => {
 const Main = () => {
   const queryClient = useQueryClient();
   const { isError, fetchStatus, error } = useAvailableSites();
+  const [params, setParams] = useSearchParams();
   const { access: add } = useAccess("booking.add");
   const hasCache = localStorage.getItem("cachedBookings");
+  const [value, setValue] = useState("all");
 
+  const onValueChange = (val: string) => {
+    setValue(val);
+    setParams({ t: val });
+  }
 
-
+  useEffect(() => {
+    const tab = params.get("t");
+    if (tab) {
+      setValue(tab);
+    }
+  }, [params]);
 
   useEffect(() => {
     if (!hasCache) return;
@@ -66,11 +77,11 @@ const Main = () => {
   return (
     <AnimatePresence>
       <Page>
-        <Tabs defaultValue="all">
+        <Tabs value={value} defaultValue="all" onValueChange={onValueChange}>
           <TabsList className="w-full justify-start px-1 gap-1">
             <TabsTrigger value="all" className="text-xs uppercase data-[state=active]:bg-zinc-200">Site Availability</TabsTrigger>
             <TabsTrigger value="bookings" className="text-xs uppercase data-[state=active]:bg-zinc-200">Site Bookings</TabsTrigger>
-            <TabsTrigger value="pre" className="text-xs uppercase data-[state=active]:bg-zinc-200">Other (pre-site) Bookings</TabsTrigger>
+            <TabsTrigger value="other" className="text-xs uppercase data-[state=active]:bg-zinc-200">Other Bookings</TabsTrigger>
           </TabsList>
           <TabsContent value="all">
             <Suspense fallback={<>Loading tab...</>}>
@@ -82,7 +93,7 @@ const Main = () => {
               <SiteBookingsTab />
             </Suspense>
           </TabsContent>
-          <TabsContent value="pre">
+          <TabsContent value="other">
             <div className="flex gap-4">
 
               {add && (

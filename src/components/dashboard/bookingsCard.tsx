@@ -11,7 +11,7 @@ import { formatAmount } from '@/lib/format';
 import { Calendar, MapPin, PhilippinePeso, Quote, User, Users } from 'lucide-react';
 import { Card, CardContent, CardTitle } from '../ui/card';
 
-type BookingCard = (Booking & { facing: string, address: string, size: string });
+export type BookingCard = (Booking & { facing: string, address: string, size: string });
 const BookingsCard = () => {
     const { data, isLoading } = useBookings();
     const { data: sites } = useSites();

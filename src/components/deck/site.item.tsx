@@ -8,13 +8,12 @@ import { fetchImage } from "@/lib/fetch";
 import { SiteImage } from "@/interfaces/sites.interface";
 import { Button } from "../ui/button";
 import { Trash2 } from "lucide-react";
-import { useActiveUNISURL } from "@/hooks/useSettings";
 
 const SiteItem = ({ site }: { site: DeckSite }) => {
-  const { data: images } = useSiteImages(site.site_code);
+  const imageResult = useSiteImages(site.site_code);
   // const { data: impressions } = useSiteImpressions(site);
-  const { data: unisURL, isLoading } = useActiveUNISURL();
   const [siteImages, setSiteImages] = useState<SiteImage[]>([]);
+  const [loading, setLoading] = useState(false);
   const { setSelectedOptions, setSelectedSites, page } = useDeck();
 
   const onDelete = () => {
@@ -26,24 +25,21 @@ const SiteItem = ({ site }: { site: DeckSite }) => {
     });
   };
   useEffect(() => {
-    
-    if (!unisURL) return;
+
     let isCancelled = false;
     const objectUrls: string[] = []; // Track all created object URLs
 
     const setup = async () => {
-      if (!images) return;
+      if (!imageResult.data) return;
 
-      const processedImagePromises = images.map(async (image) => {
-        const upload_path =
-          unisURL.path + image.upload_path;
-        const imgUrl = await fetchImage(upload_path); // returns object URL
+      const processedImagePromises = imageResult.data.map(async (image) => {
+        setLoading(true)
+        const imgUrl = await fetchImage(image.upload_path); // returns object URL
         if (imgUrl) {
           objectUrls.push(imgUrl); // Track it for cleanup
         }
         return {
           ...image,
-          upload_path,
           url: imgUrl ?? "",
         };
       });
@@ -51,6 +47,7 @@ const SiteItem = ({ site }: { site: DeckSite }) => {
       const processedImages = await Promise.all(processedImagePromises);
       if (!isCancelled) {
         setSiteImages(processedImages);
+        setLoading(false);
       }
     };
 
@@ -60,7 +57,7 @@ const SiteItem = ({ site }: { site: DeckSite }) => {
       isCancelled = true;
       objectUrls.forEach((url) => URL.revokeObjectURL(url)); // Clean up blob URLs
     };
-  }, [images, unisURL, isLoading, page]);
+  }, [imageResult.data, page]);
   return (
     <div
       className="bg-slate-100 rounded-xl flex flex-col gap-4"
@@ -81,7 +78,7 @@ const SiteItem = ({ site }: { site: DeckSite }) => {
       <div className="p-4 flex flex-col gap-4 pt-0">
         <BasicSection data={site} />
         <LocationSection data={site} />
-        <ImagesSection site_code={site.site_code} data={siteImages} />
+        <ImagesSection site_code={site.site_code} images={siteImages} size={imageResult.data?.length ?? 0} isLoading={loading} isFetching={imageResult.isFetching} />
       </div>
     </div>
   );

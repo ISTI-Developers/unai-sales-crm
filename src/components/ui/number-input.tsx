@@ -16,7 +16,7 @@ const InputNumber = React.forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLI
         if (onChange) {
             const syntheticEvent = {
                 ...e,
-                target: { ...e.target, value: raw },
+                target: { ...e.target, id: props.id, value: raw },
             };
             onChange(syntheticEvent as React.ChangeEvent<HTMLInputElement>);
         }
@@ -40,12 +40,13 @@ const InputNumber = React.forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLI
 
     return (
         <Input
+            {...props}
+            id={props.id}
             value={display}
             onChange={handleChange}
             inputMode="decimal"
             // placeholder=""
             ref={ref}
-            {...props}
         />
     )
 })

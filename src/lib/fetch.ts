@@ -6,7 +6,6 @@ import { List } from "@/interfaces";
 import { Client } from "@/interfaces/client.interface";
 import { User } from "@/interfaces/user.interface";
 import { ChartData, SourceFilter, WidgetType } from "@/misc/dashboardLayoutMap";
-import axios from "axios";
 import { chartColors } from "./utils";
 import { useStatuses } from "@/hooks/useClientOptions";
 import { useAvailableSites, useSites } from "@/hooks/useSites";
@@ -14,6 +13,7 @@ import { Booking, useBookings } from "@/hooks/useBookings";
 import { differenceInDays } from "date-fns";
 import { AvailableSites, Site } from "@/interfaces/sites.interface";
 import { useCurrentWeekReport } from "@/hooks/useDashboard";
+import { wp } from "@/providers/api";
 
 export async function fetchFromLark(url: string, options: RequestInit) {
   const response = await fetch(url, options);
@@ -27,7 +27,7 @@ export const fetchImage: (
   imageLink: string
 ) => Promise<string | undefined> = async (imageLink: string) => {
   try {
-    const response = await axios.get(imageLink, {
+    const response = await wp.get(`files?path=${imageLink}`, {
       responseType: "blob", // This ensures binary data is received
     });
 

@@ -1,27 +1,36 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { SiteImage } from "@/interfaces/sites.interface";
 import { Container } from "./container.deck";
 import { ScrollArea } from "../ui/scroll-area";
 import { useEffect, useMemo } from "react";
 import { useDeck } from "@/providers/deck.provider";
 import { CircleCheck } from "lucide-react";
+import { Skeleton } from "../ui/skeleton";
 
 const ImagesSection = ({
   site_code,
-  data,
+  images,
+  isFetching,
+  isLoading,
+  size
 }: {
   site_code: string;
-  data?: SiteImage[];
+  images?: SiteImage[];
+  isLoading: boolean;
+  isFetching: boolean;
+  size: number
 }) => {
   const { selectedOptions, setSelectedOptions } = useDeck();
 
+
   // 🔹 On mount: restore cached selection
   useEffect(() => {
-    if (!data || data.length === 0) return;
+    if (!images || images.length === 0) return;
 
     const cached = localStorage.getItem(`${site_code}_selected`);
     if (cached) {
       const storedID = JSON.parse(cached) as string;
-      const selectedImage = data.find(img => img.upload_id === Number(storedID));
+      const selectedImage = images.find(img => img.upload_id === Number(storedID));
 
       setSelectedOptions((prev) =>
         prev.map((site) =>
@@ -35,12 +44,12 @@ const ImagesSection = ({
       setSelectedOptions((prev) =>
         prev.map((site) =>
           site.site_code === site_code
-            ? { ...site, images: data[0] }
+            ? { ...site, images: images[0] }
             : site
         )
       );
     }
-  }, [site_code, data]);
+  }, [site_code, images]);
 
   useEffect(() => {
     console.count("render")
@@ -59,11 +68,13 @@ const ImagesSection = ({
     <Container>
       <ScrollArea className="max-h-[30vh] overflow-y-auto">
         <div className="flex flex-wrap flex-1 gap-4 w-full justify-center items-center text-black">
-          {data && data.length > 0
-            ? data.map((item) => (
-              <ImageItem key={item.upload_id} item={item} site_code={site_code} />
-            ))
-            : "No images found."}
+          {(isFetching || isLoading) ?
+            Array(size).fill(0).map((_, index) => <Skeleton key={index} className="w-full aspect-video max-w-[250px] h-[150px]" />) :
+            images && images.length > 0
+              ? images.map((item) => (
+                <ImageItem key={item.upload_id} item={item} site_code={site_code} />
+              ))
+              : "No images found."}
         </div>
       </ScrollArea>
     </Container>

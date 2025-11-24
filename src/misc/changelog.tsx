@@ -10,6 +10,14 @@ import {
 
 const Changelog = () => {
   const changes = {
+    "1.8.4": [
+      "Added image loaders.",
+      "Updated the logic of retrieving site images."
+    ],
+    "1.8.3": [
+      "Removed redundancies on site availability.",
+      "Fixed an issue where booking monthly rates is always 0",
+    ],
     "1.8.2": [
       "fix client name on reports page.",
       "fix the restriction of remarks and price accesses.",

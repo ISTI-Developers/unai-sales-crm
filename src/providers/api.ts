@@ -6,11 +6,11 @@ import { openDB } from "idb";
 
 const mainURL = import.meta.env.VITE_SERVER;
 const OOHURL = import.meta.env.VITE_OOH_SERVER;
-const WPURL = import.meta.env.VITE_WP_UNIS;
+const WPURL = import.meta.env.VITE_WP;
 
 export const spAPI = axios.create({ baseURL: mainURL, timeout: 120000 });
 export const ooh = axios.create({ baseURL: OOHURL, timeout: 120000 });
-export const wp = axios.create({ baseURL: WPURL, timeout: 120000 });
+export const wp = axios.create({ baseURL: `${WPURL}unis/`, timeout: 120000 });
 
 spAPI.interceptors.request.use(
   (config) => {

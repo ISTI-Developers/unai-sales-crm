@@ -18,7 +18,7 @@ const SiteSelection = () => {
         return (
           <div
             role="button"
-            key={site.ID}
+            key={site.site_code}
             onClick={() => {
               setSelectedSites((prev) => {
                 if (prev.find((item) => item.site_code === site.site_code)) {

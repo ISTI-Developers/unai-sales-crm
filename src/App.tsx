@@ -11,17 +11,47 @@ import { LogProvider } from "./providers/log.provider";
 import { SettingsProvider } from "./providers/settings.provider";
 import Changelog from "./misc/changelog";
 import Advisory from "./misc/advisory";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState } from "react";
 import ScreenLoader from "./misc/ScreenLoader";
+import { registerServiceWorker, subscribeUserToPush } from "./lib/notifications";
+import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "./components/ui/alert-dialog";
 
 const Home = lazy(() => import("./views/Home"));
 const Banner = lazy(() => import("./misc/banner"));
 
 function App() {
   const location = useLocation();
+  const hasSubscribed = localStorage.getItem("subscribed");
+  const [open, setOpen] = useState(Boolean(!hasSubscribed))
+
+  const onSubscribe = async () => {
+    try {
+      const registration = await registerServiceWorker();
+      if (registration) {
+        await subscribeUserToPush(registration);
+        localStorage.setItem("subscribed", "true");
+        setOpen(false);
+        console.log("Push notification ready");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
   return (
     <>
       <Banner />
+      {import.meta.env.MODE === "development" && hasSubscribed === null && <AlertDialog open={open} onOpenChange={setOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Stay Updated!</AlertDialogTitle>
+            <AlertDialogDescription>Allow notifications to receive important updates from Sales Platform.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={onSubscribe}>Allow</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>}
       <ToastProvider duration={3000}>
         <LogProvider>
           <AuthProvider>

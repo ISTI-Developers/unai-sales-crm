@@ -72,6 +72,8 @@ const Main = () => {
   const { access: add } = useAccess("clients.add");
   const { data, isLoading, fetchStatus } = useClients();
 
+  const companyID = localStorage.getItem("companyID");
+
   const clients: ClientTable[] = useMemo(() => {
     if (!data || isLoading) return [];
     const grouped = data.reduce((acc, item) => {
@@ -126,14 +128,28 @@ const Main = () => {
       return client; // return as-is if has children
     });
 
+    const sortedByCompany = groupedValues.sort((a, b) => {
+      const aIsCompany = String(a.company_id) === companyID;
+      const bIsCompany = String(b.company_id) === companyID;
 
+      if (aIsCompany && !bIsCompany) return -1;
+      if (!aIsCompany && bIsCompany) return 1;
+
+      return 0; // keep existing order for others
+    });
 
     const ORDER = ["HOT", "ACTIVE", "ON/OFF", "FOR ELECTIONS", "POOL"];
-    return groupedValues.sort(
+    return sortedByCompany.sort(
       (a, b) => ORDER.indexOf(a.status_name as string) - ORDER.indexOf(b.status_name as string)
     );
-  }, [clients])
+  }, [clients, companyID])
 
+  const filteredColumns = useMemo(() => {
+    if (companyID !== "5") {
+      return columns.filter(col => col.id !== "sales_unit")
+    }
+    return columns;
+  }, [companyID])
   if (isLoading) {
     return <>{fetchStatus}...</>;
   }
@@ -144,7 +160,7 @@ const Main = () => {
       <AnimatePresence>
         <Page className="w-full">
           {data && (
-            <DataTable columns={columns} data={clientsWithChildren} size={100} getSubRows={(row: ClientTable) => row.children}>
+            <DataTable columns={filteredColumns} data={clientsWithChildren} size={100} getSubRows={(row: ClientTable) => row.children}>
               {add && (
                 <header className="flex items-center gap-4">
                   <Button
