@@ -117,23 +117,23 @@ const Login = () => {
             {/* <h3 className="text-xs font-light text-slate-300">Making lives meaningful since 1937 💅</h3> */}
           </CardHeader>
           <CardContent>
-            <form className="flex flex-col ~gap-8/6" onSubmit={onSubmit}>
+            <form className="flex flex-col gap-6" onSubmit={onSubmit}>
               <Input
                 type="text"
                 placeholder="Email or Username"
                 required
                 ref={usernameRef}
-                className="w-full ~h-16/12 ~pl-6/4 rounded-xl lg:rounded-md focus-visible:ring-0 shadow-none backdrop-blur"
+                className="w-full rounded-xl h-12 lg:rounded-md focus-visible:ring-0 shadow-none backdrop-blur"
               />
 
               {/* PASSWORD FIELD */}
-              <div className="border w-full ~h-16/12 rounded-xl lg:rounded-md flex items-center overflow-hidden backdrop-blur">
+              <div className="border w-full rounded-xl h-12 lg:rounded-md flex items-center overflow-hidden backdrop-blur">
                 <Input
                   type={isEyeVisible ? "text" : "password"}
                   placeholder="Password"
                   required
                   ref={passwordRef}
-                  className="border-none shadow-none ~pl-6/4 focus-visible:ring-0"
+                  className="border-none shadow-none focus-visible:ring-0"
                 />
                 <Button
                   type="button"
@@ -167,7 +167,7 @@ const Login = () => {
               <Button
                 type="submit"
                 disabled={hasSubmitted}
-                className="uppercase w-full ~h-16/12 rounded-xl lg:rounded-md bg-main-700 hover:bg-main-500"
+                className="uppercase w-full h-12 rounded-xl lg:rounded-md bg-main-700 hover:bg-main-500"
               >
                 {hasSubmitted && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
