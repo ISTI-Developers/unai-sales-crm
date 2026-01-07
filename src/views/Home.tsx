@@ -1,4 +1,3 @@
-import Sidebar from "@/components/dashboard/sidebar.dashboard";
 import { Helmet } from "react-helmet";
 import { Navigate, Route, Routes } from "react-router-dom";
 import InitialSetup from "@/components/home/initialSetup.home";
@@ -8,11 +7,12 @@ import { Suspense } from "react";
 import ErrorPage from "@/misc/ErrorPage";
 import { useSettings } from "@/providers/settings.provider";
 import { LoaderCircle } from "lucide-react";
-import { SidebarProvider } from "@/providers/sidebar.provider";
+// import { SidebarProvider } from "@/providers/sidebar.provider";
 import { useAuth } from "@/providers/auth.provider";
 import { RolesProvider } from "@/providers/roles.provider";
 import Container from "@/misc/Container";
 import useLinks from "@/data/links";
+import HomeSidebar from "@/components/sidebar/sidebar.home";
 
 const Home = () => {
   const { user } = useAuth();
@@ -34,12 +34,12 @@ const Home = () => {
         )}
       </AnimatePresence>
       <RolesProvider>
-        <SidebarProvider>
-          <main className="relative h-screen">
+        <HomeSidebar>
+          <main className="relative h-screen w-full">
             <Helmet>
               <title>Home | Sales Platform</title>
             </Helmet>
-            <Sidebar />
+            {/* <Sidebar /> */}
             <HomeRoutes />
             <AnimatePresence mode="wait">
               {user &&
@@ -48,7 +48,7 @@ const Home = () => {
                 )}
             </AnimatePresence>
           </main>
-        </SidebarProvider>
+        </HomeSidebar>
       </RolesProvider>
     </>
   );

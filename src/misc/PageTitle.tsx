@@ -7,6 +7,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import React from "react";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 const PageTitle = ({ title }: { title: string }) => {
   const location = useLocation();
@@ -17,44 +18,47 @@ const PageTitle = ({ title }: { title: string }) => {
   const length = paths.length;
   return (
     <AnimatePresence>
-      <div>
-        <h1 className="text-lg font-semibold capitalize">
-          {title.length > 0 ? `${title}` : `Dashboard`}
-        </h1>
-        {length > 1 && (
-          <motion.div
-            key="breadcrumb" // Unique key for the breadcrumb animation
-            initial={{ opacity: 0, y: 20 }} // Start hidden and slightly above
-            animate={{ opacity: 1, y: 0 }} // Animate into view
-            exit={{ opacity: 0, y: 20 }} // Animate out of view
-            transition={{ type: "tween", duration: 0.3 }} // Smooth and quick animation
-          >
-            <Breadcrumb>
-              <BreadcrumbList>
-                {paths.map((path, index) => {
-                  const href = `/${paths.slice(0, index + 1).join("/")}`;
+      <div className="flex gap-2 items-center">
+        <SidebarTrigger />
+        <div>
+          <h1 className="text-lg font-semibold capitalize">
+            {title.length > 0 ? `${title}` : `Dashboard`}
+          </h1>
+          {length > 1 && (
+            <motion.div
+              key="breadcrumb" // Unique key for the breadcrumb animation
+              initial={{ opacity: 0, y: 20 }} // Start hidden and slightly above
+              animate={{ opacity: 1, y: 0 }} // Animate into view
+              exit={{ opacity: 0, y: 20 }} // Animate out of view
+              transition={{ type: "tween", duration: 0.3 }} // Smooth and quick animation
+            >
+              <Breadcrumb>
+                <BreadcrumbList>
+                  {paths.map((path, index) => {
+                    const href = `/${paths.slice(0, index + 1).join("/")}`;
 
-                  return (
-                    <React.Fragment key={index}>
-                      <BreadcrumbItem className="capitalize text-xs text-white">
-                        {index !== length - 1 ? (
-                          <Link to={href} className="underline">
-                            {path.replace(/_/g, " ")}
-                          </Link>
-                        ) : (
-                          <p>{path.replace(/_/g, " ")}</p>
+                    return (
+                      <React.Fragment key={index}>
+                        <BreadcrumbItem className="capitalize text-[0.6rem] leading-tight text-white">
+                          {index !== length - 1 ? (
+                            <Link to={href} className="underline">
+                              {path.replace(/_/g, " ")}
+                            </Link>
+                          ) : (
+                            <p>{path.replace(/_/g, " ")}</p>
+                          )}
+                        </BreadcrumbItem>
+                        {index !== length - 1 && (
+                          <BreadcrumbSeparator className="text-white" />
                         )}
-                      </BreadcrumbItem>
-                      {index !== length - 1 && (
-                        <BreadcrumbSeparator className="text-white" />
-                      )}
-                    </React.Fragment>
-                  );
-                })}
-              </BreadcrumbList>
-            </Breadcrumb>
-          </motion.div>
-        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </BreadcrumbList>
+              </Breadcrumb>
+            </motion.div>
+          )}
+        </div>
       </div>
     </AnimatePresence>
   );
