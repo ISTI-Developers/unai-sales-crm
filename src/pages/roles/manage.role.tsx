@@ -73,7 +73,7 @@ const ManageRole = () => {
     e.preventDefault();
 
     if (!role) return;
-    console.log(role);
+    // console.log(role);
     setLoading((prev) => !prev);
 
     if (title === "Add Role") {
@@ -93,6 +93,7 @@ const ManageRole = () => {
     } else {
       updateRolePermissions(role, {
         onSuccess: (response) => {
+          // console.log(response);
           if (!response) return;
           toast({
             title: "Role Updated!",
@@ -128,8 +129,8 @@ const ManageRole = () => {
       </header>
       {role &&
         <form className="flex flex-col gap-4" onSubmit={onSubmit}>
-          <div className="flex flex-col gap-4 max-h-[76vh] overflow-y-auto p-2 pt-0">
-            <div className="space-y-4">
+          <div className="flex flex-col gap-4 h-full max-h-[68vh] overflow-y-auto">
+            <div className="flex flex-col gap-4">
               <div>
                 <Label>Name</Label>
                 <Input value={role.name} onChange={(e) => setRole(prev => {
@@ -248,10 +249,10 @@ const ModuleCard = ({ module, userPermissions, setRole }: { module: Modules; use
     userPermissions.includes(opt.value)
   );
 
-  return <div className="flex flex-col bg-slate-200 p-4 rounded gap-2">
-    <header className="capitalize font-semibold border-b border-slate-400 flex justify-between items-center pb-1.5">
-      <span>{module.name}</span>
-      <div className="flex items-center gap-1.5">
+  return <div className="flex flex-col gap-2 bg-zinc-100 rounded-lg">
+    <header className="flex justify-between p-4">
+      <span className="font-semibold">{module.name}</span>
+      <div className="flex items-center gap-2">
         <Checkbox
           id={`${module.name}_select-all`}
           checked={allSelected}
@@ -260,9 +261,9 @@ const ModuleCard = ({ module, userPermissions, setRole }: { module: Modules; use
         <Label htmlFor={`${module.name}_select-all`}>Select All</Label>
       </div>
     </header>
-    <main className="grid grid-cols-2 gap-4">
+    <main className="p-4 pt-0 grid grid-cols-2 gap-4">
       {options.map(({ value, label }) => (
-        <div key={value} className="flex items-center gap-1.5">
+        <div key={value} className="flex items-center gap-2">
           <Checkbox
             id={value}
             checked={userPermissions.includes(value)}

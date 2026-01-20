@@ -35,7 +35,7 @@ const Roles = () => {
         <Route path="/:id/edit" element={<ManageRole />} />
       </Routes>
     </Container>
-  );S
+  );
 };
 
 const Main = () => {
