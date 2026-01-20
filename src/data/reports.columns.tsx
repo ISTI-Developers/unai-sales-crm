@@ -447,7 +447,6 @@ const ReportForm = ({
   const weeks = useMemo(() => generateWeeks(), []);
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log(e)
     if (!currentUser) return;
     setLoading(true);
     let dateSubmitted = new Date();
@@ -457,7 +456,6 @@ const ReportForm = ({
       dateSubmitted =
         getFridayFromISOWeek(new Date().getFullYear(), weeks.indexOf(week) + 1) ?? new Date();
     }
-    console.log(dateSubmitted);
     const ID = Number(currentUser.ID);
     const SU = currentUser.sales_unit
       ? currentUser.sales_unit.sales_unit_id

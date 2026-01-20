@@ -3,7 +3,6 @@ import {
   Building,
   CircleHelp,
   FileChartColumnIncreasing,
-  FilePenLine,
   History,
   LayoutDashboard,
   LucideProps,
@@ -14,6 +13,7 @@ import {
   UserRoundCog,
   UsersRound,
   Gpu,
+  NotepadText,
 } from "lucide-react";
 import { lazy } from "react";
 
@@ -22,8 +22,8 @@ const Sites = lazy(() => import("@/views/Sites"));
 const Clients = lazy(() => import("@/views/Clients"));
 const Deck = lazy(() => import("@/views/Deck"));
 const Booking = lazy(() => import("@/views/Booking"));
-const Contracts = lazy(() => import("@/views/Contracts"));
 const Reports = lazy(() => import("@/views/Reports"));
+const Meetings = lazy(() => import("@/views/Meetings"));
 const Companies = lazy(() => import("@/views/Companies"));
 const Mediums = lazy(() => import("@/views/Mediums"));
 const Users = lazy(() => import("@/views/Users"));
@@ -38,75 +38,23 @@ export interface LinkDefinitions {
   icon: React.ForwardRefExoticComponent<
     Omit<LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>
   >;
-  hasSeparator?: boolean;
+  group: string;
   element: React.LazyExoticComponent<() => JSX.Element> | null;
 }
 
 export const linkDefinitions: LinkDefinitions[] = [
-  {
-    title: "dashboard",
-    handler: "",
-    icon: LayoutDashboard,
-    hasSeparator: true,
-    element: Dashboard,
-  },
-  {
-    title: "sites",
-    handler: "/sites",
-    icon: Monitor,
-    element: Sites,
-  },
-  {
-    title: "clients",
-    handler: "/clients",
-    icon: BookUser,
-    element: Clients,
-  },
-  {
-    title: "deck",
-    handler: "/deck",
-    icon: Gpu,
-    element: Deck,
-  },
-  {
-    title: "booking",
-    handler: "/booking",
-    icon: Tags,
-    element: Booking,
-  },
-  {
-    title: "contracts",
-    handler: "/contracts",
-    icon: FilePenLine,
-    element: Contracts,
-  },
-  {
-    title: "reports",
-    handler: "/reports",
-    icon: FileChartColumnIncreasing,
-    element: Reports,
-  },
-  {
-    title: "companies",
-    handler: "/companies",
-    icon: Building,
-    element: Companies,
-  },
-  {
-    title: "mediums",
-    handler: "/mediums",
-    icon: Package2,
-    hasSeparator: true,
-    element: Mediums,
-  },
-  { title: "users", handler: "/users", icon: UsersRound, element: Users },
-  { title: "roles", handler: "/roles", icon: UserRoundCog, element: Roles },
-  { title: "logs", handler: "/logs", icon: History, element: Logs },
-  { title: "help", handler: "/help", icon: CircleHelp, element: Help },
-  {
-    title: "settings",
-    handler: "/settings",
-    icon: SettingsIcon,
-    element: Settings,
-  },
+  { title: "dashboard", handler: "", icon: LayoutDashboard, group: "general", element: Dashboard, },
+  { title: "sites", handler: "/sites", icon: Monitor, group: 'general', element: Sites, },
+  { title: "clients", handler: "/clients", icon: BookUser, group: 'general', element: Clients, },
+  { title: "deck", handler: "/deck", icon: Gpu, group: 'general', element: Deck, },
+  { title: "booking", handler: "/booking", icon: Tags, group: 'general', element: Booking, },
+  { title: "reports", handler: "/reports", icon: FileChartColumnIncreasing, group: 'general', element: Reports, },
+  { title: "meetings", handler: "/meetings", icon: NotepadText, group: 'general', element: Meetings, },
+  { title: "companies", handler: "/companies", icon: Building, group: 'manage', element: Companies, },
+  { title: "mediums", handler: "/mediums", icon: Package2, group: 'manage', element: Mediums, },
+  { title: "users", handler: "/users", icon: UsersRound, group: 'manage', element: Users },
+  { title: "roles", handler: "/roles", icon: UserRoundCog, group: 'manage', element: Roles },
+  { title: "logs", handler: "/logs", icon: History, group: 'manage', element: Logs },
+  { title: "help", handler: "/help", icon: CircleHelp, group: 'general', element: Help },
+  { title: "settings", handler: "/settings", icon: SettingsIcon, group: 'general', element: Settings, },
 ];

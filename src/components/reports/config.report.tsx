@@ -17,6 +17,7 @@ import { generateWeeks } from "@/data/reports.columns";
 import { getISOWeek } from "date-fns";
 import CreateReport from "./create.report";
 import { AnimatePresence, motion } from "framer-motion";
+import { useLocation } from "react-router-dom";
 interface Config<TData> {
   setValue: (value: string) => void;
   table: Table<TData>;
@@ -31,6 +32,7 @@ function TableConfigurations<TData>({
   filters,
 }: Config<TData>) {
   const { setVisibleWeeks } = useReports();
+  const { pathname } = useLocation();
   const [dropdownVisible, setDropdownVisibility] = useState(false);
   const [openDialog, setOpenDialog] = useState(false)
   return (
@@ -93,29 +95,33 @@ function TableConfigurations<TData>({
         <p>Current Week:</p>
         <p className="text-[0.6rem] font-semibold">{generateWeeks()[getISOWeek(new Date()) - 1]}</p>
       </div>
-      <Button className="ml-auto" variant="outline" size="sm" onClick={() => setOpenDialog(true)}>Create Report</Button>
-      <AnimatePresence>
-        {openDialog && (
-          <motion.div
-            className="fixed inset-0 z-20 flex items-center justify-center bg-black/40"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setOpenDialog(false)} // overlay click
-          >
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.15 }}
-              className="w-full max-w-md bg-white shadow border p-2 rounded-lg"
-              onClick={(e) => e.stopPropagation()} // prevent close on modal click
-            >
-              <CreateReport data={data} open={openDialog} onOpenChange={setOpenDialog} />
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {
+        !pathname.includes("meetings") && <>
+          <Button className="ml-auto" variant="outline" size="sm" onClick={() => setOpenDialog(true)}>Create Report</Button>
+          <AnimatePresence>
+            {openDialog && (
+              <motion.div
+                className="fixed inset-0 z-20 flex items-center justify-center bg-black/40"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setOpenDialog(false)} // overlay click
+              >
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.15 }}
+                  className="w-full max-w-md bg-white shadow border p-2 rounded-lg"
+                  onClick={(e) => e.stopPropagation()} // prevent close on modal click
+                >
+                  <CreateReport data={data} open={openDialog} onOpenChange={setOpenDialog} />
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </>
+      }
 
     </div>
   );
