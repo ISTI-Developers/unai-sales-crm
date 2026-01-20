@@ -1,95 +1,16 @@
 import { Booking, useBookings } from "@/hooks/useBookings";
-import {
-  useAvailableSites,
-  useOverridenSiteEndDates,
-  useSitelandmarks,
-  useSites,
-} from "@/hooks/useSites";
-import { List, ProviderProps } from "@/interfaces";
-import {
-  Landmarks,
-  SiteDetailswithMapping,
-  SiteImage,
-} from "@/interfaces/sites.interface";
-import { collator } from "@/lib/format";
+import { useDeck as useOneDeck } from "@/hooks/useDeck";
+import { useAvailableSites, useOverridenSiteEndDates, useSitelandmarks, useSites } from "@/hooks/useSites";
+import { ProviderProps } from "@/interfaces";
+import { DeckProvider as DeckProviderType, DeckSite } from "@/interfaces/deck.interface";
 import { haversineDistance } from "@/lib/utils";
-import { addDays, differenceInDays, format } from "date-fns";
-import { createContext, useContext, useMemo, useState } from "react";
-export interface DeckSite extends SiteDetailswithMapping {
-  availability: string | null;
-  traffic_count: number;
-  vicinity_population: number;
-  client?: string;
-  product?: string;
-}
+import { DeckFilters, DeckOptions } from "@/misc/deckTemplate";
+import { addDays, differenceInCalendarDays, format, isBefore } from "date-fns";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+export const DeckProviderContext = createContext<DeckProviderType | null>(null);
 
-interface Filters {
-  area?: List[];
-  landmarks?: List[];
-  price?: {
-    from: number;
-    to: number;
-  }[];
-  availability?: List[];
-}
-export interface Options {
-  price_adjustment?: {
-    amount: number;
-    type: string;
-    operation: string;
-    apply_to: List[];
-  }[];
-  rate_generator?: {
-    duration: 3 | 6 | 12;
-    discount: number;
-    type: string;
-  }[];
-  currency_exchange?: {
-    currency: string;
-    equivalent: number;
-  };
-  landmark_visibility?: {
-    show: boolean;
-  };
-}
-interface SelectedOptions {
-  site_code: string;
-  landmarks: Landmarks[];
-  images?: SiteImage;
-}
-interface SiteMaps {
-  site_code: string;
-  map: string;
-}
-
-interface DeckProvider {
-  sites: DeckSite[];
-  search: string;
-  filters: Filters;
-  options: Options;
-  availability: string;
-  selectedOptions: SelectedOptions[];
-  toAll: boolean;
-  page: number;
-  setPage: (page: number) => void;
-  printStatus: number[];
-  isGenerating: boolean;
-  setGenerateStatus: (status: boolean) => void;
-  setPrintStatus: React.Dispatch<React.SetStateAction<number[]>>;
-  maps: SiteMaps[];
-  setSelectedOptions: React.Dispatch<React.SetStateAction<SelectedOptions[]>>;
-  setMaps: React.Dispatch<React.SetStateAction<SiteMaps[]>>;
-  setOptions: React.Dispatch<React.SetStateAction<Options>>;
-  setToAll: React.Dispatch<React.SetStateAction<boolean>>;
-  setAvailability: React.Dispatch<React.SetStateAction<string>>;
-  selectedSites: DeckSite[];
-  setSelectedSites: React.Dispatch<React.SetStateAction<DeckSite[]>>;
-  setFilters: React.Dispatch<React.SetStateAction<Filters>>;
-  setSearch: React.Dispatch<React.SetStateAction<string>>;
-}
-const DeckProviderContext = createContext<DeckProvider | null>(null);
-
-export const useDeck = (): DeckProvider => {
+export const useDeck = (): DeckProviderType => {
   const context = useContext(DeckProviderContext);
 
   if (context === undefined || context == null) {
@@ -100,35 +21,38 @@ export const useDeck = (): DeckProvider => {
 };
 
 export function DeckProvider({ children }: ProviderProps) {
-  const { data: landmarks } = useSitelandmarks();
-  const { data: rawSites } = useSites();
-  const { data, isLoading } = useAvailableSites();
-  const { data: bookings } = useBookings()
-  const { data: adjustments } = useOverridenSiteEndDates();
-  const [page, setPage] = useState(0);
-  const [search, setSearch] = useState("");
-  const [filters, setFilters] = useState<Filters>({
-    availability: [],
-  });
-  const [options, setOptions] = useState<Options>({});
-  const [availability, setAvailability] = useState("all");
-  const [selectedSites, setSelectedSites] = useState<DeckSite[]>([]);
-  const [selectedOptions, setSelectedOptions] = useState<SelectedOptions[]>([]);
-  const [maps, setMaps] = useState<SiteMaps[]>([]);
-  const [toAll, setToAll] = useState(true);
-  const [printStatus, setPrintStatus] = useState<number[]>([]);
-  const [isGenerating, setGenerateStatus] = useState(false)
+  const [searchParams] = useSearchParams()
+  const deckID = searchParams.get("token");
 
+  const { data: landmarks } = useSitelandmarks();
+  const { data: allSites } = useSites();
+  const { data: availableSites } = useAvailableSites();
+  const { data: bookings } = useBookings();
+  const { data: adjustments } = useOverridenSiteEndDates();
+  const { data: deckData } = useOneDeck(deckID);
+
+  const [selectedSites, setSelectedSites] = useState<DeckSite[]>([]);
+  const [selectedFilters, setFilters] = useState<Partial<DeckFilters>>({});
+  const [selectedOptions, setOptions] = useState<Partial<DeckOptions>>({});
+  const [title, setTitle] = useState<string>("New Deck")
+
+  const isLoading =
+    !allSites ||
+    !availableSites ||
+    !bookings ||
+    !adjustments ||
+    !landmarks;
 
 
   const sites: DeckSite[] = useMemo(() => {
-    if (isLoading || !data || !rawSites || !bookings || !adjustments) return [];
+    if (isLoading) return [];
 
-    const availableSites = new Set(data.map(d => d.site));
+    const availableSiteCodes = new Set(availableSites.map(d => d.site));
 
-    const inStoredButNotInAvailable = rawSites.filter(
-      site => !availableSites.has(site.site_code)
+    const inStoredButNotInAvailable = allSites.filter(
+      site => !availableSiteCodes.has(site.site_code)
     );
+
     const getSiteBookings = (site_code: string) => {
       const siteBookings = bookings.filter(booking => booking.site_code === site_code);
 
@@ -178,9 +102,9 @@ export function DeckProvider({ children }: ProviderProps) {
     };
 
     // 🟩 Sites currently active / available
-    const mappedAvailableSites = data
+    const mappedAvailableSites = availableSites
       .map(item => {
-        const site = rawSites.find(s => s.site_code === item.site);
+        const site = allSites.find(s => s.site_code === item.site);
         const adjustment = adjustments.find(a => a.site_code === item.site);
 
         if (!site) {
@@ -190,7 +114,7 @@ export function DeckProvider({ children }: ProviderProps) {
         const siteBookings = getSiteBookings(item.site);
         const available = getAvailability(siteBookings);
 
-        let availability = item.end_date ? format(addDays(new Date(item.end_date),1),"MMM d, yyyy") : null;
+        let availability = item.end_date ? format(addDays(new Date(item.end_date), 1), "MMM d, yyyy") : null;
 
         if (available && !adjustment) {
           availability = format(addDays(new Date(available), 1), "MMM d, yyyy");
@@ -233,14 +157,14 @@ export function DeckProvider({ children }: ProviderProps) {
       ...new Map(finalSites.map(item => [item.ID, item])).values()
     ];
     return uniqueSites;
-  }, [isLoading, data, rawSites, bookings, adjustments]);
-
+  }, [isLoading, availableSites, allSites, bookings, adjustments]);
 
   const searchedSites: DeckSite[] = useMemo(() => {
-    const query = search.trim().toLowerCase();
+    if (!sites) return sites;
+    const query = selectedFilters?.search?.trim().toLowerCase();
     if (!query) return sites;
     // Detect pattern like: 4cebceb039-1aa01
-    const SITE_CODE_PATTERN = /\b\d[a-z]{6}\d{3}-\d[a-z]{2}\d{2}\b/;
+    const SITE_CODE_PATTERN = /\b\d[a-z0-9]{6}\d{3}-\d[a-z]{2}\d{2}\b/;
 
     // Check if query looks like one or multiple site codes
     const isSiteCodeSearch = SITE_CODE_PATTERN.test(query);
@@ -258,130 +182,114 @@ export function DeckProvider({ children }: ProviderProps) {
         field.toLowerCase().includes(query)
       )
     );
-  }, [sites, search]);
-
+  }, [sites, selectedFilters?.search]);
 
   const filteredSites: DeckSite[] = useMemo(() => {
+    let temp = searchedSites;
 
+    if (selectedFilters.area?.length) {
+      temp = temp.filter(site =>
+        selectedFilters.area!.includes(site.city)
+      );
+    }
+    if (selectedFilters.availability && selectedFilters.availability.length > 0) {
+      const availability = selectedFilters.availability;
 
-    return searchedSites
-      .filter((site) => {
-        // City filter
-        if (filters.area && filters.area.length > 0) {
-          const areaFilters = filters.area.map((area) => area.value);
-          if (!areaFilters.includes(site.city)) return false;
-        }
+      if (availability.includes("open")) {
+        temp = temp.filter(site => {
+          if (!site.availability) return true;
+          return isBefore(new Date(site.availability), new Date()) || differenceInCalendarDays(new Date(site.availability), new Date()) <= 60;
+        })
+        console.log(temp);
+      }
+      if (availability.includes("booked")) {
+        temp = temp.filter(site => {
+          if (!site.availability) return false;
 
-        if (availability || filters.availability?.length) {
-          const isSpecial = ["all", "open", "booked"].includes(availability);
+          return differenceInCalendarDays(new Date(site.availability), new Date()) > 60;
+        })
+      }
+      if (availability.includes("range")) {
+        temp = temp.filter(site => {
+          if (!site.availability) return true;
+          if (availability.length > 1) {
+            if (isBefore(new Date(site.availability), new Date())) return true;
 
-          if (isSpecial) {
-            if (availability === "open") {
-              if (!site.availability) return true;
-              const availableOn = new Date(
-                new Date(site.availability).setDate(
-                  new Date(site.availability).getDate() + 1
-                )
-              );
-              if (differenceInDays(availableOn, new Date()) > 60) return false;
-            }
-
-            if (availability === "booked") {
-              if (!site.availability) return false;
-              const availableOn = new Date(site.availability);
-              if (differenceInDays(availableOn, new Date()) <= 60) return false;
-            }
-
-            // "all" means skip availability filtering (i.e., do nothing)
-          } else {
-            const availableFormatted = site.availability
-              ? format(addDays(new Date(site.availability), 1), "MMMM yyyy")
-              : "";
-
-            const match = filters.availability?.some(
-              (item) => item.value === availableFormatted
-            );
-            if (!match) return false;
+            const formatted = format(site.availability, "MMMM yyyy");
+            return availability.includes(formatted);
           }
-        }
+          return true;
+        })
 
-        // Landmarks filter (assuming a site has `site.landmarks`)
-        if (filters.landmarks && filters.landmarks.length > 0) {
-          if (!landmarks) return true;
-          const landmarkFilters = filters.landmarks.map((item) => item.value);
-          const selectedOptions = landmarks.filter((landmark) =>
-            landmark.types.some((type) => landmarkFilters.includes(type))
+      }
+      // temp = temp.filter(site =>
+      //   selectedFilters.area!.includes(site.city)
+      // );
+    }
+
+    if (selectedFilters.landmark && selectedFilters.landmark.length > 0 && landmarks) {
+      const selectedLandmarks = selectedFilters.landmark
+      const selectedOptions = landmarks.filter((landmark) =>
+        landmark.types.some((type) => selectedLandmarks.includes(type))
+      );
+
+      temp = temp.filter(site => {
+        const { latitude, longitude } = site;
+
+        return selectedOptions.some((landmark) => {
+          const { latitude: lat, longitude: lng } = landmark;
+          const distance = haversineDistance(
+            { lat: parseFloat(latitude), lng: parseFloat(longitude) },
+            { lat: parseFloat(lat), lng: parseFloat(lng) }
           );
-          const { latitude, longitude } = site;
-
-          return selectedOptions.some((landmark) => {
-            const { latitude: lat, longitude: lng } = landmark;
-            const distance = haversineDistance(
-              { lat: parseFloat(latitude), lng: parseFloat(longitude) },
-              { lat: parseFloat(lat), lng: parseFloat(lng) }
-            );
-            return distance <= 100;
-          });
-        }
-
-        // Price filter (assumes filters.price is an array of { from, to })
-        if (
-          filters.price &&
-          filters.price.length !== 0 &&
-          filters.price.every((item) => item.from !== 0 || item.to !== 0)
-        ) {
-          const match = filters.price.some((range) => {
-            const price = Number(site.price ?? 0);
-            return price >= range.from && (range.to === 0 ? price : price <= range.to);
-          });
-          if (!match) return false;
-        }
-
-        return true;
+          return distance <= 100;
+        });
       })
-      .sort((a, b) => collator.compare(a.site_code, b.site_code));
-  }, [
-    searchedSites,
-    filters.area,
-    filters.availability,
-    filters.landmarks,
-    filters.price,
-    availability,
-    landmarks,
-  ]);
+    }
 
-  // const processedSites = useMemo(() => {
-  //   console.count("rendering processed sites");
-  // }, [selectedSites])
+    // PRICE filter
+    if (selectedFilters.price?.length) {
+      temp = temp.filter(site => {
+        const price = Number(site.price); // Convert from string → number
+        if (isNaN(price)) return false;   // Defensive: skip bad data
+
+        // Check if price matches ANY range
+        return selectedFilters.price?.some(range => {
+          const min = range.from ?? 0;
+          const max = range.to === 0 ? Infinity : range.to;
+
+          return price >= min && price <= max;
+        });
+      });
+    }
+
+    if (selectedFilters.site_owner && selectedFilters.site_owner.length > 0) {
+      const owner = selectedFilters.site_owner;
+
+      temp = temp.filter(site => owner.includes(site.site_owner))
+    }
+
+    return temp;
+  }, [landmarks, searchedSites, selectedFilters]);
+
+  useEffect(() => {
+    if (!deckData || !deckID || isLoading) return;
+
+    const loadedSites = sites.filter(site =>
+      deckData.sites.some(s => s.site_code === site.site_code)
+    );
+
+    console.log(deckData.filters)
+    setSelectedSites(loadedSites);
+    setFilters(deckData.filters ?? {});
+    setOptions(deckData.options ?? {});
+    setTitle(deckData.title ?? "");
+
+    console.count(`rendering ${new Date()}`);
+  }, [deckData, deckID, isLoading, sites]);
 
 
-  const value = {
-    sites: filteredSites,
-    availability,
-    search,
-    filters,
-    options,
-    toAll,
-    setToAll,
-    setSearch,
-    setOptions,
-    setFilters,
-    setSelectedOptions,
-    selectedSites,
-    setAvailability,
-    setSelectedSites,
-    selectedOptions,
-    maps,
-    setMaps,
-    printStatus,
-    setPrintStatus,
-    isGenerating,
-    setGenerateStatus,
-    page, setPage
-  };
-  return (
-    <DeckProviderContext.Provider value={value}>
-      {children}
-    </DeckProviderContext.Provider>
-  );
+  return <DeckProviderContext.Provider value={{ sites: filteredSites, isLoading, selectedSites, selectedFilters, selectedOptions, title, setTitle, setSelectedSites, setFilters, setOptions }}>
+    {children}
+  </DeckProviderContext.Provider>
 }

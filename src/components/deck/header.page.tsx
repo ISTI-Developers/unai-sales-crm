@@ -1,7 +1,7 @@
 import { Button } from "../ui/button";
-import { useDeck } from "@/providers/deck.provider";
+import { useDeck } from "@/providers/deck.provider copy";
 import { Loader2 } from "lucide-react";
-import { useGeneratePowerpoint } from "@/hooks/usePrint";
+import { useGeneratePowerpoint } from "@/hooks/usePrint copy";
 import { Badge } from "../ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { AnimatePresence, motion } from "framer-motion";

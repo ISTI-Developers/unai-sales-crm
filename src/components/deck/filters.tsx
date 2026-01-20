@@ -4,7 +4,7 @@ import FilterItem from "./filter.item";
 import AreaFilter from "./area.filter";
 import LandmarkFilter from "./landmark.filter";
 import PriceFilter from "./price.filter";
-import AvailabilityFilter from "./availability.filter";
+import AvailabilityFilter from "./filters.availability";
 const Filters = () => {
   return (
     <div className="p-4 bg-slate-100 h-[calc(100vh-9.75rem)] rounded-lg overflow-y-auto">

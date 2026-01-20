@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { useDeck } from "@/providers/deck.provider";
+import { useDeck } from "@/providers/deck.provider copy";
 import { format, isBefore } from "date-fns";
 import { Badge } from "../ui/badge";
 const SiteSelection = () => {
@@ -21,14 +21,13 @@ const SiteSelection = () => {
             key={site.site_code}
             onClick={() => {
               setSelectedSites((prev) => {
-                if (prev.find((item) => item.site_code === site.site_code)) {
-                  return prev.filter(
-                    (item) => item.site_code !== site.site_code
-                  );
-                } else {
-                  return [...prev, site];
-                }
+                const exists = prev.some(item => item.site_code === site.site_code);
+
+                return exists
+                  ? prev.filter(item => item.site_code !== site.site_code)
+                  : [...prev, site];
               });
+
               setSelectedOptions((prev) => {
                 if (prev.find((item) => item.site_code === site.site_code)) {
                   return prev.filter(

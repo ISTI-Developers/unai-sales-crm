@@ -7,6 +7,7 @@ import { useDeck } from "@/providers/deck.provider";
 const AreaFilter = () => {
   const { setFilters, filters } = useDeck();
   const { data, isLoading } = useSiteCities();
+  
   const list: List[] = useMemo(() => {
     if (isLoading || !data) return [];
     return data.map((item) => {
