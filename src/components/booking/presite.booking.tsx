@@ -13,7 +13,7 @@ import {
 } from "../ui/table";
 import { formatAmount, formatTermDetails } from "@/lib/format";
 import { useMemo } from "react";
-import { CircleSlash2, MonitorUp } from "lucide-react";
+import { Pen, Trash2 } from "lucide-react";
 import { Button } from "../ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import {
@@ -26,9 +26,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "../ui/alert-dialog";
-import TagBooking from "./tag.booking";
 import { cn } from "@/lib/utils";
 import { useAccess } from "@/hooks/useClients";
+import { Link } from "react-router-dom";
 
 const PresiteBookings = () => {
   const { data, isLoading, isError, error } = usePreBookings();
@@ -117,25 +117,22 @@ const PresiteBookings = () => {
                       <TableCell>
                         {row.booking_status !== "CANCELLED" && (
                           <>
-                            <AlertDialog key="tag">
                               <Tooltip delayDuration={100}>
                                 <TooltipTrigger asChild>
-                                  <AlertDialogTrigger asChild>
-                                    <Button size="icon" variant="ghost">
-                                      <MonitorUp size={16} />
-                                    </Button>
-                                  </AlertDialogTrigger>
+                                  <Button size="icon" variant="ghost" asChild>
+                                    <Link to={`./edit?id=${row.ID}`}>
+                                      <Pen size={16} />
+                                    </Link>
+                                  </Button>
                                 </TooltipTrigger>
-                                <TooltipContent>Assign</TooltipContent>
+                                <TooltipContent>Edit</TooltipContent>
                               </Tooltip>
-                              <TagBooking id={row.booking_id} />
-                            </AlertDialog>
                             <AlertDialog key="cancel">
                               <Tooltip delayDuration={100}>
                                 <TooltipTrigger asChild>
                                   <AlertDialogTrigger asChild>
                                     <Button size="icon" variant="ghost">
-                                      <CircleSlash2 size={16} />
+                                      <Trash2 size={16} />
                                     </Button>
                                   </AlertDialogTrigger>
                                 </TooltipTrigger>

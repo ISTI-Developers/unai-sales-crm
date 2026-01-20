@@ -165,10 +165,11 @@ const CreateBookingDialog = ({
     if (site.adjusted_end_date) {
       endDate = addDays(new Date(site.adjusted_end_date), 1);
     }
-    if (endDate) {
+    if (endDate && !(bookings.length || site.adjusted_end_date)) {
       endDate = addDays(new Date(endDate), 1);
     }
 
+    console.log(endDate);
     setBooking(prev => {
       if (!prev) return prev;
 

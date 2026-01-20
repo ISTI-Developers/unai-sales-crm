@@ -11,12 +11,12 @@ import {
 import { useMemo, useState } from "react";
 import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "../ui/select";
-import { useBookings, useTagPreSite } from "@/hooks/useBookings";
+import { useBookings, useUpdatePreSite } from "@/hooks/useBookings";
 const TagBooking = ({ id }: { id: number }) => {
   const { data, isLoading } = useLatestSites();
   const { data: bookedSites } = useAvailableSites();
   const { data: bookings } = useBookings();
-  const { mutate } = useTagPreSite();
+  const { mutate } = useUpdatePreSite();
   const { data: sites } = useSites();
   const [site, setSite] = useState("");
 

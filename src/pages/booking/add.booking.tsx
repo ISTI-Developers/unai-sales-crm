@@ -3,6 +3,7 @@ import { MultiComboBox } from "@/components/multicombobox";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/datepicker";
 import { Input } from "@/components/ui/input";
+import InputNumber from "@/components/ui/number-input";
 import {
   Select,
   SelectContent,
@@ -11,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useCreateBookingWithNoSite } from "@/hooks/useBookings";
+import { useBookings, useCreateBookingWithNoSite, usePreBookings, useUpdatePreSiteBooking } from "@/hooks/useBookings";
 import { useAccess } from "@/hooks/useClients";
 import { useSiteCities } from "@/hooks/useSites";
 import { useUsers } from "@/hooks/useUsers";
@@ -20,19 +21,25 @@ import { capitalize } from "@/lib/utils";
 import Page from "@/misc/Page";
 import { useAuth } from "@/providers/auth.provider";
 import { ChevronLeft, Loader2 } from "lucide-react";
-import { ChangeEvent, FormEvent, ReactNode, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, ReactNode, useEffect, useMemo, useState } from "react";
 import { Helmet } from "react-helmet";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { v4 } from "uuid";
 
 const AddNewBooking = () => {
+  const [params] = useSearchParams();
+  const { pathname } = useLocation();
+  const { data: others } = usePreBookings();
+  const { data: rows } = useBookings()
   const { user } = useAuth();
   const { data, isLoading, fetchStatus } = useUsers();
   const { data: areas } = useSiteCities();
   const { access: add } = useAccess("booking.add");
   const { mutate } = useCreateBookingWithNoSite();
+  const { mutate: update } = useUpdatePreSiteBooking()
   const navigate = useNavigate();
 
+  const [bookingID, setBookingID] = useState<number>()
   const [booking, setBooking] = useState({
     area: "",
     address: "",
@@ -79,24 +86,71 @@ const AddNewBooking = () => {
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     onSend(true);
-    mutate(booking, {
-      onSuccess: () => {
-        onSend(false);
-        navigate("/booking", { replace: true });
-      },
-    });
+    if (pathname.includes("edit") && params.has("id")) {
+      update({ ...booking, booking_id: bookingID!, id: Number(params.get("id")) }, {
+        onSuccess: () => {
+          onSend(false);
+          navigate("/booking?t=other", { replace: true });
+        },
+      });
+    } else {
+      mutate(booking, {
+        onSuccess: () => {
+          onSend(false);
+          navigate("/booking?t=other", { replace: true });
+        },
+      });
+    }
   };
 
+  useEffect(() => {
+    if ((!params.get("id") && pathname.includes("edit")) || !others || !rows) return;
+    const ID = params.get("id") as string;
+
+    const otherData = others.find(o => o.ID === Number(ID));
+    if (!otherData) return;
+
+    const bookingData = rows.find(r => r.ID === otherData.booking_id);
+    if (!bookingData) return;
+
+    const aes = bookingData.account_executive.split(",");
+    const aeOptions = options.filter(opt => aes.some(ae => ae.includes(opt.value)));
+
+    setBooking({
+      area: otherData.area,
+      address: otherData.address,
+      facing: otherData.facing,
+      size: otherData.size,
+      srp: bookingData.srp,
+      site_rental: bookingData.site_rental,
+      booking_status: bookingData.booking_status,
+      client: bookingData.client,
+      account_executive: aeOptions,
+      start: new Date(bookingData.date_from),
+      end: new Date(bookingData.date_to),
+      monthly_rate: String(bookingData.monthly_rate),
+      remarks: bookingData.remarks
+    })
+
+    setBookingID(bookingData.ID)
+
+  }, [rows, others, params, pathname, options])
+
+
   if (!add) {
-    return <Navigate to="/booking" replace />;
+    return <Navigate to="/booking?t=other" replace />;
   }
+  if (!params.get("id") && pathname.includes("edit")) {
+    return <Navigate to="/booking?t=other" replace />;
+  }
+
   return (
     <Page className="flex flex-col gap-4">
       <Helmet>
-        <title>Add | Bookings | Sales Platform</title>
+        <title>{pathname.includes("edit") ? "Edit" : "Add"} | Bookings | Sales Platform</title>
       </Helmet>
       <header className="flex items-center justify-between border-b pb-1.5">
-        <h1 className="text-blue-500 font-bold uppercase">Add Booking</h1>
+        <h1 className="text-blue-500 font-bold uppercase">{pathname.includes("edit") ? "Edit" : "Add"} Booking</h1>
         <Button variant="link" type="button" asChild>
           <Link to="/booking">
             <ChevronLeft /> Back
@@ -158,23 +212,23 @@ const AddNewBooking = () => {
             />
           </FormField>
           <FormField id="Site Rental">
-            <Input
+            <InputNumber
               id="site_rental"
               value={booking.site_rental}
               required
               onChange={onChange}
-              disabled={send}
+              disabled={send || pathname.includes("edit")}
             />
           </FormField>
         </FormSection>
         <FormSection title="Booking Information">
           <FormField id="SRP">
-            <Input
+            <InputNumber
               id="srp"
               value={booking.srp}
               required
               onChange={onChange}
-              disabled={send}
+              disabled={send || pathname.includes("edit")}
             />
           </FormField>
           <FormField id="booking_status">
@@ -237,9 +291,9 @@ const AddNewBooking = () => {
 
                   return found
                     ? {
-                        ...prev,
-                        account_executive: [...current, found],
-                      }
+                      ...prev,
+                      account_executive: [...current, found],
+                    }
                     : prev;
                 });
               }}
@@ -276,7 +330,7 @@ const AddNewBooking = () => {
             </div>
           </FormField>
           <FormField id="monthly_rate">
-            <Input
+            <InputNumber
               disabled={send}
               id="monthly_rate"
               value={booking.monthly_rate}
@@ -309,88 +363,6 @@ const AddNewBooking = () => {
           Proceed
         </Button>
       </form>
-      {/* <main>
-        <form
-          className="grid lg:grid-cols-2 gap-4"
-          onSubmit={onSubmit}
-          autoComplete="off"
-        >
-          <FormSection title="Client Information">
-            <FormField id="name">
-              <ClientNameField name={client.name} setClient={setClient} />
-            </FormField>
-            <FormField id="brand">
-              <Input
-                id="brand"
-                value={client.brand}
-                disabled={isLoading}
-                onChange={(e) =>
-                  setClient((prev) => {
-                    if (!prev) return prev;
-                    return {
-                      ...prev,
-                      brand: e.target.value,
-                    };
-                  })
-                }
-              />
-            </FormField>
-            {dropdowns.slice(0, 5).map((field) => (
-              <FormField key={field.id} id={field.id}>
-                <SelectField
-                  client={client}
-                  setClient={setClient}
-                  field={field}
-                />
-              </FormField>
-            ))}
-            <MediumField
-              mediums={client.mediums as List[]}
-              updateMedium={updateMedium}
-            />
-          </FormSection>
-          <FormSection title="Contact Person Information">
-            {texts.map((id) => {
-              return (
-                <FormField id={id}>
-                  <Input
-                    id={id}
-                    value={client[id] as string}
-                    disabled={isLoading}
-                    onChange={(e) =>
-                      setClient((prev) => {
-                        if (!prev) return prev;
-                        return {
-                          ...prev,
-                          [id]: e.target.value,
-                        };
-                      })
-                    }
-                  />
-                </FormField>
-              );
-            })}
-            {dropdowns.slice(5).map((field) => (
-              <FormField key={field.id} id={field.id}>
-                <SelectField
-                  client={client}
-                  setClient={setClient}
-                  field={field}
-                />
-              </FormField>
-            ))}
-          </FormSection>
-          <Button
-            type="submit"
-            variant="ghost"
-            disabled={isPending}
-            className="w-fit bg-main-100 hover:bg-main-700 text-white hover:text-white float-right flex gap-4 disabled:cursor-not-allowed lg:col-[2/3] ml-auto"
-          >
-            {isPending && <LoaderCircle className="animate-spin" />}
-            Submit
-          </Button>
-        </form>
-      </main> */}
     </Page>
   );
 };
