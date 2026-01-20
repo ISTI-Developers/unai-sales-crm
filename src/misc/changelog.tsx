@@ -10,6 +10,9 @@ import {
 
 const Changelog = () => {
   const changes = {
+    "2.2.0": [
+      "Implement meetings management with table and hooks for CRUD operations."
+    ],
     "2.1.1": [
       "Fixed an issue where deck images aren't loaded properly when imported to Google Slides.",
       "Added the ideal view link to decks."
