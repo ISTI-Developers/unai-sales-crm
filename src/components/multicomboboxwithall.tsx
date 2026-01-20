@@ -5,17 +5,19 @@ import { Check, ChevronsUpDown } from "lucide-react";
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from "./ui/command";
 import { capitalize, cn } from "@/lib/utils";
 
-interface List {
-    id: string;
-    value: string;
-    label: string;
-}
-
-const MultiComboBoxWithAll = ({ title = "records", value, onValueChange, options, disabled, isSingle }: { title?: string; value: List[]; onValueChange: (value: List[]) => void; options: List[], disabled?: boolean; isSingle?: boolean }) => {
+const MultiComboBoxWithAll = ({ title = "records", value, onValueChange, options, disabled, isSingle }:
+    {
+        title?: string;
+        value: string[];
+        onValueChange: (value: string[]) => void;
+        options: string[],
+        disabled?: boolean;
+        isSingle?: boolean
+    }) => {
     const [open, setOpen] = useState(false);
 
     const onValueSelect = (id: string) => {
-        let selectedOptions = value.map(v => v.id);
+        let selectedOptions = value.map(v => v);
 
         if (isSingle) {
             // single mode → just replace with the one id
@@ -29,7 +31,7 @@ const MultiComboBoxWithAll = ({ title = "records", value, onValueChange, options
             }
         }
 
-        const updatedValue = options.filter(opt => selectedOptions.includes(opt.id));
+        const updatedValue = options.filter(opt => selectedOptions.includes(opt));
 
         onValueChange(updatedValue);
     };
@@ -39,12 +41,12 @@ const MultiComboBoxWithAll = ({ title = "records", value, onValueChange, options
     return (
         <Popover open={open} onOpenChange={setOpen} modal>
             <PopoverTrigger disabled={disabled} asChild>
-                <Button variant="outline" className="w-full h-8 text-start justify-between max-w-full overflow-hidden">
+                <Button variant="outline" className="w-full h-7 px-2 text-start justify-between max-w-full overflow-hidden">
                     {value.length > 0 ?
-                        <div className="flex gap-1 text-[0.65rem]">
-                            {value.length > 2 ? `Selected ${value.length} options` : value.map(v => v.label).join(", ")}
+                        <div className="flex gap-1 text-[0.6rem]">
+                            {value.length > 2 ? `Selected ${value.length} options` : value.join(", ").length > 16 ? `${value[0]}, +${value.length - 1} other` : value.join(", ")}
                         </div> :
-                        <><span>Select {capitalize(title, "_")}</span>
+                        <><span className="text-[0.65rem]">Select {capitalize(title, "_")}</span>
                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" /></>}
                 </Button>
             </PopoverTrigger>
@@ -54,11 +56,11 @@ const MultiComboBoxWithAll = ({ title = "records", value, onValueChange, options
                         <CommandEmpty>{title} not found</CommandEmpty>
                         <CommandGroup>
                             {options && <>
-                                {!isSingle && <CommandItem value="all" onSelect={onSelectAll}>
+                                {!isSingle && <CommandItem value="all" onSelect={onSelectAll} className="text-[0.65rem]">
                                     <Check
                                         className={cn(
-                                            "mr-2 h-4 w-4",
-                                            value.find((val) => val.id === "all")
+                                            "mr-2 h-2 w-2",
+                                            value.find((val) => val === "all")
                                                 ? "opacity-100"
                                                 : "opacity-0"
                                         )}
@@ -66,16 +68,16 @@ const MultiComboBoxWithAll = ({ title = "records", value, onValueChange, options
                                     Check All
                                 </CommandItem>}
                                 {options.map(option => (
-                                    <CommandItem key={option.id} value={option.id} onSelect={onValueSelect}>
+                                    <CommandItem key={option} value={option} onSelect={onValueSelect} className="text-[0.65rem]">
                                         <Check
                                             className={cn(
-                                                "mr-2 h-4 w-4",
-                                                value.find((val) => val.id == option.id)
+                                                "mr-2 h-2 w-2",
+                                                value.find((val) => val == option)
                                                     ? "opacity-100"
                                                     : "opacity-0"
                                             )}
                                         />
-                                        {capitalize(option.label)}
+                                        {capitalize(option)}
                                     </CommandItem>
                                 ))}
                             </>}

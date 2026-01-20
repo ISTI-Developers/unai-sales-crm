@@ -14,7 +14,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
+import { capitalize, cn } from "@/lib/utils";
 
 interface List {
   id: string;
@@ -37,13 +37,13 @@ export function MultiComboBox({
   setValue,
   disabled,
 }: ComboboxProps) {
-  const [open, setOpen] = useState(false);
+  const [open, onOpenChange] = useState(false);
   return (
-    <Popover open={open} onOpenChange={setOpen} modal>
+    <Popover open={open} onOpenChange={onOpenChange} modal>
       <PopoverTrigger disabled={disabled} asChild>
         <div
           className={cn(
-            "whitespace-nowrap border shadow-sm rounded-md flex p-2 text-sm items-center justify-between bg-white w-full",
+            "whitespace-nowrap border shadow-sm rounded-md flex p-2 items-center justify-between bg-white w-full text-xs",
             disabled
               ? "opacity-70 pointer-events-none cursor-not-allowed"
               : "pointer-events-auto cursor-pointer"
@@ -52,39 +52,39 @@ export function MultiComboBox({
           <div className="inline-flex gap-1 flex-wrap flex-1">
             {value.length !== 0
               ? value.map((val) => {
-                  return (
-                    <AnimatePresence>
-                      <motion.p
-                        id={val.id}
-                        initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0.8, opacity: 0 }}
-                        transition={{ type: "spring", duration: 0.5 }}
-                        className="px-2 rounded-md bg-green-300 flex items-center gap-1 capitalize"
+                return (
+                  <AnimatePresence>
+                    <motion.p
+                      id={val.id}
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.8, opacity: 0 }}
+                      transition={{ type: "spring", duration: 0.5 }}
+                      className="px-2 rounded-md bg-green-300 flex items-center gap-1 capitalize"
+                    >
+                      {capitalize(val.label, "_")}
+                      <button
+                        title="x-button"
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setValue(val.id, "remove");
+                        }}
                       >
-                        {val.label}
-                        <button
-                          title="x-button"
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setValue(val.id, "remove");
-                          }}
-                        >
-                          <X size={14} />
-                        </button>
-                      </motion.p>
-                    </AnimatePresence>
-                  );
-                })
+                        <X size={14} />
+                      </button>
+                    </motion.p>
+                  </AnimatePresence>
+                );
+              })
               : `Select ${title.toLowerCase()}...`}
           </div>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </div>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-0">
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
         <Command>
-          <CommandInput placeholder={`Search ${title.toLowerCase()}...`} />
+          <CommandInput className="text-xs" placeholder={`Search ${title.toLowerCase()}...`} />
           <CommandList>
             <CommandEmpty>{title} not found</CommandEmpty>
             <CommandGroup>
@@ -92,7 +92,7 @@ export function MultiComboBox({
                 <CommandItem
                   key={item.id}
                   value={item.value}
-                  className="capitalize"
+                  className="capitalize text-xs"
                   onSelect={() => {
                     setValue(item.id);
                   }}

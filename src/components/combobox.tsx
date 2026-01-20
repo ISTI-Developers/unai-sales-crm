@@ -42,13 +42,13 @@ export function ComboBox({
           role="combobox"
           aria-expanded={open}
           disabled={disabled || false}
-          className="w-full justify-between capitalize"
+          className="w-full justify-between capitalize overflow-hidden"
         >
-          {value ? value : `Select ${title.toLowerCase()}...`}
+          {value ? value.length > 30 ? `${value.slice(0, 40)}...` : value : `Select ${title.toLowerCase()}...`}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-0">
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
         <Command>
           <CommandInput placeholder={`Search ${title.toLowerCase()}...`} />
           <CommandList>
