@@ -11,7 +11,7 @@ import { useStatuses } from "@/hooks/useClientOptions";
 import { useAvailableSites, useSites } from "@/hooks/useSites";
 import { Booking, useBookings } from "@/hooks/useBookings";
 import { differenceInDays } from "date-fns";
-import { AvailableSites, Site } from "@/interfaces/sites.interface";
+import { AvailableSites, Landmarks, Site } from "@/interfaces/sites.interface";
 import { useCurrentWeekReport } from "@/hooks/useDashboard";
 import { wp } from "@/providers/api";
 
@@ -24,21 +24,22 @@ export async function fetchFromLark(url: string, options: RequestInit) {
   return result;
 }
 export const fetchImage: (
-  imageLink: string
+  imageLink: string,
 ) => Promise<string | undefined> = async (imageLink: string) => {
   try {
     const response = await wp.get(`files?path=${imageLink}`, {
-      responseType: "blob", // This ensures binary data is received
+      responseType: "arraybuffer", // This ensures binary data is received
     });
+    const bytes = new Uint8Array(response.data);
+    let binary = "";
+    const chunkSize = 0x8000; // prevent call stack overflow
 
-    const blob = response.data;
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+    }
 
-    return await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = (err) => reject(err);
-      reader.readAsDataURL(blob);
-    });
+    const base64 = btoa(binary);
+    return `data:image/png;base64,${base64}`;
   } catch (error) {
     console.error("Error fetching image:", error);
   }
@@ -48,17 +49,17 @@ export function findMatch<T>(
   list: T[],
   key: keyof T,
   value: string,
-  normalize: (s: string) => string = (s) => s
+  normalize: (s: string) => string = (s) => s,
 ) {
   return list.find((item) =>
-    normalize(String(item[key])).match(normalize(value))
+    normalize(String(item[key])).match(normalize(value)),
   ) as T;
 }
 
 export const useWidgetData = (
   source: string,
   filters: SourceFilter[],
-  type: WidgetType
+  type: WidgetType,
 ) => {
   const { data: clients } = useClients();
   const { data: sites } = useSites();
@@ -112,7 +113,7 @@ export const useWidgetData = (
 
 export const useOptions = (
   module: string,
-  field?: string
+  field?: string,
 ): List[] | undefined => {
   const { data: companies } = useCompanies();
   const { data: salesUnits } = useSalesUnits();
@@ -192,13 +193,13 @@ export const useData = (
   source: string,
   field: string,
   config: ChartConfig,
-  map: ChartData[]
+  map: ChartData[],
 ) => {
   const { data: clients } = useClients();
   const data = useWidgetData(
     "sites",
     [{ key: "options", value: ["all sites"] }],
-    "Pie"
+    "Pie",
   );
   if (source === "clients") {
     if (!clients) return;
@@ -269,12 +270,33 @@ export const useData = (
   }
 };
 
+export const getLandmarks = async () => {
+  const response: Landmarks[] = await fetch("/landmarks.json").then((res) =>
+    res.json(),
+  );
+  const modLms = response.map((lm) => {
+    let types = lm.types;
+
+    if (typeof types === "string") {
+      types = types.replace("{", "");
+      types = types.replace("}", "");
+      types = types.split(",");
+    }
+
+    return {
+      ...lm,
+      types: types,
+    };
+  });
+
+  return modLms;
+};
 //helpers
 
 const processSites = (
   sites: Site[],
   availability: AvailableSites[],
-  bookings: Booking[]
+  bookings: Booking[],
 ) => {
   const today = new Date();
 
@@ -284,7 +306,7 @@ const processSites = (
       (booking) =>
         booking.site_code === siteCode &&
         new Date(booking.date_from) <= today &&
-        booking.booking_status !== "CANCELLED"
+        booking.booking_status !== "CANCELLED",
     );
 
   const calculateEndDate = (site: AvailableSites) => {
@@ -312,7 +334,7 @@ const processSites = (
       area: string;
       status: number | string;
       site_owner: string;
-    }> = {}
+    }> = {},
   ) => ({
     site_code: site.site_code,
     region: site.region,
@@ -327,7 +349,7 @@ const processSites = (
   const availableSites = new Set(availability.map((s) => s.site));
 
   const availableByDefault = sites.filter(
-    (site) => !availableSites.has(site.site_code)
+    (site) => !availableSites.has(site.site_code),
   );
 
   const availableByBooking = availability.map((site) => {
@@ -342,7 +364,7 @@ const processSites = (
 
   // process default sites
   const processedSiteDefault = availableByDefault.map((site) =>
-    toProcessedSite(site, { available: 1 })
+    toProcessedSite(site, { available: 1 }),
   );
 
   const processedSiteBooking = availableByBooking
@@ -363,7 +385,7 @@ const processSites = (
 
   // keep last occurrence if duplicates
   const uniqueSites = Array.from(
-    new Map(mergedSites.map((site) => [site?.site_code, site])).values()
+    new Map(mergedSites.map((site) => [site?.site_code, site])).values(),
   );
 
   return uniqueSites;
@@ -400,7 +422,7 @@ const filterClients = (clients: Client[], filter: SourceFilter[]) => {
     if (!statVal.some((val) => val.includes("all"))) {
       filteredClients = filteredClients.filter((client) => {
         return statVal.some(
-          (val) => client.status_name.toLowerCase() === val.toLowerCase()
+          (val) => client.status_name.toLowerCase() === val.toLowerCase(),
         );
       });
     }

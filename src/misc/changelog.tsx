@@ -10,32 +10,22 @@ import {
 
 const Changelog = () => {
   const changes = {
-    "1.8.4": [
-      "Added image loaders.",
-      "Updated the logic of retrieving site images."
+    "2.1.1": [
+      "Fixed an issue where deck images aren't loaded properly when imported to Google Slides.",
+      "Added the ideal view link to decks."
     ],
-    "1.8.3": [
-      "Removed redundancies on site availability.",
-      "Fixed an issue where booking monthly rates is always 0",
+    "2.1.0": [
+      "Added Delete functions for saved decks and individual sites."
     ],
-    "1.8.2": [
-      "fix client name on reports page.",
-      "fix the restriction of remarks and price accesses.",
-      "adjust of layout of dashboard for ops account.",
-      "added activate/ deactivate / dismantle functions for sites.",
-      "added filter of site owner on sites.",
+    "2.0.1": [
+      "Fixed an issue where the 'available' filter is showing bookings beyond 60 days.",
+      "Fixed an issue where the sales unit picker of Booking is not opening up."
     ],
-    "1.8.1": [
-      "Fixed the display of contract adjustments",
-      "Changed the behavior of booking dates based on selected booking status.",
-      ""
-    ],
-    "1.8": [
-      "New design for dashboard.",
-      "Setup the role access of OPS.",
-      "Add and Edit of Sites.",
-      "Added a display for current week in Reports page."
-    ],
+    "2.0.0": [
+      "Redesigned Sidebar",
+      "Sales Deck Revamp and improvements",
+      "UI Clean-up for reports page."
+    ]
   };
   return (
     <Dialog>
@@ -52,8 +42,7 @@ const Changelog = () => {
         <DialogHeader>
           <DialogTitle>Changelog Details</DialogTitle>
           <DialogDescription>
-            This update includes UI improvements and bug fixes for the clients
-            table.
+            This update includes UI improvements and bug fixes for the system.
           </DialogDescription>
         </DialogHeader>
         <div className="text-[0.65rem] pl-4">

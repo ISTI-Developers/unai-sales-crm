@@ -1,515 +1,592 @@
-import { useDeck } from "@/providers/deck.provider";
+import { useDeck } from "@/providers/deck.provider"
+import { toast } from "./use-toast";
+import { catchError } from "@/providers/api";
 import PptxGenJS from "pptxgenjs";
-import bg from "@/assets/finalbg.png";
-import mockup from "@/assets/mockup.png";
-import {
-  applyPriceAdjustment,
-  formatAmount,
-  Inches,
-} from "@/lib/format";
+import { applyPriceAdjustment, downloadPptxFromArrayBuffer, formatAmount, formatNumber, Inches } from "@/lib/format";
 import { capitalize } from "@/lib/utils";
 import { format, isBefore } from "date-fns";
-import { catchError } from "@/providers/api";
+import { DeckSite } from "@/interfaces/deck.interface";
+import { getSiteLandmarks } from "./useSites";
+import mockup from "@/assets/mockup.png";
 
 export const useGeneratePowerpoint = () => {
-  const {
-    selectedSites: sites,
-    options,
-    selectedOptions: config,
-    toAll: applyToAll,
-    maps,
-    setPrintStatus,
-    setGenerateStatus
-  } = useDeck();
+    const { title, selectedSites, selectedOptions } = useDeck();
+    const start = new Date().getTime();
+    const margin = 0.3;
+    const width = Inches(33.858);
+    const height = Inches(20.31);
+    const headerHeight = Inches(2.02);
+    const detailsSection = Inches(21.48);
+    const colWidth = (width - detailsSection);
+    const halfColWidth = (width - detailsSection) / 2;
+    const textHeight = 0.2;
+    const details2ndColumnSection = detailsSection + halfColWidth;
+    const contentSection = headerHeight + 0.2;
 
-  const start = new Date().getTime();
+    const applyOptions = (site: DeckSite, price: string, baseRate: number) => {
+        if (Object.keys(selectedOptions).length !== 0) {
+            const adjustments = selectedOptions.price_adjustment;
+            const exchange = selectedOptions.currency_exchange;
 
-  const margin = 0.4;
+            if (adjustments) {
+                const applyAll = adjustments.some(adj => adj.apply_to === "ALL");
+                let adjustment = null;
 
-  function downloadPptxFromArrayBuffer(buffer: string | ArrayBuffer | Blob | Uint8Array<ArrayBufferLike>, fileName = "presentation.pptx") {
-    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.presentationml.presentation" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = fileName;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
+                if (applyAll) {
+                    adjustment = adjustments[0];
+                } else {
+                    adjustment = adjustments.filter(adj => adj.apply_to !== "ALL").find(conf => {
+                        if (conf.apply_to.type === "sites") {
+                            return conf.apply_to.list.includes(site.site_code);
+                        } else {
+                            return Number(price) >= conf.apply_to.range.from && Number(price) <= conf.apply_to.range.to;
+                        }
+                    })
+                }
 
-  const print = async () => {
-    if (sites.length === 0) return;
-    if (maps.length === 0) return;
-
-    try {
-      console.log("Start:", start)
-      setGenerateStatus(true)
-      const presentation = new PptxGenJS();
-
-      presentation.defineLayout({
-        name: "Widescreen",
-        width: Inches(33.858),
-        height: Inches(19.05),
-      });
-      presentation.layout = "Widescreen";
-
-      for (const site of sites) {
-        const slide = presentation.addSlide();
-        slide.background = { path: bg };
-        const siteConfig = config.find(
-          (item) => item.site_code === site.site_code
-        );
-        const image = siteConfig?.images;
-        const landmarks = siteConfig?.landmarks;
-
-        const { price } = site;
-        let tempPrice = Number(price);
-
-        if (Object.keys(options).length !== 0) {
-          const adjustments = options.price_adjustment;
-          const exchange = options.currency_exchange;
-          if (adjustments) {
-            const globalAdjustment =
-              applyToAll && adjustments.length === 1 ? adjustments[0] : null;
-            const siteAdjustment = !applyToAll
-              ? adjustments.find((item) =>
-                item.apply_to.some((a) => a.value === site.site_code)
-              )
-              : null;
-
-            const adjustmentToApply = globalAdjustment || siteAdjustment;
-
-            if (adjustmentToApply) {
-              tempPrice = applyPriceAdjustment(tempPrice, {
-                amount: adjustmentToApply.amount,
-                type: adjustmentToApply.type as "percent" | "flat",
-                operation: adjustmentToApply.operation as "add" | "subtract",
-              });
+                if (adjustment) {
+                    baseRate = applyPriceAdjustment(baseRate, {
+                        amount: adjustment.amount,
+                        type: adjustment.type,
+                        operation: adjustment.operation,
+                    });
+                }
             }
-          }
 
-          if (exchange && exchange.equivalent) {
-            tempPrice = tempPrice / Number(exchange.equivalent);
-          }
-        }
-
-        const area = `Billboard Site in ${capitalize(site.city)}`;
-        const headerHeight = Inches(1.93);
-        const detailsSection = Inches(21.48);
-        const contentSection = headerHeight + Inches(0.8);
-
-        const availability = site.availability
-          ? isBefore(new Date(site.availability), new Date()) ? "OPEN" : format(new Date(site.availability), "MMM d, yyyy")
-          : "OPEN";
-
-        slide.addText(area, {
-          w: Inches(33.33),
-          h: headerHeight,
-          x: 0,
-          y: 0,
-          fontFace: "Aptos",
-          fontSize: 18,
-          bold: true,
-          align: "right",
-          color: "FFFFFF",
-        });
-        slide.addText("AVAILABILITY: ", {
-          w: 3,
-          h: margin,
-          x: detailsSection,
-          y: contentSection - Inches(0.2),
-          color: "76899E",
-          fontFace: "Aptos",
-          fontSize: 11,
-        });
-        slide.addText(availability, {
-          w: 3,
-          h: margin,
-          x: detailsSection + Inches(2.6),
-          y: contentSection - Inches(0.25),
-          color: "d22735",
-          fontFace: "Century Gothic",
-          bold: true,
-          fontSize: 12,
-        });
-
-        const imageURL = image ? image.url : mockup;
-
-        slide.addImage({
-          data: imageURL,
-          x: Inches(0.8),
-          y: ((Inches(19.05) - Inches(1.93)) / 4) + Inches(0.275),
-          w: Inches(20.09),
-          h: Inches(11.9),
-        });
-
-        const colWidth = Inches(5.9);
-        const lineHeight = Inches(0.4);
-        const textHeight = Inches(0.55);
-        const detailHeight = lineHeight + textHeight;
-
-        slide.addText("SITE CODE:", {
-          w: colWidth,
-          h: textHeight,
-          x: detailsSection,
-          y: contentSection + textHeight,
-          align: "left",
-          color: "76899E",
-          fontFace: "Aptos",
-          fontSize: 8,
-        });
-        slide.addText(site.site_code, {
-          w: colWidth,
-          h: textHeight,
-          x: detailsSection,
-          y: contentSection + detailHeight,
-          align: "left",
-          color: "1E2C3C",
-          bold: true,
-          fontFace: "Century Gothic",
-          fontSize: 10,
-        });
-        slide.addText("SIZE (H x W):", {
-          w: colWidth,
-          h: textHeight,
-          x: detailsSection + colWidth,
-          y: contentSection + textHeight,
-          align: "left",
-          color: "76899E",
-          fontFace: "Aptos",
-          fontSize: 8,
-        });
-        slide.addText(site.size, {
-          w: colWidth,
-          h: textHeight,
-          x: detailsSection + colWidth,
-          y: contentSection + detailHeight,
-          align: "left",
-          color: "1E2C3C",
-          bold: true,
-          fontFace: "Century Gothic",
-          fontSize: 10,
-        });
-
-        slide.addText("FACING:", {
-          w: colWidth,
-          h: textHeight,
-          x: detailsSection,
-          y: contentSection + textHeight + detailHeight,
-          align: "left",
-          color: "76899E",
-          fontFace: "Aptos",
-          fontSize: 8,
-        });
-        slide.addText(capitalize(site.board_facing), {
-          w: colWidth * 2,
-          h: textHeight,
-          x: detailsSection,
-          y: contentSection + textHeight + detailHeight + lineHeight,
-          align: "left",
-          color: "1E2C3C",
-          bold: true,
-          fontFace: "Century Gothic",
-          fontSize: 10,
-        });
-
-        slide.addText("BOUND:", {
-          w: colWidth,
-          h: textHeight,
-          x: detailsSection,
-          y: contentSection + textHeight + detailHeight * 2,
-          align: "left",
-          color: "76899E",
-          fontFace: "Aptos",
-          fontSize: 8,
-        });
-        slide.addText(capitalize(site.bound ?? "") || "N/A", {
-          w: colWidth * 2,
-          h: textHeight,
-          x: detailsSection,
-          y: contentSection + textHeight + detailHeight * 2 + lineHeight,
-          align: "left",
-          color: "1E2C3C",
-          bold: true,
-          fontFace: "Century Gothic",
-          fontSize: 10,
-        });
-        slide.addText("TRAFFIC COUNT:", {
-          w: colWidth,
-          h: textHeight,
-          x: detailsSection,
-          y: contentSection + textHeight + detailHeight * 3,
-          align: "left",
-          color: "76899E",
-          fontFace: "Aptos",
-          fontSize: 8,
-        });
-
-        slide.addText(Intl.NumberFormat("en-PH", {
-          style: "decimal"
-        }).format(site.traffic_count ?? 0), {
-          w: colWidth * 2,
-          h: textHeight,
-          x: detailsSection,
-          y: contentSection + textHeight + detailHeight * 3 + lineHeight,
-          align: "left",
-          color: "1E2C3C",
-          bold: true,
-          fontFace: "Century Gothic",
-          fontSize: 10,
-        });
-        slide.addText("POPULATION:", {
-          w: colWidth,
-          h: textHeight,
-          x: detailsSection + colWidth,
-          y: contentSection + textHeight + detailHeight * 3,
-          align: "left",
-          color: "76899E",
-          fontFace: "Aptos",
-          fontSize: 8,
-        });
-        slide.addText(Intl.NumberFormat("en-PH", {
-          style: "decimal"
-        }).format(site.vicinity_population ?? 0), {
-          w: colWidth * 2,
-          h: textHeight,
-          x: detailsSection + colWidth,
-          y: contentSection + textHeight + detailHeight * 3 + lineHeight,
-          align: "left",
-          color: "1E2C3C",
-          bold: true,
-          fontFace: "Century Gothic",
-          fontSize: 10,
-        });
-        slide.addText("ADDRESS:", {
-          w: colWidth * 2,
-          h: textHeight,
-          x: detailsSection,
-          y: contentSection + textHeight + detailHeight * 4,
-          align: "left",
-          color: "76899E",
-          fontFace: "Aptos",
-          fontSize: 8,
-        });
-        const addressHeight =
-          site.address.length > 140
-            ? textHeight * 2 + lineHeight
-            : site.address.length > 74
-              ? textHeight + lineHeight
-              : textHeight;
-
-        slide.addText(capitalize(site.address), {
-          w: colWidth * 2,
-          h: addressHeight,
-          x: detailsSection,
-          y: contentSection + textHeight + detailHeight * 4 + lineHeight,
-          align: "left",
-          valign: "top",
-          color: "1E2C3C",
-          bold: true,
-          fontFace: "Century Gothic",
-          fontSize: 9,
-        });
-
-        const afterAddressPosition =
-          contentSection + detailHeight * 4 + lineHeight + addressHeight;
-
-        if (landmarks) {
-          const landmarkArray = landmarks.map(
-            (landmark) => landmark.display_name
-          );
-          slide.addText("LANDMARKS:", {
-            w: colWidth,
-            h: textHeight,
-            x: detailsSection,
-            y: afterAddressPosition + lineHeight + Inches(0.05),
-            align: "left",
-            color: "76899E",
-            fontFace: "Aptos",
-            fontSize: 8,
-          });
-          if (landmarkArray.length > 0) {
-            const landmarkHeight =
-              landmarkArray.join(" • ").length > 65
-                ? textHeight + lineHeight
-                : lineHeight;
-            slide.addText(landmarkArray.join(" | "), {
-              w: colWidth * 2,
-              h: landmarkHeight,
-              x: detailsSection,
-              y: afterAddressPosition + Inches(0.1) + lineHeight * 2,
-              align: "left",
-              color: "1E2C3C",
-              fontFace: "Century Gothic",
-              fontSize: 9,
-            });
-          }
-        }
-        const landmarksLength = landmarks
-          ? landmarks.map((lm) => lm.display_name).join(" | ").length
-          : 0;
-        const ratesPosition =
-          afterAddressPosition +
-          detailHeight +
-          (landmarksLength != 0
-            ? landmarksLength > 65
-              ? textHeight + lineHeight
-              : lineHeight
-            : 0);
-
-        if (options.rate_generator) {
-          const rates = options.rate_generator;
-          const rateRows = rates.map((rate) => {
-            const { discount, type, duration } = rate;
-            tempPrice =
-              discount === 0
-                ? tempPrice
-                : applyPriceAdjustment(tempPrice, {
-                  amount: discount,
-                  type: type as "percent" | "flat",
-                });
-            return [
-              {
-                text: `${duration} Months`,
-                options: {
-                  align: "center" as PptxGenJS.HAlign,
-                  fontFace: "Aptos",
-                  fontSize: 10,
-                  fill: { color: "FFFFFF" },
-                  color: "1E2C3C",
-                },
-              },
-              {
-                text: `${formatAmount(tempPrice, {
-                  currency: options.currency_exchange?.currency ?? "PHP",
-                })} + VAT`,
-                options: {
-                  align: "center" as PptxGenJS.HAlign,
-                  fontFace: "Century Gothic",
-                  fontSize: 10,
-                  fill: { color: "FFFFFF" },
-                  color: "1E2C3C",
-                },
-              },
-            ];
-          });
-          const rows = [
-            [
-              {
-                text: "DURATION",
-                options: {
-                  align: "center" as PptxGenJS.HAlign,
-                  fontFace: "Aptos",
-                  bold: true,
-                  fontSize: 11,
-                  fill: { color: "F2F2F2" },
-                  color: "1E2C3C",
-                },
-              },
-              {
-                text: "MONTHLY RATE",
-                options: {
-                  align: "center" as PptxGenJS.HAlign,
-                  fontFace: "Aptos",
-                  bold: true,
-                  fontSize: 11,
-                  fill: { color: "F2F2F2" },
-                  color: "1E2C3C",
-                },
-              },
-            ],
-            ...rateRows,
-          ];
-          slide.addTable(rows, {
-            w: Inches(11.55),
-            h: 1.08,
-            x: detailsSection,
-            y: ratesPosition + Inches(0.2),
-            rowH: 0.27,
-            border: { color: "F2F2F2", pt: 1 },
-          });
-        } else {
-          slide.addText("MONTHLY RATE: ", {
-            w: colWidth,
-            h: textHeight,
-            x: detailsSection,
-            y: ratesPosition + Inches(0.2),
-            align: "left",
-            bold: true,
-            color: "1E2C3C",
-            fontFace: "Aptos",
-            fontSize: 10,
-          });
-          slide.addText(
-            formatAmount(tempPrice, {
-              currency: options.currency_exchange?.currency ?? "PHP",
-            }) + " + VAT",
-            {
-              w: colWidth * 1.5,
-              h: textHeight + Inches(0.2),
-              x: detailsSection + Inches(3),
-              y: ratesPosition,
-              align: "left",
-              valign: "top",
-              color: "1E2C3C",
-              bold: true,
-              fontFace: "Century Gothic",
-              fontSize: 14,
+            if (exchange && exchange.equivalent) {
+                baseRate = baseRate / Number(exchange.equivalent);
             }
-          );
+
         }
-        const hasMonthlyRateDuration = options.rate_generator;
-        const mapSize = hasMonthlyRateDuration ? Inches(5.54) : Inches(7.5);
-
-        slide.addImage({
-          data: maps.find((map) => map.site_code === site.site_code)?.map,
-          x: detailsSection + Inches(0.2),
-          y: ratesPosition + detailHeight + (hasMonthlyRateDuration ? 1 : 0),
-          w: mapSize,
-          h: mapSize,
-        });
-
-        if (site.ideal_view) {
-          slide.addText("View Google Map", {
-            hyperlink: {
-              url: site.ideal_view ?? "",
-            },
-            w: mapSize,
-            h: Inches(0.68),
-            x: detailsSection + Inches(0.2),
-            y:
-              ratesPosition +
-              detailHeight +
-              mapSize -
-              Inches(0.8) +
-              (hasMonthlyRateDuration ? 1 : Inches(0.1)),
-            align: "center",
-            color: "25589D",
-            fontFace: "Aptos",
-            fontSize: 11,
-            isTextBox: true,
-            fill: { color: "#F2F2F2" },
-          });
-        }
-        setPrintStatus(prev => ([...prev, 0]));
-        await new Promise(requestAnimationFrame)
-      }
-
-      try {
-        const response = await presentation.write({ outputType: "arraybuffer", compression: false })
-        downloadPptxFromArrayBuffer(response, "Sales Deck")
-        console.log(response, "Success!")
-        console.log("End:", new Date().getTime() - start)
-      } catch (e) {
-        console.log(e)
-      } finally {
-        setGenerateStatus(false)
-        setPrintStatus([])
-
-      }
-    } catch (e) {
-      catchError(e);
+        return baseRate;
     }
-  };
 
-  return { print };
-};
+    const addText = (slide: PptxGenJS.Slide, text: string, options: PptxGenJS.TextPropsOptions) => {
+        return slide.addText(text, {
+            fontSize: 8,
+            fontFace: "Aptos",
+            color: "76899E",
+            align: 'left',
+            h: margin,
+            ...options,
+        })
+    }
+    function measureLinesCanvas(text: string, widthIn: number, fontSize: number, fontFamily = 'Century Gothic') {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return 1;
+        ctx.font = `${fontSize}pt ${fontFamily}`;
+
+        const maxWidthPx = widthIn * 96; // PPT ≈ 96 DPI
+
+        const words = text.split(' ');
+        const lines = [];
+        let line = '';
+
+        for (const word of words) {
+            const testLine = line ? `${line} ${word}` : word;
+            const { width } = ctx.measureText(testLine);
+
+            if (width <= maxWidthPx) {
+                line = testLine;
+            } else {
+                lines.push(line);
+                line = word;
+            }
+        }
+
+        if (line) lines.push(line);
+
+        return lines.length;
+    }
+
+    const print = async () => {
+        if (!selectedSites.length) {
+            toast({ title: "Please select atleast one site.", variant: "warning" })
+            return;
+        }
+
+        try {
+            const presentation = new PptxGenJS();
+
+            presentation.defineLayout({
+                name: "Widescreen",
+                width: width,
+                height: height,
+            });
+            presentation.layout = "Widescreen";
+
+            for (const site of selectedSites) {
+                const slide = presentation.addSlide();
+                //SLIDE CONFIGURATIONS
+                slide.background = { path: "/finalbg.png" }
+
+                const landmarks = await getSiteLandmarks({ latitude: site.latitude, longitude: site.longitude })
+                const { price } = site;
+                let baseRate = Number(price);
+                const area = `Billboard Site in ${capitalize(site.city)}`;
+                const availability = site.availability
+                    ? isBefore(new Date(site.availability), new Date()) ? "OPEN" : format(new Date(site.availability), "MMM d, yyyy")
+                    : "OPEN";
+
+                baseRate = applyOptions(site, price, baseRate);
+                const IMAGE_WIDTH = Inches(20.09);
+                const IMAGE_HEIGHT = Inches(10.6194);
+
+                slide.addImage({
+                    data: site.url ?? mockup,
+                    x: Inches(0.8),
+                    y: ((height - Inches(1.93)) / 4) + Inches(1),
+                    w: IMAGE_WIDTH,
+                    h: IMAGE_HEIGHT,
+                    sizing: {
+                        type: "crop",
+                        w: IMAGE_WIDTH,
+                        h: IMAGE_HEIGHT,
+                    }
+                });
+
+                addText(slide, area, {
+                    w: width - 0.2,
+                    h: headerHeight,
+                    x: 0,
+                    y: 0,
+                    fontSize: 18,
+                    bold: true,
+                    align: "right",
+                    color: "FFFFFF",
+                });
+
+                addText(slide, "AVAILABILITY:", {
+                    w: Inches(2.34),
+                    h: margin,
+                    x: detailsSection,
+                    y: contentSection,
+                });
+
+                addText(slide, availability, {
+                    w: Inches(4.23),
+                    x: detailsSection + Inches(2.34) - 0.15,
+                    y: contentSection,
+                    color: "d22735",
+                    fontFace: "Century Gothic",
+                    bold: true,
+                    fontSize: 12,
+                });
+                addText(slide, "ROFR:", {
+                    w: Inches(2.34),
+                    x: details2ndColumnSection,
+                    y: contentSection,
+                });
+
+                addText(slide, 'TBA', {
+                    w: Inches(4.23),
+                    x: details2ndColumnSection + Inches(1.39) - 0.15,
+                    y: contentSection,
+                    color: "1E2C3C",
+                    bold: true,
+                    fontFace: "Century Gothic",
+                    fontSize: 10,
+                });
+                addText(slide, "SITE CODE:", {
+                    w: halfColWidth,
+                    h: textHeight,
+                    x: detailsSection,
+                    y: contentSection + textHeight,
+                    align: "left",
+                    color: "76899E",
+                    fontFace: "Aptos",
+                    fontSize: 8,
+                });
+                addText(slide, site.site_code, {
+                    w: halfColWidth,
+                    h: textHeight,
+                    x: detailsSection,
+                    y: contentSection + (textHeight * 1.75),
+                    align: "left",
+                    color: "1E2C3C",
+                    bold: true,
+                    fontFace: "Century Gothic",
+                    fontSize: 10,
+                });
+                addText(slide, "SIZE (H x W):", {
+                    w: halfColWidth,
+                    h: textHeight,
+                    x: details2ndColumnSection,
+                    y: contentSection + textHeight,
+                    align: "left",
+                    color: "76899E",
+                    fontFace: "Aptos",
+                    fontSize: 8,
+                });
+                addText(slide, site.size, {
+                    w: halfColWidth,
+                    h: textHeight,
+                    x: details2ndColumnSection,
+                    y: contentSection + (textHeight * 1.75),
+                    align: "left",
+                    color: "1E2C3C",
+                    bold: true,
+                    fontFace: "Century Gothic",
+                    fontSize: 10,
+                });
+                addText(slide, "ADDRESS:", {
+                    w: colWidth,
+                    h: textHeight,
+                    x: detailsSection,
+                    y: contentSection + (textHeight * 2.75),
+                    align: "left",
+                    color: "76899E",
+                    fontFace: "Aptos",
+                    fontSize: 8,
+                });
+
+                const addressLines = measureLinesCanvas(site.address, colWidth - 0.3, 8);
+                const addressLineHeight = (addressLines * 14 * 1.2) / 72;
+                const addressPosition = contentSection + (addressLines > 1 ? textHeight * 0.8 : textHeight * 2.2) + addressLineHeight
+
+                addText(slide, site.address, {
+                    w: colWidth,
+                    h: addressLineHeight,
+                    x: detailsSection,
+                    y: addressPosition,
+                    align: "left",
+                    color: "1E2C3C",
+                    bold: true,
+                    fontFace: "Century Gothic",
+                    fontSize: 8,
+                });
+
+                const facingPosition = addressLines > 1 ? addressPosition * 1.21 : addressPosition * 1.1
+                addText(slide, "FACING:", {
+                    w: colWidth,
+                    h: textHeight,
+                    x: detailsSection,
+                    y: facingPosition,
+                    align: "left",
+                    color: "76899E",
+                    fontFace: "Aptos",
+                    fontSize: 8,
+                });
+
+                addText(slide, site.board_facing, {
+                    w: colWidth,
+                    h: textHeight,
+                    x: detailsSection,
+                    y: facingPosition + (textHeight * 0.75),
+                    align: "left",
+                    color: "1E2C3C",
+                    bold: true,
+                    fontFace: "Century Gothic",
+                    fontSize: 10,
+                });
+                const boundPosition = addressLines > 1 ? facingPosition * 1.17 : facingPosition * 1.165
+                addText(slide, "BOUND:", {
+                    w: colWidth,
+                    h: textHeight,
+                    x: detailsSection,
+                    y: boundPosition,
+                    align: "left",
+                    color: "76899E",
+                    fontFace: "Aptos",
+                    fontSize: 8,
+                });
+
+                addText(slide, site.bound, {
+                    w: colWidth,
+                    h: textHeight,
+                    x: detailsSection,
+                    y: boundPosition + (textHeight * 0.75),
+                    align: "left",
+                    color: "1E2C3C",
+                    bold: true,
+                    fontFace: "Century Gothic",
+                    fontSize: 10,
+                });
+
+                const countYPosition = boundPosition * 1.145
+                addText(slide, "TRAFFIC COUNT:", {
+                    w: halfColWidth,
+                    h: textHeight,
+                    x: detailsSection,
+                    y: countYPosition,
+                    align: "left",
+                    color: "76899E",
+                    fontFace: "Aptos",
+                    fontSize: 8,
+                });
+
+                addText(slide, formatNumber(site.traffic_count), {
+                    w: halfColWidth,
+                    h: textHeight,
+                    x: detailsSection,
+                    y: countYPosition + (textHeight * 0.75),
+                    align: "left",
+                    color: "1E2C3C",
+                    bold: true,
+                    fontFace: "Century Gothic",
+                    fontSize: 10,
+                });
+                addText(slide, "POPULATION:", {
+                    w: halfColWidth,
+                    h: textHeight,
+                    x: details2ndColumnSection,
+                    y: countYPosition,
+                    align: "left",
+                    color: "76899E",
+                    fontFace: "Aptos",
+                    fontSize: 8,
+                });
+
+                addText(slide, formatNumber(site.vicinity_population), {
+                    w: halfColWidth,
+                    h: textHeight,
+                    x: details2ndColumnSection,
+                    y: countYPosition + (textHeight * 0.75),
+                    align: "left",
+                    color: "1E2C3C",
+                    bold: true,
+                    fontFace: "Century Gothic",
+                    fontSize: 10,
+                });
+                let landmarkPosition = countYPosition;
+                let landmarkLines = 1
+                if (landmarks.length > 0) {
+                    const mappedLandmarks = landmarks.map(lm => lm.display_name).slice(0, 5).join(" • ");
+                    landmarkLines = measureLinesCanvas(mappedLandmarks, colWidth, 8);
+                    const landmarkLineHeight = (landmarkLines * 14 * 1.2) / 72;
+                    landmarkPosition = boundPosition + (landmarkLines > 1 ? textHeight * 0.8 : textHeight * 2.1) + landmarkLineHeight
+                    addText(slide, "LANDMARKS:", {
+                        w: colWidth,
+                        h: textHeight,
+                        x: detailsSection,
+                        y: landmarkPosition,
+                        align: "left",
+                        color: "76899E",
+                        fontFace: "Aptos",
+                        fontSize: 8,
+                    });
+
+                    addText(slide, mappedLandmarks, {
+                        w: colWidth,
+                        h: textHeight * landmarkLines,
+                        x: detailsSection,
+                        y: landmarkPosition + (textHeight * 0.875),
+                        align: "left",
+                        color: "1E2C3C",
+                        fontFace: "Century Gothic",
+                        fontSize: 8,
+                    });
+                }
+
+
+                landmarkPosition = landmarkLines > 1 ? landmarkPosition * 1.2 : landmarkPosition * 1.13
+
+                if (selectedOptions.rate_generator) {
+                    const rates = selectedOptions.rate_generator;
+                    const displayOptions: PptxGenJS.TableRow = [];
+                    if (selectedOptions.display_options?.material_inclusions) {
+                        displayOptions.push({
+                            text: "MATERIAL",
+                            options: {
+                                align: "center" as PptxGenJS.HAlign,
+                                fontFace: "Aptos",
+                                bold: true,
+                                fontSize: 10,
+                                fill: { color: "F2F2F2" },
+                                color: "1E2C3C",
+                            },
+                        })
+                    }
+                    if (selectedOptions.display_options?.installation_inclusions) {
+                        displayOptions.push({
+                            text: "INSTALLATION",
+                            options: {
+                                align: "center" as PptxGenJS.HAlign,
+                                fontFace: "Aptos",
+                                bold: true,
+                                fontSize: 10,
+                                fill: { color: "F2F2F2" },
+                                color: "1E2C3C",
+                            },
+                        },)
+                    }
+                    const rateRows = rates.map((rate, index) => {
+                        const { discount, type, duration } = rate;
+                        if (discount === 0) return null;
+                        const monthlyRate = discount === 0 ? baseRate : applyPriceAdjustment(baseRate, { amount: discount, type: type });
+                        const displayRates: PptxGenJS.TableRow = [];
+                        if (selectedOptions.display_options?.material_inclusions && Array.isArray(selectedOptions.display_options.material_inclusions)) {
+                            displayRates.push({
+                                text: `${selectedOptions.display_options.material_inclusions[index].count}x`,
+                                options: {
+                                    align: "center" as PptxGenJS.HAlign,
+                                    fontFace: "Aptos",
+                                    fontSize: 10,
+                                    fill: { color: "FFFFFF" },
+                                    color: "1E2C3C",
+                                },
+                            })
+                        }
+                        if (selectedOptions.display_options?.installation_inclusions && Array.isArray(selectedOptions.display_options.installation_inclusions)) {
+                            displayRates.push({
+                                text: `${selectedOptions.display_options.installation_inclusions[index].count}x`,
+                                options: {
+                                    align: "center" as PptxGenJS.HAlign,
+                                    fontFace: "Aptos",
+                                    fontSize: 10,
+                                    fill: { color: "FFFFFF" },
+                                    color: "1E2C3C",
+                                },
+                            })
+                        }
+                        return [
+                            {
+                                text: `${duration}`,
+                                options: {
+                                    align: "center" as PptxGenJS.HAlign,
+                                    fontFace: "Aptos",
+                                    fontSize: 10,
+                                    fill: { color: "FFFFFF" },
+                                    color: "1E2C3C",
+                                },
+                            },
+                            {
+                                text: `${formatAmount(monthlyRate, {
+                                    currency: selectedOptions.currency_exchange?.currency ?? "PHP",
+                                })} + VAT`,
+                                options: {
+                                    align: "center" as PptxGenJS.HAlign,
+                                    fontFace: "Century Gothic",
+                                    fontSize: 9,
+                                    fill: { color: "FFFFFF" },
+                                    color: "1E2C3C",
+                                },
+                            },
+                            ...displayRates
+                        ];
+
+                    })
+                    const rows: PptxGenJS.TableRow[] = [
+                        [
+                            {
+                                text: "MONTHS",
+                                options: {
+                                    align: "center" as PptxGenJS.HAlign,
+                                    fontFace: "Aptos",
+                                    bold: true,
+                                    fontSize: 10,
+                                    fill: { color: "F2F2F2" },
+                                    color: "1E2C3C",
+                                },
+                            },
+                            {
+                                text: "RATE/MONTH",
+                                options: {
+                                    align: "center" as PptxGenJS.HAlign,
+                                    fontFace: "Aptos",
+                                    bold: true,
+                                    fontSize: 10,
+                                    fill: { color: "F2F2F2" },
+                                    color: "1E2C3C",
+                                },
+                            },
+                            ...displayOptions,
+                        ],
+                        ...rateRows.filter(row => row !== null),
+                    ];
+                    slide.addTable(rows, {
+                        w: Inches(11.55),
+                        h: 1.08,
+                        colW: [Inches(2), Inches(3.7), Inches(3), Inches(3)],
+                        x: detailsSection + Inches(0.2),
+                        y: landmarkPosition + Inches(0.2),
+                        rowH: 0.27,
+                        border: { color: "F2F2F2", pt: 1 },
+                    });
+                    landmarkPosition = landmarkPosition + 1.1
+                } else {
+                    addText(slide, "MONTHLY RATE:", {
+                        w: Inches(3),
+                        h: textHeight,
+                        x: detailsSection,
+                        y: landmarkPosition,
+                        align: "left",
+                        color: "1E2C3C",
+                        bold: true,
+                        fontFace: "Aptos",
+                        fontSize: 9,
+                    });
+                    addText(slide, `${formatAmount(baseRate)} + VAT`, {
+                        w: colWidth - Inches(2.89),
+                        h: textHeight,
+                        x: detailsSection + Inches(2.65),
+                        y: landmarkPosition,
+                        align: "left",
+                        color: "1E2C3C",
+                        bold: true,
+                        fontFace: "Century Gothic",
+                        fontSize: 12,
+                    });
+                    if (selectedOptions.display_options?.material_inclusions || selectedOptions.display_options?.installation_inclusions) {
+                        let text = `FREE `;
+                        if (selectedOptions.display_options.installation_inclusions) {
+                            text += `${selectedOptions.display_options.installation_inclusions}x Installation and `
+                        }
+                        if (selectedOptions.display_options.material_inclusions) {
+                            text += `${selectedOptions.display_options.material_inclusions}x Material`
+                        }
+                        addText(slide, text, {
+                            w: colWidth,
+                            h: textHeight,
+                            x: detailsSection,
+                            y: landmarkPosition + textHeight,
+                            align: "left",
+                            color: "1E2C3C",
+                            bold: false,
+                            fontFace: "Century Gothic",
+                            fontSize: 9,
+                        })
+                    }
+                }
+                const mapSize = landmarkLines > 1 || addressLines > 1 ? Inches(7.25) : Inches(7.5)
+                slide.addImage({
+                    data: site.map,
+                    x: detailsSection + Inches(0.2),
+                    y: landmarkPosition + (selectedOptions.rate_generator ? textHeight * 1.2 : textHeight * 2),
+                    w: mapSize,
+                    h: mapSize,
+                })
+                if (site.ideal_view) {
+                    slide.addText("View Google Map", {
+                        hyperlink: {
+                            url: site.ideal_view ?? "",
+                        },
+                        w: mapSize,
+                        h: Inches(0.68),
+                        x: detailsSection + Inches(0.2),
+                        y: landmarkPosition + (selectedOptions.rate_generator ? textHeight * 1.2 : textHeight * 2) + mapSize - Inches(0.68),
+                        align: "center",
+                        color: "25589D",
+                        fontFace: "Aptos",
+                        fontSize: 11,
+                        isTextBox: true,
+                        fill: { color: "#F2F2F2" },
+                    });
+                }
+            }
+
+            try {
+                const response = await presentation.write({ outputType: "arraybuffer", compression: false })
+                downloadPptxFromArrayBuffer(response, title)
+                console.log("End:", new Date().getTime() - start)
+            } catch (e) {
+                console.log(e)
+            }
+        } catch (e) {
+            catchError(e)
+        }
+    }
+
+    return { applyOptions, print };
+}

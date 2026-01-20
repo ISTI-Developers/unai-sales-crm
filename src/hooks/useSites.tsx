@@ -13,7 +13,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { toast } from "./use-toast";
 import { WorkplaceRes } from "@/interfaces";
-import landmarks from "@/data/landmarks.json"
+import { haversineDistance } from "@/lib/utils";
+import { getLandmarks } from "@/lib/fetch";
 
 export const useSites = () => {
   return useQuery({
@@ -68,7 +69,7 @@ export const useSitelandmarks = () => {
   return useQuery({
     queryKey: ["landmarks"],
     queryFn: async () => {
-      const response: Landmarks[] = landmarks;
+      const response: Landmarks[] = await fetch("/landmarks.json").then(res => res.json());
       const modLms = response.map((lm) => {
         let types = lm.types;
 
@@ -137,6 +138,26 @@ export const useSiteImages = (id?: string) => {
     retry: 3
   });
 };
+
+export const useThumbnail = (id?: number) => {
+  return useQuery({
+    queryKey: ["sites", "images", { id: id }],
+    queryFn: async () => {
+      const response = await wp.get(`files/${id}`, {
+        responseType: "blob", // This ensures binary data is received
+      });
+      // console.log(response.data);
+      const blob = response.data;
+      return await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = (err) => reject(err);
+        reader.readAsDataURL(blob);
+      });
+    },
+    enabled: !!id,
+  })
+}
 
 export const useImageFiles = (link?: string) => {
   return useQuery({
@@ -212,7 +233,7 @@ export const useAvailableSites = () => {
     },
     select: (data) => data?.sort((a, b) => a.site.localeCompare(b.site)),
     throwOnError: true,
-    staleTime: 60000,
+    staleTime: 360000,
     enabled: companyID ? companyID === "5" : false,
   });
 };
@@ -447,4 +468,19 @@ export const useManageSite = () => {
     },
     onError: catchError,
   });
+}
+
+export const getSiteLandmarks = async (coordinates: { latitude: string, longitude: string }) => {
+  const data = await getLandmarks();
+
+  return data.filter(item => {
+    const { latitude, longitude } = item;
+    const { latitude: lat, longitude: lng } = coordinates
+    return haversineDistance(
+      { lat: parseFloat(latitude), lng: parseFloat(longitude) },
+      { lat: parseFloat(lat), lng: parseFloat(lng) }
+
+    ) <= 100;
+  })
+
 }

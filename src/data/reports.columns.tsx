@@ -13,7 +13,7 @@ import {
 } from "date-fns";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { LoaderCircle, Paperclip, Pen, Plus, Trash2 } from "lucide-react";
+import { Check, Paperclip, Pen, Plus, Trash2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +40,7 @@ import {
 import { useAuth } from "@/providers/auth.provider";
 import { catchError } from "@/providers/api";
 import { getFridayFromISOWeek } from "@/lib/format";
+import { Label } from "@/components/ui/label";
 
 interface Cell {
   row: Row<ReportTable>;
@@ -446,6 +447,7 @@ const ReportForm = ({
   const weeks = useMemo(() => generateWeeks(), []);
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    console.log(e)
     if (!currentUser) return;
     setLoading(true);
     let dateSubmitted = new Date();
@@ -453,7 +455,7 @@ const ReportForm = ({
 
     if (currentWeek !== week) {
       dateSubmitted =
-        getFridayFromISOWeek(2025, weeks.indexOf(week) + 1) ?? new Date();
+        getFridayFromISOWeek(new Date().getFullYear(), weeks.indexOf(week) + 1) ?? new Date();
     }
     console.log(dateSubmitted);
     const ID = Number(currentUser.ID);
@@ -468,6 +470,7 @@ const ReportForm = ({
       });
       return;
     }
+
     if (edit) {
       if (typeof reportData === "string") return;
       const reportID = Number(reportData.reportID);
@@ -484,6 +487,7 @@ const ReportForm = ({
         {
           onSuccess: () => {
             setOpen(false);
+            setEdit(false)
             toast({
               description: `Your report has been updated!`,
               variant: "success",
@@ -554,59 +558,66 @@ const ReportForm = ({
 
   return (
     <form
-      className="p-4 flex flex-col gap-4 items-end"
+      className="flex items-center relative gap-2"
       onSubmit={onSubmit}
       encType="multi-part/formdata"
     >
       <Textarea
         value={report}
+        className="border-none outline-none min-h-0 focus-visible:ring-0 px-1 py-1 text-xs"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            if (!loading && !cantSubmit) {
+              e.currentTarget.form?.requestSubmit();
+            }
+          }
+        }}
         onChange={(e) => setReport(e.target.value)}
         placeholder="Enter your activities here..."
 
       />
-      <div className="w-fit mr-auto flex flex-col items-start gap-4">
+      <div className="w-fit mr-auto flex items-center gap-2">
         {previewUrl && (
-          <div className="text-sm text-gray-700">
-            Attachment:
-            <a
-              href={previewUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 underline ml-2"
-            >
-              {selectedFile ? selectedFile.name : "View"}
-            </a>
-          </div>
+          <a
+            href={previewUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 underline ml-2 text-xs flex items-center"
+          >
+            {selectedFile && `view file`}
+          </a>
         )}
+        <Label htmlFor="attachment" className="size-6 flex items-center justify-center rounded-full cursor-pointer bg-yellow-100 text-yellow-300 border border-yellow-300 hover:bg-yellow-300 transition-all hover:text-yellow-500">
+          <Paperclip size={16} />
+        </Label>
         <Input
           id="attachment"
           type="file"
-          className="w-fit mr-auto"
+          className="hidden"
           accept="image/*,application/pdf"
           onChange={onFileChange}
         />
       </div>
       <div className="flex gap-2 items-center">
         <Button
+          type="submit"
+          variant="ghost"
+          disabled={loading || cantSubmit}
+          className="p-1 h-6 w-6 rounded-full border border-emerald-400 bg-emerald-100 hover:bg-emerald-400 hover:text-white text-emerald-400 transition-all z-[2]"
+        >
+          <Check size={16} />
+        </Button>
+        <Button
           type="reset"
           variant="ghost"
-          className="text-xs h-7"
           onClick={() => {
             setEdit(false);
             setOpen(false);
           }}
+          className="p-1 h-6 w-6 rounded-full border border-zinc-400 bg-zinc-100 hover:bg-zinc-400 hover:text-white text-zinc-400 transition-all z-[2]"
         >
-          Cancel
-        </Button>
-        <Button
-          type="submit"
-          variant="ghost"
-          className="w-fit text-xs h-7 bg-emerald-500 hover:bg-teal-700 text-white hover:text-white flex gap-4 disabled:cursor-not-allowed"
-          disabled={loading || cantSubmit}
-        // className={cn("flex gap-4 ml-auto", loading && "pl-2.5")}
-        >
-          {loading && <LoaderCircle className="animate-spin" />}
-          Save
+          <X size={16} />
         </Button>
       </div>
     </form>

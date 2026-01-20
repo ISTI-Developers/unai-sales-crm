@@ -15,7 +15,7 @@ const FooterSidebar = () => {
         return {
             name: `${user.first_name} ${user.last_name}`,
             email: user.email_address,
-            avatar: user.image,
+            avatar: user.image ?? '/user.png',
         }
     }, [user])
 
@@ -31,7 +31,7 @@ const FooterSidebar = () => {
                             className="flex items-center hover:bg-main-400 data-[active=true]:bg-main-400"
                         >
                             <div className={cn("bg-transparent text-sidebar-primary-foreground flex aspect-square transition-all items-center justify-center rounded-lg", state === "collapsed" ? "size-8" : "size-8")}>
-                                <img src="https://github.com/vncntkyl.png" alt="" className='rounded-lg' />
+                                <img src={userData.avatar} alt="" className='rounded-lg' />
                             </div>
                             <div className="grid flex-1 text-left text-sm leading-tight">
                                 <span className="truncate font-medium">{userData.name}</span>
@@ -46,10 +46,10 @@ const FooterSidebar = () => {
                         align="end"
                         sideOffset={4}
                     >
-                        <DropdownMenuLabel className="p-0 font-normal">
-                            <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                                <div className={cn("bg-transparent text-sidebar-primary-foreground flex aspect-square transition-all items-center justify-center rounded-lg", state === "collapsed" ? "size-8" : "size-8")}>
-                                    <img src="https://github.com/vncntkyl.png" alt="" className='rounded-lg' />
+                        <DropdownMenuLabel className="p-0 font-normal bg-main-400/20 rounded-lg">
+                            <div className="flex items-center gap-2 p-1.5 text-left text-sm">
+                                <div className={cn("bg-transparent text-sidebar-primary-foreground flex aspect-square transition-all items-center justify-center rounded-md", state === "collapsed" ? "size-8" : "size-8")}>
+                                    <img src={userData.avatar} alt="" className='rounded-md' />
                                 </div>
                                 <div className="grid flex-1 text-left text-sm leading-tight">
                                     <span className="truncate font-medium">{userData.name}</span>
@@ -59,11 +59,11 @@ const FooterSidebar = () => {
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuGroup>
-                            <DropdownMenuItem className='gap-1'>
+                            <DropdownMenuItem className='gap-1' disabled>
                                 <BadgeCheck size={16} />
                                 <span>Account</span>
                             </DropdownMenuItem>
-                            <DropdownMenuItem className='gap-1'>
+                            <DropdownMenuItem className='gap-1' disabled>
                                 <Bell size={16} />
                                 <span>Notifications</span>
                             </DropdownMenuItem>

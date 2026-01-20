@@ -65,18 +65,18 @@ export const applyPriceAdjustment = (
   price: number,
   adjustment: {
     amount: number;
-    type: "percent" | "flat";
-    operation?: "add" | "subtract";
+    type: "%" | "---";
+    operation?: "+" | "-";
   }
 ): number => {
   let adjustedAmount = Number(adjustment.amount);
 
-  if (adjustment.type === "percent") {
+  if (adjustment.type === "%") {
     adjustedAmount = (price * adjustedAmount) / 100;
   }
 
   return adjustment.operation
-    ? adjustment.operation === "add"
+    ? adjustment.operation === "+"
       ? price + adjustedAmount
       : price - adjustedAmount
     : price - adjustedAmount;
@@ -200,4 +200,25 @@ export function getFridayFromISOWeek(year: number, week: number): Date | null {
   friday.setUTCDate(monday.getUTCDate() + 4);
 
   return friday;
+}
+
+/**
+ * Generate the Powerpoint from an array buffer
+ * @param buffer - Generated file
+ * @param fileName - Name of the filename. Defaults to "Presentation.pptx"
+ * @returns Date or null
+ */
+export function downloadPptxFromArrayBuffer(
+  buffer: string | ArrayBuffer | Blob | Uint8Array<ArrayBufferLike>,
+  fileName = "presentation.pptx"
+) {
+  const blob = new Blob([buffer as ArrayBuffer], {
+    type: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  a.click();
+  URL.revokeObjectURL(url);
 }

@@ -28,6 +28,7 @@ export interface PreSiteBooking {
   area: string;
   address: string;
   site_rental: string;
+  size: string;
   facing: string;
   date_from: string;
   date_to: string;
@@ -277,20 +278,36 @@ export const useCancelBooking = () => {
   });
 };
 
-export const useTagPreSite = () => {
+export const useUpdatePreSiteBooking = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({
-      booking_id,
-      site_code,
-    }: {
+    mutationFn: async (booking: {
+      area: string;
+      address: string;
+      facing: string;
+      size: string;
+      srp: number;
+      booking_status: string;
+      client: string;
+      account_executive: List[];
+      start: Date;
+      end: Date;
+      monthly_rate: string;
+      remarks: string;
+      site_rental: number;
       booking_id: number;
-      site_code: string;
+      id: number;
     }) => {
-      const response = await spAPI.put<DefaultResponse>("booking", {
-        id: booking_id,
-        site_code: site_code,
-      });
+      const data = {
+        ...booking,
+        account_executive: booking.account_executive
+          .map((item) => item.value)
+          .join(", "),
+        start: format(booking.start, "yyyy-MM-dd"),
+        end: format(booking.end, "yyyy-MM-dd"),
+        modified_at: format(new Date(), "yyyy-MM-dd HH:mm:ss"),
+      };
+      const response = await spAPI.put<DefaultResponse>("booking", data);
       return response.data;
     },
     onSuccess: () => {
