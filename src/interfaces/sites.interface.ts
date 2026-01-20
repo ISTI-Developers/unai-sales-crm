@@ -20,12 +20,13 @@ export interface Site {
   ideal_view: string;
   imageURL: string;
   remarks: string | null;
+  is_prime: number;
   bound: string;
   status: number;
 }
 
 export interface SiteDetailswithMapping extends Site {
-  [key: string]: string | number | null | undefined;
+  [key: string]: string | number | null | undefined | Landmarks[];
 }
 export interface SiteImage {
   upload_id: number;
@@ -114,8 +115,10 @@ export interface LatestSites {
   bound: string | null;
   date_created: string;
 }
-export interface NewSite
-  extends Omit<LatestSites, "structure_id" | "date_created"> {
+export interface NewSite extends Omit<
+  LatestSites,
+  "structure_id" | "date_created"
+> {
   ideal_view: string;
 }
 export interface SiteImpressions {

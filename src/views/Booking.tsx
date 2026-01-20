@@ -35,6 +35,14 @@ const Booking = () => {
             </Suspense>
           }
         />
+        <Route
+          path="/edit"
+          element={
+            <Suspense fallback={<>Loading...</>}>
+              <AddNewBooking />
+            </Suspense>
+          }
+        />
         <Route path="/*" element={<Navigate to="/booking" replace />} />
       </Routes>
     </Container>

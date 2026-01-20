@@ -35,7 +35,7 @@ const Home = () => {
       </AnimatePresence>
       <RolesProvider>
         <HomeSidebar>
-          <main className="relative h-screen w-full">
+          <main className="relative max-h-screen w-full">
             <Helmet>
               <title>Home | Sales Platform</title>
             </Helmet>
