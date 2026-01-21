@@ -29,7 +29,7 @@ const Main = () => {
   const indexes = Object.entries(JSON.parse(toggledWeeks ?? '{}'))
     .map(([k, v], i) => ({ key: k, value: v, index: i }))
     .filter(({ value }) => value)
-    .map(({ index }) => index);
+    .map(({ index }) => index + 1);
 
   const { data } = useMeetings(toggledWeeks ? indexes : [getISOWeek(new Date())]);
   const { columns } = useWeekColumns();

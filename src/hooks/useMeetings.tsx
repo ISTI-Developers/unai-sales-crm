@@ -30,7 +30,7 @@ export const useCreateMinute = () => {
     const indexes = Object.entries(JSON.parse(toggledWeeks))
         .map(([k, v], i) => ({ key: k, value: v, index: i }))
         .filter(({ value }) => value)
-        .map(({ index }) => index);
+        .map(({ index }) => index + 1);
 
     return useMutation({
         mutationFn: async (meeting: Omit<BaseMinutes, "ID">) => {
@@ -85,7 +85,7 @@ export const useUpdateMinute = () => {
     const indexes = Object.entries(JSON.parse(toggledWeeks))
         .map(([k, v], i) => ({ key: k, value: v, index: i }))
         .filter(({ value }) => value)
-        .map(({ index }) => index);
+        .map(({ index }) => index + 1);
 
     return useMutation({
         mutationFn: async (meeting: BaseMinutes) => {
@@ -133,7 +133,7 @@ export const useDeleteMinute = () => {
     const indexes = Object.entries(JSON.parse(toggledWeeks))
         .map(([k, v], i) => ({ key: k, value: v, index: i }))
         .filter(({ value }) => value)
-        .map(({ index }) => index);
+        .map(({ index }) => index + 1);
 
     return useMutation({
         mutationFn: async (ID: number) => {

@@ -3,7 +3,7 @@ import { ActionCell } from "@/components/sites/action.cell";
 import { Site } from "@/interfaces/sites.interface";
 import { ColumnDef } from "@tanstack/react-table";
 import PriceCell from "@/components/sites/price.cell";
-import StatusCell from "@/components/sites/status.cell";
+import { Badge } from "@/components/ui/badge";
 
 export const columns: ColumnDef<Site>[] = [
   {
@@ -66,9 +66,32 @@ export const columns: ColumnDef<Site>[] = [
     cell: RemarksCell,
   },
   {
+    id: "status",
     accessorKey: "status",
+    accessorFn: (row) => {
+      const statusMap = {
+        1: "Active",
+        2: "Inactive",
+        5: "Dismantled",
+      }
+
+      return statusMap[row.status as keyof typeof statusMap];
+    },
     header: "Status",
-    cell: StatusCell
+    cell: ({ row, column }) => {
+      const status: string = row.getValue(column.id);
+
+      const className = {
+        Active: "bg-emerald-100 border-emerald-200 text-emerald-500",
+        Inactive: "bg-red-200 border-red-100 text-red-400",
+        5: ""
+      }
+
+      return <Badge variant="outline" className={className[status as keyof typeof className]}>
+        {status}
+      </Badge >
+    },
+    filterFn: (row, column, filterValue) => filterValue.includes(row.getValue(column)),
   },
   {
     header: "Actions",

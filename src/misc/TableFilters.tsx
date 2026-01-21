@@ -93,8 +93,8 @@ function TableFilters<TData>({ table, data, filters }: Filters<TData>) {
             const updatedQuery = action // action is always remove so remove the item
               ? cond.query.filter((queryItem: List) => queryItem.id !== item.id) // remove if action is specified
               : cond.query.find((queryItem: List) => queryItem.id === item.id)
-              ? cond.query.filter((queryItem: List) => queryItem.id !== item.id) // remove if id already exists
-              : [...cond.query, item]; // add id if it doesn't exist
+                ? cond.query.filter((queryItem: List) => queryItem.id !== item.id) // remove if id already exists
+                : [...cond.query, item]; // add id if it doesn't exist
 
             return {
               ...cond,
@@ -185,7 +185,7 @@ function TableFilters<TData>({ table, data, filters }: Filters<TData>) {
               const { column, query } = condition;
 
               const queries =
-                typeof query === "string" ? [query] : query.map((q) => q.value);
+                !Array.isArray(query) ? [query] : query.map((q) => q.value);
 
               table.getColumn(column)?.setFilterValue(queries);
             } else {
@@ -271,6 +271,13 @@ function TableFilters<TData>({ table, data, filters }: Filters<TData>) {
                     ];
                   }
 
+                  if (condition.column === "status") {
+                    flattenedOptions = [
+                      'Active', 'Inactive'
+                    ]
+                  }
+
+                  console.log(flattenedOptions);
                   const queryConditions = flattenedOptions.map(
                     (item, index) => {
                       if (["mediums", "companies"].includes(condition.column)) {
@@ -352,7 +359,7 @@ function TableFilters<TData>({ table, data, filters }: Filters<TData>) {
                           <SelectItem value="contains">contains</SelectItem>
                         </SelectContent>
                       </Select>
-                      {typeof condition.query === "string" ? (
+                      {typeof condition.query === "string" || typeof condition.query === "number" ? (
                         <Select
                           value={condition.query}
                           onValueChange={(value) =>

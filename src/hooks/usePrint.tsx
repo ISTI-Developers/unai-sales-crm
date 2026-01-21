@@ -413,7 +413,7 @@ export const useGeneratePowerpoint = () => {
                     }
                     const rateRows = rates.map((rate, index) => {
                         const { discount, type, duration } = rate;
-                        if (discount === 0) return null;
+                        // if (discount === 0) return null;
                         const monthlyRate = discount === 0 ? baseRate : applyPriceAdjustment(baseRate, { amount: discount, type: type });
                         const displayRates: PptxGenJS.TableRow = [];
                         if (selectedOptions.display_options?.material_inclusions && Array.isArray(selectedOptions.display_options.material_inclusions)) {
@@ -493,7 +493,7 @@ export const useGeneratePowerpoint = () => {
                             },
                             ...displayOptions,
                         ],
-                        ...rateRows.filter(row => row !== null),
+                        ...rateRows /*.filter(row => row !== null)*/,
                     ];
                     slide.addTable(rows, {
                         w: Inches(11.55),
