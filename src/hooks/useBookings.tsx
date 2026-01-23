@@ -180,6 +180,7 @@ export const useUpdateBooking = () => {
         booking_status: booking.booking_status,
         date_from: format(booking.date_from, "yyyy-MM-dd"),
         date_to: format(booking.date_to, "yyyy-MM-dd"),
+        remarks: booking.remarks,
         modified_at: format(new Date(), "yyyy-MM-dd HH:mm:ss"),
       };
 
