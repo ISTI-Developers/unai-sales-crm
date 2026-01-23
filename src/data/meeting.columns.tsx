@@ -1,11 +1,9 @@
-import { MinutesTable, RawMinutes } from "@/interfaces/meeting.interface";
-import { Column, Row, ColumnDef } from "@tanstack/react-table";
+import { RawMinutes, WeekRow } from "@/interfaces/meeting.interface";
+import { ColumnDef, CellContext } from "@tanstack/react-table";
 import { generateWeeks } from "./reports.columns";
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { useToast } from "@/hooks/use-toast";
+import { toast, useToast } from "@/hooks/use-toast";
 import { useCreateMinute, useDeleteMinute, useUpdateMinute } from "@/hooks/useMeetings";
-import { useSettings } from "@/providers/settings.provider";
-import { getISOWeek, isMonday } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Check, Pen, Plus, Trash2, X } from "lucide-react";
@@ -13,66 +11,13 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 
-interface Cell {
-    row: Row<MinutesTable>;
-    column: Column<MinutesTable, unknown>;
-}
-
-export const useWeekColumns = () => {
-    const columns: ColumnDef<MinutesTable>[] = [
-        {
-            id: "sales_unit",
-            accessorKey: "sales_unit",
-            header: () => <>Sales Unit</>
-        },
-    ]
-
-    columns.push(
-        ...generateWeeks().map((week) => ({
-            id: week,
-            accessorKey: week,
-            cell: WeekForm
-        }))
-    )
-
-    return { columns }
-}
-
-const WeekForm = ({ column, row }: Cell) => {
-    const { toast } = useToast();
+const WeekCell = (cell: CellContext<WeekRow, unknown>) => {
+    const value = cell.getValue() as RawMinutes | null;
     const { mutate: deleteActivity } = useDeleteMinute()
-    const { weekAccess } = useSettings();
     const [open, setOpen] = useState(false);
     const [edit, setEdit] = useState(false);
-    const meetingMinutes = row.original;
-    const activity = meetingMinutes[column.id] as string | RawMinutes;
 
-    const isOpen = useMemo(() => {
-        const weeks = generateWeeks();
-        const currentWeekIndex = getISOWeek(new Date());
-        const columnWeekIndex = weeks.indexOf(column.id);
-
-        if (weekAccess.find((wk) => wk.week === column.id)) {
-            return true;
-        }
-        if (columnWeekIndex === currentWeekIndex - 1) {
-            return true;
-        }
-
-        if (columnWeekIndex === currentWeekIndex - 2) {
-            const isItMonday = isMonday(new Date());
-            const currentTime = new Date().getHours();
-
-            if (isItMonday) {
-                return currentTime < 23;
-            }
-
-            return false;
-        }
-
-        return false;
-    }, [column.id, weekAccess]);
-    const onDelete = async (ID: number) => {
+const onDelete = async (ID: number) => {
         if (ID) {
             deleteActivity(ID, {
                 onSuccess: () => {
@@ -87,44 +32,16 @@ const WeekForm = ({ column, row }: Cell) => {
             );
         }
     };
-    const report = useMemo(() => {
-        if (typeof activity === "string") {
-            return activity;
-        }
-        return activity.activity;
-    }, [activity]);
 
     return <div>
-        {open ? <ActivityForm week={column.id} edit={edit} setEdit={setEdit} minutes={meetingMinutes} setOpen={setOpen} reportData={activity} /> : <div
-            className={cn(
-                "relative group p-2 flex items-center",
-                report.length > 0 ? "justify-start" : "justify-center"
-            )}
-        >
-            <p
-                className={cn(
-                    "block indent-0 transition-all",
-                    report.length === 0 && isOpen
-                        ? "group-hover:hidden"
-                        : "whitespace-break-spaces text-xs",
-                )}
-            >
-                {report.length > 0 ? report : "---"}
-            </p>
-            {report.length === 0
-                ? isOpen && (
-                    <Button
-                        variant={null}
-                        disabled={!isOpen}
-                        onClick={() => {
-                            setOpen(true);
-                        }}
-                        className="hidden group-hover:flex w-full text-[0.6rem] p-1 px-2 h-5 gap-1"
-                    >
-                        <Plus size={12} /> Add Minutes
-                    </Button>
-                )
-                : isOpen && (
+        {open ? <ActivityForm week={cell.column.id} edit={edit} setEdit={setEdit} setOpen={setOpen} data={value} /> : <>
+            <div className={cn("relative group p-2 flex items-center", value ? "justify-start" : "justify-center")}>
+                <p className={cn("block indent-0 transition-all", !value ? "group-hover:hidden" : "whitespace-break-spaces text-xs")}>
+                    {value ? value.activity : "---"}
+                </p>
+                {!value ? <Button variant={null} onClick={() => setOpen(true)} className="hidden group-hover:flex w-full text-[0.6rem] p-1 px-2 h-5 gap-1">
+                    <Plus size={12} /> Add Minutes
+                </Button> :
                     <div className="absolute w-full flex items-center justify-center">
                         <div className="ml-auto flex gap-2 pr-2 h-full">
                             <div className="flex gap-2 opacity-0 group-hover:opacity-100 overflow-hidden w-full transition-all">
@@ -132,9 +49,7 @@ const WeekForm = ({ column, row }: Cell) => {
                                     <TooltipTrigger asChild>
                                         <Button
                                             variant={null}
-                                            disabled={!isOpen}
                                             onClick={() => {
-                                                if (!isOpen) return;
                                                 setEdit(true);
                                                 setOpen(true);
                                             }}
@@ -174,9 +89,7 @@ const WeekForm = ({ column, row }: Cell) => {
                                                     size="sm"
                                                     className="w-fit"
                                                     onClick={() => {
-                                                        if (typeof activity === "object") {
-                                                            onDelete(activity.ID);
-                                                        }
+                                                        onDelete(value.ID)
                                                     }}
                                                 >
                                                     Proceed
@@ -187,27 +100,23 @@ const WeekForm = ({ column, row }: Cell) => {
                                 </Popover>
                             </div>
                         </div>
-                    </div>
-                )}
-        </div>
-        }
+                    </div>}
+            </div>
+        </>}
     </div>
 }
-
 const ActivityForm = ({
     week,
-    minutes,
     setOpen,
     edit,
     setEdit,
-    reportData,
+    data,
 }: {
     week: string;
     edit: boolean;
     setEdit: (bool: boolean) => void;
-    minutes: MinutesTable;
     setOpen: (bool: boolean) => void;
-    reportData: string | RawMinutes;
+    data: RawMinutes | null;
 }) => {
     const { toast } = useToast();
     const [activity, setActivity] = useState("");
@@ -229,13 +138,10 @@ const ActivityForm = ({
         }
 
         if (edit) {
-            if (typeof reportData === "string") return;
-            const reportID = Number(reportData.ID);
+            if (!data) return;
+            const reportID = Number(data.ID);
             updateActivity(
                 {
-                    sales_unit: minutes.sales_unit,
-                    sales_unit_id: minutes.unit_id as number,
-                    unit_id: minutes.unit_id as number,
                     week: weeks.indexOf(week) + 1,
                     ID: reportID,
                     activity: activity
@@ -255,9 +161,6 @@ const ActivityForm = ({
         } else {
             insertActivity(
                 {
-                    sales_unit: minutes.sales_unit,
-                    unit_id: minutes.unit_id as number,
-                    sales_unit_id: minutes.unit_id as number,
                     activity: activity,
                     week: weeks.indexOf(week) + 1,
                 },
@@ -277,25 +180,27 @@ const ActivityForm = ({
         }
     }
 
-    const weeks = useMemo(() => generateWeeks(), []);
-
     useEffect(() => {
-        if (typeof reportData === "string") return;
-        setActivity(reportData.activity);
-    }, [reportData]);
+        if (data) {
+            setActivity(data.activity)
+        }
+    }, [data])
+
+    const weeks = useMemo(() => generateWeeks(), []);
 
     return <form onSubmit={onSubmit} className="flex flex-col items-end relative gap-2">
         <Textarea
             value={activity}
-            className="border-none outline-none min-h-0 focus-visible:ring-0 px-1 py-1 text-xs"
-            onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    if (!loading && activity.length > 0) {
-                        e.currentTarget.form?.requestSubmit();
-                    }
-                }
-            }}
+            className="border-none outline-none min-h-[300px] focus-visible:ring-0 px-1 py-1 text-xs"
+            // onKeyDown={(e) => {
+            //     if (e.key === "Enter" && !e.shiftKey) {
+            //         e.preventDefault();
+            //         if (!loading && activity.length > 0) {
+            //             e.currentTarget.form?.requestSubmit();
+            //         }
+            //     }
+            // }}
+
             onChange={(e) => setActivity(e.target.value)}
             placeholder="Enter the minutes here..."
         />
@@ -322,3 +227,10 @@ const ActivityForm = ({
         </div>
     </form>
 }
+
+export const columns: ColumnDef<WeekRow>[] = generateWeeks().map(week => ({
+    accessorKey: week,
+    header: week,
+    cell: WeekCell
+}))
+

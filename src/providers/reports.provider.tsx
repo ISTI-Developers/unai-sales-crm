@@ -104,7 +104,6 @@ export function ReportProvider({ children }: ProviderProps) {
       .map(([k, v], i) => ({ key: k, value: v, index: i }))
       .filter(({ value }) => value)
       .map(({ index }) => index + 1);
-      console.log(indexes)
     setSelectedWeeks(indexes as number[]);
   }, [visibleWeeks]);
 

@@ -2,7 +2,7 @@ import { DefaultResponse } from "@/interfaces";
 import { BaseMinutes, ParsedMinutes, RawMinutes } from "@/interfaces/meeting.interface";
 import { catchError, spAPI } from "@/providers/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getISOWeek } from "date-fns";
+import { getISOWeek, getYear } from "date-fns";
 
 export const useMeetings = (week: number[]) => {
     const year = new Date().getFullYear();
@@ -15,7 +15,6 @@ export const useMeetings = (week: number[]) => {
                     week: JSON.stringify(week)
                 },
             });
-            console.log(response.data);
             return response.data;
         },
         staleTime: 1000 * 60 * 10,
@@ -35,10 +34,7 @@ export const useCreateMinute = () => {
     return useMutation({
         mutationFn: async (meeting: Omit<BaseMinutes, "ID">) => {
             const formdata = new FormData();
-
-            console.log(meeting);
             formdata.append("activity", meeting.activity);
-            formdata.append("unit_id", String(meeting.sales_unit_id));
             formdata.append("week", String(meeting.week));
             formdata.append("date", new Date().toISOString());
 
@@ -57,16 +53,12 @@ export const useCreateMinute = () => {
                 (old) => {
                     if (!old) return old;
                     const exists = old.some(
-                        (item) => item.unit_id === variables.unit_id
+                        (item) => item.week === variables.week && getYear(new Date(item.modified_at)) === new Date().getFullYear()
                     );
 
-                    if (exists) {
-                        return old.map((item) =>
-                            item.unit_id === variables.unit_id ? (meetings as ParsedMinutes) : item
-                        );
-                    }
-
-                    return old;
+                    return old.map((item) =>
+                        exists ? (meetings as ParsedMinutes) : item
+                    );
                 }
             );
             queryClient.refetchQueries({
@@ -104,16 +96,12 @@ export const useUpdateMinute = () => {
                 (old) => {
                     if (!old) return old;
                     const exists = old.some(
-                        (item) => item.unit_id === variables.unit_id
+                        (item) => item.week === variables.week && getYear(new Date(item.modified_at)) === new Date().getFullYear()
                     );
 
-                    if (exists) {
-                        return old.map((item) =>
-                            item.unit_id === variables.unit_id ? (meetings as ParsedMinutes) : item
-                        );
-                    }
-
-                    return old;
+                    return old.map((item) =>
+                        exists ? (meetings as ParsedMinutes) : item
+                    );
                 }
             );
             queryClient.refetchQueries({

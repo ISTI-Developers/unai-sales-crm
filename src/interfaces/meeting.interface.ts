@@ -1,8 +1,5 @@
 export interface BaseMinutes {
   ID: number;
-  unit_id: number;
-  sales_unit_id: number;
-  sales_unit: string;
   activity: string;
   week: number;
 }
@@ -19,6 +16,8 @@ export interface ParsedMinutes extends BaseMinutes {
 
 export interface MinutesTable {
   [key: string]: string | number | RawMinutes;
-  sales_unit: string;
-  sales_unit_id: number;
 }
+
+export type WeekRow = {
+  [weekKey: string]: RawMinutes | null;
+};
