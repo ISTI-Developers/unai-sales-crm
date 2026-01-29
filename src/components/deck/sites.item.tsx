@@ -5,7 +5,7 @@ import { Landmarks, SiteImage } from "@/interfaces/sites.interface";
 import { ReactNode, useEffect, useMemo, useState } from "react";
 import { getSiteLandmarks, useSiteImages } from "@/hooks/useSites";
 import { fetchImage } from "@/lib/fetch";
-import { differenceInCalendarDays, format, isBefore, subDays } from "date-fns";
+import { format, isBefore, subDays } from "date-fns";
 import { applyPriceAdjustment, formatAmount } from "@/lib/format";
 import { getRecord, saveRecord } from "@/providers/api";
 import { useDeck } from "@/providers/deck.provider";
@@ -44,6 +44,7 @@ export const SiteItem = ({ item, width, className }: { item: DeckSite; width: nu
         const objectUrls: string[] = []; // Track all created object URLs
 
         const setup = async () => {
+            console.log(imageResult.error);
             if (!imageResult.data) return;
 
             const processedImagePromises = imageResult.data.map(async (image) => {

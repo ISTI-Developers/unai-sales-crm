@@ -51,7 +51,6 @@ const Main = () => {
 
   const deckList = useMemo(() => {
     if (!decks) return [];
-    console.log(decks);
     if (search.length === 0) return decks;
 
     return decks.filter(deck => deck.title.includes(search));

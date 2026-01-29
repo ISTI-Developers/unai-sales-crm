@@ -156,7 +156,7 @@ export function DeckProvider({ children }: ProviderProps) {
     const uniqueSites = [
       ...new Map(finalSites.map(item => [item.ID, item])).values()
     ];
-    return uniqueSites;
+    return uniqueSites.filter(site => site.status === 1);
   }, [isLoading, availableSites, allSites, bookings, adjustments]);
 
   const searchedSites: DeckSite[] = useMemo(() => {

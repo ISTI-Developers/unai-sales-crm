@@ -1,9 +1,10 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { Helmet } from "react-helmet";
 import { Navigate, Route, Routes } from "react-router-dom";
 import InitialSetup from "@/components/home/initialSetup.home";
 import { AnimatePresence, motion } from "framer-motion";
 import UnderConstructionPage from "@/misc/UnderConstructionPage";
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import ErrorPage from "@/misc/ErrorPage";
 import { useSettings } from "@/providers/settings.provider";
 import { LoaderCircle } from "lucide-react";
@@ -13,13 +14,56 @@ import { RolesProvider } from "@/providers/roles.provider";
 import Container from "@/misc/Container";
 import useLinks from "@/data/links";
 import HomeSidebar from "@/components/sidebar/sidebar.home";
+import { useQueryClient } from "@tanstack/react-query";
+import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { registerServiceWorker, subscribeUserToPush } from "@/lib/notifications";
 
 const Home = () => {
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const { isLoading } = useSettings();
+  const hasSubscribed = localStorage.getItem("subscribed");
+  const [open, setOpen] = useState(Boolean(!hasSubscribed))
 
+  const onSubscribe = async () => {
+    try {
+      const registration = await registerServiceWorker();
+      if (registration) {
+        await subscribeUserToPush(registration);
+        localStorage.setItem("subscribed", "true");
+        setOpen(false);
+        console.log("Push notification ready");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+
+  useEffect(() => {
+    const handler = (event: MessageEvent) => {
+      if (event.data?.type === "NEW_NOTIFICATION") {
+        queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      }
+    };
+
+    navigator.serviceWorker?.addEventListener("message", handler);
+    return () =>
+      navigator.serviceWorker?.removeEventListener("message", handler);
+  }, []);
   return (
     <>
+      {hasSubscribed === null && <AlertDialog open={open} onOpenChange={setOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Stay Updated!</AlertDialogTitle>
+            <AlertDialogDescription>Allow notifications to receive important updates from Sales Platform.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={onSubscribe}>Allow</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>}
       <AnimatePresence>
         {isLoading && (
           <motion.div

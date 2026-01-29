@@ -1,7 +1,7 @@
 import { SidebarFooter, SidebarMenu, SidebarMenuButton, useSidebar } from '../ui/sidebar'
 import { useAuth } from '@/providers/auth.provider'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
-import { BadgeCheck, Bell, ChevronsUpDown, LogOut } from 'lucide-react';
+import { BadgeCheck, Cog, LogOut } from 'lucide-react';
 import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -37,7 +37,6 @@ const FooterSidebar = () => {
                                 <span className="truncate font-medium">{userData.name}</span>
                                 <span className="truncate text-xs">{userData.email}</span>
                             </div>
-                            <ChevronsUpDown className="ml-auto size-4" />
                         </SidebarMenuButton>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
@@ -64,8 +63,8 @@ const FooterSidebar = () => {
                                 <span>Account</span>
                             </DropdownMenuItem>
                             <DropdownMenuItem className='gap-1' disabled>
-                                <Bell size={16} />
-                                <span>Notifications</span>
+                                <Cog size={16} />
+                                <span>Settings</span>
                             </DropdownMenuItem>
                         </DropdownMenuGroup>
                         <DropdownMenuSeparator />

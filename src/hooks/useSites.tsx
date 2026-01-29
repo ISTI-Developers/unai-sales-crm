@@ -125,6 +125,7 @@ export const useSiteImages = (id?: string) => {
     queryKey: ["sites", "images", id],
     queryFn: async () => {
       const response = await wp.get<WorkplaceRes<SiteImage[]>>(`images/${id}`);
+      // console.log(response)
       return response.data;
     },
     select: (data) =>
@@ -411,7 +412,7 @@ export const useUpdatePrice = () => {
     mutationFn: async (data: { site_code: string; priceValue: string }) => {
       const response = await spAPI.put("sites", {
         ...data,
-        type: "remarks",
+        type: "price",
       });
 
       if (response.data) {

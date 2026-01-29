@@ -1,4 +1,3 @@
-import { BookingCard } from '@/components/dashboard/bookingsCard';
 import { Badge } from '@/components/ui/badge';
 import { DateRangePicker } from '@/components/ui/daterangepicker';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -74,7 +73,7 @@ const BookingPreview = ({ id, setParams }: { id?: number; setParams: SetURLSearc
 
     const onOpenChange = (val: boolean) => {
         setOpen(val);
-        setParams({ t: "bookings" })
+        setParams({ t: "bookings" }, { replace: true })
     }
 
     return <Dialog open={open} onOpenChange={onOpenChange}>
