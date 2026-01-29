@@ -30,7 +30,6 @@ const Main = () => {
     .map(([k, v], i) => ({ key: k, value: v, index: i }))
     .filter(({ value }) => value)
     .map(({ index }) => index + 1);
-
   const { data } = useMeetings(toggledWeeks ? indexes : [getISOWeek(new Date())]);
 
 

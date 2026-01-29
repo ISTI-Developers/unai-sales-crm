@@ -11,6 +11,7 @@ const WPURL = import.meta.env.VITE_WP;
 export const spAPI = axios.create({ baseURL: mainURL, timeout: 120000 });
 export const ooh = axios.create({ baseURL: OOHURL, timeout: 120000 });
 export const wp = axios.create({ baseURL: `${WPURL}unis/`, timeout: 120000 });
+export const wpAPI = axios.create({ baseURL: `${WPURL}`, timeout: 120000 });
 
 spAPI.interceptors.request.use(
   (config) => {
@@ -36,7 +37,7 @@ spAPI.interceptors.request.use(
 
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 ooh.interceptors.request.use(
   (config) => {
@@ -44,7 +45,7 @@ ooh.interceptors.request.use(
     config.headers["x-api-key"] = token;
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 wp.interceptors.request.use(
@@ -53,7 +54,16 @@ wp.interceptors.request.use(
     config.headers["x-api-key"] = token;
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
+);
+
+wpAPI.interceptors.request.use(
+  (config) => {
+    const token = import.meta.env.VITE_OOH_KEY;
+    config.headers["x-api-key"] = token;
+    return config;
+  },
+  (error) => Promise.reject(error),
 );
 
 export function logoutAndRedirect() {
@@ -84,7 +94,7 @@ ooh.interceptors.response.use(
       });
     }
     return Promise.reject(new Error(msg));
-  }
+  },
 );
 wp.interceptors.response.use(
   (res) => res,
@@ -104,7 +114,7 @@ wp.interceptors.response.use(
       });
     }
     return Promise.reject(new Error(msg));
-  }
+  },
 );
 spAPI.interceptors.response.use(
   (res) => res,
@@ -149,7 +159,7 @@ spAPI.interceptors.response.use(
       }
     }
     return Promise.reject(new Error(msg));
-  }
+  },
 );
 
 export const catchError = (error: unknown) => {
@@ -179,13 +189,13 @@ export const idb = openDB(
         });
       }
     },
-  }
+  },
 );
 
 export async function saveQuery<TData>(
   store: string,
   key: QueryKey,
-  data: TData[]
+  data: TData[],
 ) {
   const db = await idb;
   await db.put(store, {
@@ -198,7 +208,7 @@ export async function saveRecord<TData>(
   store: string,
   key: string,
   data: TData,
-  options?: unknown
+  options?: unknown,
 ) {
   const db = await idb;
   await db.put(store, {
@@ -210,7 +220,7 @@ export async function saveRecord<TData>(
 }
 export async function getRecord<Data>(
   store: string,
-  key: string
+  key: string,
 ): Promise<RecordType<Data>> {
   const db = await idb;
   return db.get(store, key);
@@ -230,7 +240,7 @@ type ReturnType<Data> = {
 
 export async function getQuery<Data>(
   store: string,
-  key: QueryKey
+  key: QueryKey,
 ): Promise<ReturnType<Data>> {
   const db = await idb;
   return db.get(store, JSON.stringify(key));
