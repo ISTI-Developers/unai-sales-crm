@@ -7,6 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useBooking, useCancelBooking } from "@/hooks/useBookings";
 import { useAccess } from "@/hooks/useClients";
+import { Notification, sendNotification } from "@/hooks/useNotifications";
+import { useUsers } from "@/hooks/useUsers";
 import { cn } from "@/lib/utils";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
@@ -131,6 +133,7 @@ export const columns: ColumnDef<SiteBooking>[] = [
         id: "action",
         header: "Actions",
         cell: ({ row }) => {
+            const { data: users } = useUsers();
             const { mutate: cancelBooking } = useCancelBooking();
             const item: SiteBooking = row.original;
             const [open, setOpen] = useState(false);
@@ -141,9 +144,28 @@ export const columns: ColumnDef<SiteBooking>[] = [
             const onContinue = async () => {
                 onSend(true);
                 cancelBooking({ booking_id: item.ID, reason: reason }, {
-                    onSuccess: () => {
-                        setOpen(false);
-                        onSend(false);
+                    onSuccess: async (data, variables) => {
+                        if (data?.acknowledged) {
+
+                            setOpen(false);
+                            onSend(false);
+
+
+                            if (!users) return;
+                            const body = `Site ${item.site_code}'s booking has been cancelled.`;
+
+                            const notification: Notification = {
+                                title: "Booking Cancellation",
+                                recipients: [...users.filter(user => user.role.role_id in [1, 3, 4, 5, 10, 13]).map(user => Number(user.ID))],
+                                body: body,
+                                tag: "booking-cancellation",
+                                data: {
+                                    url: `/booking?t=bookings&b=${variables.booking_id}`,
+                                },
+                            }
+                            await sendNotification(notification);
+
+                        }
                     },
                 });
             };

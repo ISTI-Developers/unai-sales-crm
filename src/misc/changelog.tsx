@@ -10,6 +10,16 @@ import {
 
 const Changelog = () => {
   const changes = {
+    "2.3.1": [
+      "Fixed an issue where the time received from notifications behaves abnormally.",
+      "Fixed an issue where contract change option for booking has limited date options.",
+      "Added notifications for editing bookings and cancellations."
+    ],
+    "2.3.0": [
+      "Push notifications are now available!",
+      "Meetings management fixes",
+      "Minor bugs fixes."
+    ],
     "2.2.0": [
       "Implement meetings management with table and hooks for CRUD operations."
     ],

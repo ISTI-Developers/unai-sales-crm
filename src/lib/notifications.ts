@@ -1,5 +1,6 @@
 import { User } from "@/interfaces/user.interface";
 import axios from "axios";
+import { Monitor, Tag } from "lucide-react";
 
 export async function registerServiceWorker() {
   if ("serviceWorker" in navigator) {
@@ -12,7 +13,7 @@ export async function registerServiceWorker() {
 }
 
 export async function subscribeUserToPush(
-  registration: ServiceWorkerRegistration
+  registration: ServiceWorkerRegistration,
 ) {
   const currentUser = localStorage.getItem("currentUser");
   if (currentUser) {
@@ -51,3 +52,8 @@ function urlBase64ToUint8Array(base64String: string) {
   const rawData = window.atob(base64);
   return Uint8Array.from([...rawData].map((char) => char.charCodeAt(0)));
 }
+
+export const notificationTagMap = {
+  booking: Tag,
+  sites: Monitor,
+};

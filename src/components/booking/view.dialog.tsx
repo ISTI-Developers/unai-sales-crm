@@ -35,6 +35,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { DatePicker } from "../ui/datepicker";
 import { Input } from "../ui/input";
 import { differenceInDays } from "date-fns";
+import { useUsers } from "@/hooks/useUsers";
+import { Notification, sendNotification } from "@/hooks/useNotifications";
 
 const ViewBookingDialog = ({ site }: { site: BookingTable }) => {
   const [show, onShow] = useState(false);
@@ -114,6 +116,7 @@ const ViewBookingDialog = ({ site }: { site: BookingTable }) => {
 };
 
 const BookingItem = ({ item, show }: { item: Booking; show: boolean }) => {
+  const { data: users } = useUsers();
   const { mutate: cancelBooking } = useCancelBooking();
   const [open, setOpen] = useState(false);
   const [send, onSend] = useState(false);
@@ -135,9 +138,29 @@ const BookingItem = ({ item, show }: { item: Booking; show: boolean }) => {
   const onContinue = async () => {
     onSend(true);
     cancelBooking({ booking_id: item.ID, reason: reason }, {
-      onSuccess: () => {
-        setOpen(false);
-        onSend(false);
+      onSuccess: async (data, variables) => {
+        if (data?.acknowledged) {
+
+          setOpen(false);
+          onSend(false);
+
+
+          if (!users) return;
+          const body = `Site ${item.site_code}'s booking has been cancelled.`;
+
+          const notification: Notification = {
+            title: "Booking Cancellation",
+            recipients: [...users.filter(user => user.role.role_id in [1, 3, 4, 5, 10, 13]).map(user => Number(user.ID))],
+            body: body,
+            tag: "booking-cancellation",
+            data: {
+              url: `/booking?t=bookings&b=${variables.booking_id}`,
+            },
+          }
+          await sendNotification(notification);
+
+        }
+
       },
     });
   };
@@ -201,6 +224,7 @@ const BookingItem = ({ item, show }: { item: Booking; show: boolean }) => {
   );
 };
 export const EditBookingDialog = ({ item }: { item: Booking }) => {
+  const { data: users } = useUsers();
   const { mutate: updateBooking } = useUpdateBooking();
   const [booking, setBooking] = useState({
     ...item,
@@ -211,16 +235,42 @@ export const EditBookingDialog = ({ item }: { item: Booking }) => {
   const [send, onSend] = useState(false);
 
   const canSubmit = useMemo(() => {
-    return booking.client.length > 0 && booking.account_executive.length > 0 && Number(booking.monthly_rate) > 0 && differenceInDays(booking.date_to, booking.date_from) > 1;
+    return booking.client.length > 0 && booking.account_executive.length > 0 && differenceInDays(booking.date_to, booking.date_from) > 1;
   }, [booking])
   const onSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     onSend(true)
 
     updateBooking(booking, {
-      onSuccess: () => {
+      onSuccess: async (data, variables) => {
         onSend(false);
         setOpen(false);
+        if (data.acknowledged) {
+          if (!users) return;
+          let body = `There's a change in ${booking.site_code}'s contract details.`;
+
+          if (variables.booking_status === "CANCELLED") {
+            body = `Site ${booking.site_code}'s booking has been cancelled.`
+          } else if (variables.booking_status === "QUEUEING") {
+            body = `A reservation for site ${booking.site_code} has been made.`
+          } else if (variables.booking_status === "RENEWAL") {
+            body = `Site ${booking.site_code}'s booking has been renewed.`
+          } else if (variables.booking_status === "PRE-TERMINATION") {
+            body = `Site ${booking.site_code} has been pre-terminated.`;
+          }
+
+          const notification: Notification = {
+            title: "Booking Update",
+            recipients: [...users.filter(user => user.role.role_id in [1, 3, 4, 5, 10, 13]).map(user => Number(user.ID))],
+            body: body,
+            tag: "booking-update",
+            data: {
+              url: `/booking?t=bookings&b=${variables.ID}`,
+            },
+          }
+          await sendNotification(notification);
+
+        }
       },
       onError: () => {
         onSend(false);
@@ -287,7 +337,7 @@ export const EditBookingDialog = ({ item }: { item: Booking }) => {
             <DatePicker
               disabled={send}
               date={booking.date_from}
-              min={booking.date_from}
+              min={undefined}
               onDateChange={(value) => {
                 if (!value) return;
                 setBooking((prev) => ({

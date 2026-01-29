@@ -2,6 +2,7 @@ import { ReactNode, lazy, Suspense } from "react";
 import Page from "./Page";
 import { cn } from "@/lib/utils";
 import { useLocation } from "react-router-dom";
+import Notifications from "./Notifications";
 
 const PageTitle = lazy(() => import("@/misc/PageTitle"));
 
@@ -23,7 +24,7 @@ const Container = ({ children, title = "", className }: ContainerProps) => {
         <Suspense fallback={<>Loading...</>}>
           <PageTitle title={title} />
         </Suspense>
-        {/* <Uservatar /> */}
+        <Notifications />
       </header>
       <Page
         className={cn(

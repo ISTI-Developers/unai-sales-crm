@@ -189,15 +189,18 @@ export const useUpdateBooking = () => {
 
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] })
       queryClient.refetchQueries({ queryKey: ["bookings"] });
       toast({
         description: "Booking has been updated.",
+        variant: "success",
       })
     },
     onError: catchError,
   });
 };
 export const useCreateBookingWithNoSite = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (booking: {
       area: string;
@@ -233,6 +236,7 @@ export const useCreateBookingWithNoSite = () => {
         variant: "success",
         description: "Booking has created!",
       });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] })
     },
     onError: catchError,
   });
@@ -253,7 +257,7 @@ export const useCancelBooking = () => {
         return response.data;
       }
     },
-    onSuccess: (data, { booking_id }) => {
+    onSuccess: (data, variables) => {
       if (data) {
         toast({
           title: "Booking cancelled",
@@ -265,7 +269,7 @@ export const useCancelBooking = () => {
         if (!bookings) return bookings;
 
         return bookings.map((booking) => {
-          return booking.ID === booking_id
+          return booking.ID === variables.booking_id
             ? {
               ...booking,
               booking_status: "CANCELLED",
@@ -273,6 +277,7 @@ export const useCancelBooking = () => {
             : booking;
         });
       });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] })
       queryClient.invalidateQueries({ queryKey: ["bookings"] });
     },
     onError: catchError,

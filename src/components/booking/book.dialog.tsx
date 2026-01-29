@@ -42,6 +42,7 @@ const CreateBookingDialog = ({
   onOpenChange: (open: boolean) => void;
 }) => {
   const { user } = useAuth();
+  const { data: users } = useUsers();
   const { data, isLoading, fetchStatus } = useUsers();
   const { mutate: createBooking } = useCreateBooking(site.site);
   const { data: site_info } = useSite(site.site);
@@ -96,27 +97,29 @@ const CreateBookingDialog = ({
         onSuccess: async (data, variables) => {
           if (data?.acknowledged) {
 
-            if (import.meta.env.MODE === "development") {
+            // if (import.meta.env.MODE === "development") {
 
-              let body = `Site ${site.site} has a new booking.`;
+            let body = `Site ${site.site} has a new booking.`;
 
-              if (variables.booking_status === "CANCELLED") {
-                body = `Site ${site.site}'s booking has been cancelled.`
-              } else if (variables.booking_status === "QUEUEING") {
-                body = `A reservation for site ${site.site} has been made.`
-              } else if (variables.booking_status === "RENEWAL") {
-                body = `Site ${site.site}'s booking has been renewed.`
-              }
-
-              const response = await notifyBooking(body, data.id!);
-              if (response) {
-                toast({
-                  variant: "success",
-                  title: "Booking created!",
-                  description: "Successfully created a booking!",
-                });
-              }
+            if (variables.booking_status === "CANCELLED") {
+              body = `Site ${site.site}'s booking has been cancelled.`
+            } else if (variables.booking_status === "QUEUEING") {
+              body = `A reservation for site ${site.site} has been made.`
+            } else if (variables.booking_status === "RENEWAL") {
+              body = `Site ${site.site}'s booking has been renewed.`
+            } else if (variables.booking_status === "PRE-TERMINATION") {
+              body = `Site ${site.site} has been pre-terminated.`;
             }
+
+            const response = await notifyBooking(body, data.id!);
+            if (response) {
+              toast({
+                variant: "success",
+                title: "Booking created!",
+                description: "Successfully created a booking!",
+              });
+            }
+            // }
           } else {
             toast({
               variant: "success",
@@ -132,9 +135,10 @@ const CreateBookingDialog = ({
   };
 
   const notifyBooking = async (body: string, id: number) => {
+    if (!users) return;
     const notification: Notification = {
       title: "Site Bookings Alert!",
-      recipients: [...salesUnits.map(u => Number(u.id)), 1],
+      recipients: [...salesUnits.map(u => Number(u.id)), ...users.filter(user => user.role.role_id === 13).map(user => Number(user.ID)), 1],
       body: body,
       tag: "booking",
       data: {
