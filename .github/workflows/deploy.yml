@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - staging
 
 jobs:
   build-and-deploy:
@@ -19,14 +20,35 @@ jobs:
       - name: Build project
         run: npm run build
 
-      - name: Setup SSH
+      # 🔑 Select SSH credentials based on branch
+      - name: Setup SSH and Environment
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.DREAMHOST_SSH_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H ${{ secrets.DREAMHOST_HOST }} >> ~/.ssh/known_hosts
+
+          if [ "${GITHUB_REF##*/}" == "staging" ]; then
+            echo "${{ secrets.DREAMHOST_SSH_KEY_STAGING }}" > ~/.ssh/id_ed25519
+            chmod 600 ~/.ssh/id_ed25519
+            ssh-keyscan -H ${{ secrets.DREAMHOST_HOST }} >> ~/.ssh/known_hosts
+
+            echo "DEPLOY_USER=${{ secrets.DREAMHOST_USER_STAGING }}" >> $GITHUB_ENV
+            echo "DEPLOY_HOST=${{ secrets.DREAMHOST_HOST }}" >> $GITHUB_ENV
+            echo "DEPLOY_PATH=${{ secrets.DREAMHOST_PATH_STAGING }}" >> $GITHUB_ENV
+          else
+            echo "${{ secrets.DREAMHOST_SSH_KEY }}" > ~/.ssh/id_ed25519
+            chmod 600 ~/.ssh/id_ed25519
+            ssh-keyscan -H ${{ secrets.DREAMHOST_HOST }} >> ~/.ssh/known_hosts
+
+            echo "DEPLOY_USER=${{ secrets.DREAMHOST_USER }}" >> $GITHUB_ENV
+            echo "DEPLOY_HOST=${{ secrets.DREAMHOST_HOST }}" >> $GITHUB_ENV
+            echo "DEPLOY_PATH=${{ secrets.DREAMHOST_PATH }}" >> $GITHUB_ENV
+          fi
 
       - name: Deploy dist folder
         run: |
-          rsync -avz ./dist/ \
-          ${{ secrets.DREAMHOST_USER }}@${{ secrets.DREAMHOST_HOST }}:${{ secrets.DREAMHOST_PATH }}
+          rsync -avz --delete \
+            --exclude 'api/' \
+            --exclude 'scripts/' \
+            --exclude '.htaccess' \
+            --exclude 'notify.sh' \
+            ./dist/ \
+            $DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH
