@@ -1,4 +1,4 @@
-import errorImage from "@/assets/forbidden.svg";
+import errorImage from "@/assets/Forbidden.svg";
 import Container from "./Container";
 import { motion } from "framer-motion";
 
