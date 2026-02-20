@@ -32,7 +32,7 @@ const AppSidebar = () => {
                     <SidebarGroup>
                         <SidebarMenu>
                             <SidebarMenuItem key={"dashboard"}>
-                                <SidebarMenuButton tooltip="Dashboard" isActive={pathname === "/"} asChild>
+                                <SidebarMenuButton tooltip="Dashboard" isActive={pathname === "/"} size="sm" asChild>
                                     <Link to="/">
                                         <LayoutDashboardIcon />
                                         <span>Dashboard</span>
@@ -51,6 +51,7 @@ const AppSidebar = () => {
                                         <SidebarMenuButton
                                             tooltip={capitalize(link.title)}
                                             isActive={pathname.includes(link.handler)}
+                                            size="sm"
                                             className={cn(
                                                 "select-none",
                                                 !link.isActive

@@ -34,7 +34,7 @@ const FooterSidebar = () => {
                                 <img src={userData.avatar} alt="" className='rounded-lg' />
                             </div>
                             <div className="grid flex-1 text-left text-sm leading-tight">
-                                <span className="truncate font-medium">{userData.name}</span>
+                                <span className="truncate font-medium capitalize">{userData.name}</span>
                                 <span className="truncate text-xs">{userData.email}</span>
                             </div>
                         </SidebarMenuButton>
@@ -51,7 +51,7 @@ const FooterSidebar = () => {
                                     <img src={userData.avatar} alt="" className='rounded-md' />
                                 </div>
                                 <div className="grid flex-1 text-left text-sm leading-tight">
-                                    <span className="truncate font-medium">{userData.name}</span>
+                                    <span className="truncate font-medium capitalize">{userData.name}</span>
                                     <span className="truncate text-xs">{userData.email}</span>
                                 </div>
                             </div>
