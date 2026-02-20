@@ -111,6 +111,10 @@ const CreateBookingDialog = ({
               body = `Site ${site.site} has been pre-terminated.`;
             }
 
+            if (import.meta.env.MODE === "development"){
+              body = `IT TESTING: ${body}`;
+            }
+
             const response = await notifyBooking(body, data.id!);
             if (response) {
               toast({
