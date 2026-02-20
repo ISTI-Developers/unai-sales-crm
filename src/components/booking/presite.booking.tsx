@@ -36,26 +36,27 @@ const PresiteBookings = () => {
   const { mutate } = useCancelBooking();
   const { access: edit } = useAccess("booking.viewAll");
   const { access: remove } = useAccess("bookings.delete");
+  
   const rows = useMemo(() => {
     if (!data || isLoading || !bookings) return null;
 
-    return data
+    const rawBookings = data
       .filter((item) =>
         bookings.some(
           (booking) =>
             booking.ID === item.booking_id && booking.site_code === "---"
         )
       )
-      .map((item) => {
-        return {
-          ...item,
-          term_details: formatTermDetails(
-            item.date_from,
-            item.date_to,
-            item.monthly_rate
-          ),
-        };
-      });
+      .map((item) => ({
+        ...item,
+        term_details: formatTermDetails(
+          item.date_from,
+          item.date_to,
+          item.monthly_rate
+        ),
+      }));
+
+    return rawBookings.sort((a, b) => b.booking_id - a.booking_id);
   }, [bookings, data, isLoading]);
 
   const onCancel = (ID: number) => {
@@ -117,16 +118,16 @@ const PresiteBookings = () => {
                       <TableCell>
                         {row.booking_status !== "CANCELLED" && (
                           <>
-                              <Tooltip delayDuration={100}>
-                                <TooltipTrigger asChild>
-                                  <Button size="icon" variant="ghost" asChild>
-                                    <Link to={`./edit?id=${row.ID}`}>
-                                      <Pen size={16} />
-                                    </Link>
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Edit</TooltipContent>
-                              </Tooltip>
+                            <Tooltip delayDuration={100}>
+                              <TooltipTrigger asChild>
+                                <Button size="icon" variant="ghost" asChild>
+                                  <Link to={`./edit?id=${row.ID}`}>
+                                    <Pen size={16} />
+                                  </Link>
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Edit</TooltipContent>
+                            </Tooltip>
                             <AlertDialog key="cancel">
                               <Tooltip delayDuration={100}>
                                 <TooltipTrigger asChild>

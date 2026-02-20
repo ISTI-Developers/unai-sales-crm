@@ -7,39 +7,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { changes } from "./changes";
 
 const Changelog = () => {
-  const changes = {
-    "2.3.1": [
-      "Fixed an issue where the time received from notifications behaves abnormally.",
-      "Fixed an issue where contract change option for booking has limited date options.",
-      "Added notifications for editing bookings and cancellations."
-    ],
-    "2.3.0": [
-      "Push notifications are now available!",
-      "Meetings management fixes",
-      "Minor bugs fixes."
-    ],
-    "2.2.0": [
-      "Implement meetings management with table and hooks for CRUD operations."
-    ],
-    "2.1.1": [
-      "Fixed an issue where deck images aren't loaded properly when imported to Google Slides.",
-      "Added the ideal view link to decks."
-    ],
-    "2.1.0": [
-      "Added Delete functions for saved decks and individual sites."
-    ],
-    "2.0.1": [
-      "Fixed an issue where the 'available' filter is showing bookings beyond 60 days.",
-      "Fixed an issue where the sales unit picker of Booking is not opening up."
-    ],
-    "2.0.0": [
-      "Redesigned Sidebar",
-      "Sales Deck Revamp and improvements",
-      "UI Clean-up for reports page."
-    ]
-  };
   return (
     <Dialog>
       <DialogTrigger asChild>

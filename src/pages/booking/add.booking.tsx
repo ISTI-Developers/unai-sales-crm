@@ -246,7 +246,7 @@ const AddNewBooking = () => {
                 <SelectValue placeholder="Select booking status" />
               </SelectTrigger>
               <SelectContent>
-                {["NEW", "QUEUEING", "SPECIAL EXECUTION"].map((opt) => (
+                {["NEW", "QUEUEING", "RENEWAL", "SPECIAL EXECUTION"].map((opt) => (
                   <SelectItem
                     className="hover:bg-slate-50"
                     value={opt}

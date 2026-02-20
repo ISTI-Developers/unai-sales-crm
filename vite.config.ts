@@ -4,9 +4,10 @@ import react from "@vitejs/plugin-react";
 // https://vitejs.dev/config/
 export default defineConfig({
   assetsInclude: ["**/*.xlsx"],
-  plugins: [
-    react(),
-  ],
+  plugins: [react()],
+  esbuild: {
+    drop: ["console", "debugger"],
+  },
   server: {
     port: 9424,
   },
