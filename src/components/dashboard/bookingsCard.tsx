@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Booking, useBookings } from '@/hooks/useBookings'
+import { Booking, useBookings, usePreBookings } from '@/hooks/useBookings'
 import { Skeleton } from '../ui/skeleton';
 import { addDays, differenceInDays, differenceInMonths, format, isToday } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
@@ -14,20 +14,28 @@ import { Card, CardContent, CardTitle } from '../ui/card';
 export type BookingCard = (Booking & { facing: string, address: string, size: string });
 const BookingsCard = () => {
     const { data, isLoading } = useBookings();
+    const { data: otherBookings } = usePreBookings();
     const { data: sites } = useSites();
     const [dates, setDates] = useState("today")
 
     const bookings: BookingCard[] = useMemo(() => {
-        if (!data || isLoading || !sites) return []
+        if (!data || isLoading || !sites || !otherBookings) return []
 
-        let tempBookings = [...data.map(item => {
+        console.log(otherBookings);
+
+        let tempBookings = data.map(item => {
+
+            const siteDetails = sites.find(site => site.site_code === item.site_code);
+            const specialBooking = otherBookings.find(ob => ob.booking_id === item.ID);
             return {
                 ...item,
-                facing: sites.find(site => site.site_code === item.site_code)?.board_facing ?? "---",
-                address: sites.find(site => site.site_code === item.site_code)?.address ?? "---",
-                size: sites.find(site => site.site_code === item.site_code)?.size ?? "---",
+                site_code: specialBooking ? `${specialBooking.area} (OTHER)` : item.site_code,
+                facing: specialBooking ? specialBooking.facing : siteDetails ? siteDetails.board_facing : '---',
+                address: specialBooking ? specialBooking.address : siteDetails ? siteDetails.address : '---',
+                size: specialBooking ? specialBooking.size : siteDetails ? siteDetails.size : '---',
             }
-        })];
+        });
+
 
         tempBookings = tempBookings.sort((a, b) => {
             return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -42,7 +50,7 @@ const BookingsCard = () => {
 
         return tempBookings.filter(booking => format(new Date(booking.created_at), "MMMM dd, yyyy") === format(new Date(), "MMMM dd, yyyy"));
 
-    }, [data, isLoading, dates, sites])
+    }, [data, isLoading, sites, otherBookings, dates])
     return (
         <Card className='p-4 rounded-lg'>
             <CardTitle className="flex items-center justify-between gap-1.5 sticky top-0 bg-white font-normal">
