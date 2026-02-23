@@ -29,6 +29,7 @@ const EditSite = () => {
             }
         })
     }
+    const exclude = ['remarks', 'created_at', 'status', 'ID', 'modified_at','is_prime'];
     return (
         <Page className="flex flex-col gap-4">
             <Helmet>
@@ -46,7 +47,7 @@ const EditSite = () => {
                 {site &&
                     <form className='space-y-4' onSubmit={onSubmit}>
                         <div className='grid grid-rows-8 grid-flow-col gap-2 gap-x-4'>
-                            {Object.keys(site).filter(key => !['remarks', 'created_at', 'status', 'ID'].includes(key)).map(key => {
+                            {Object.keys(site).filter(key => !exclude.includes(key)).map(key => {
                                 const InputType = key === "vicinity_population" || key === "traffic_count" || key === "price" ? InputNumber : Input;
 
                                 return <div key={key} className='grid grid-cols-[200px_auto] items-center gap-2'>
