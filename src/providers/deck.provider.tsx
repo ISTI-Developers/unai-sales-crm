@@ -63,7 +63,7 @@ export function DeckProvider({ children }: ProviderProps) {
 
           // Include upcoming OR currently active bookings
           return (
-            booking.booking_status !== "CANCELLED" && booking.booking_status !== "QUEUEING" &&
+            !['CANCELLED', 'PRE-TERMINATION', 'QUEUEING'].includes(booking.booking_status) &&
             (from >= new Date() || (from <= new Date() && to >= new Date()))
           );
         }).sort((a, b) => new Date(a.date_from).getTime() - new Date(b.date_from).getTime())

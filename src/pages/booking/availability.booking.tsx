@@ -14,10 +14,10 @@ const SiteAvailability = () => {
 
     const availableSites: BookingTable[] = useMemo(() => {
         if (!sites || !data || !bookings || !adjustments || isLoading) return [];
-
+        
         const availableSites = new Set(data.map(d => d.site));
         // const storedSites = new Set(sites.map(s => s.site_code));
-        const inStoredButNotInAvailable = sites.filter(site => !availableSites.has(site.site_code));
+        const inStoredButNotInAvailable = sites.filter(site => !availableSites.has(site.site_code) && site.status === 1);
         // const inAvailableButNotInStored = data.filter(site => !storedSites.has(site.site));
 
         const mappedStoredSites = inStoredButNotInAvailable.map(item => {
