@@ -21,11 +21,34 @@ export const ActionCell = (cell: CellContext<BookingTable, unknown>) => {
   const [openViewing, setOpenViewing] = useState(false);
 
   const remainingDays = useMemo(() => {
-    let days = item.remaining_days;
-    if (item.adjusted_end_date) {
-      days = differenceInDays(new Date(item.adjusted_end_date), new Date());
+    let endDate = item.end_date;
+
+    const activeBooking = item.bookings.find(i => i.site_code === item.site);
+
+
+    if (activeBooking) {
+      if (activeBooking.booking_status === "PRE-TERMINATION") {
+        endDate = activeBooking.modified_at;
+      } else if (item.adjusted_end_date) {
+        if (new Date(activeBooking.date_from) < new Date(item.adjusted_end_date)) {
+          endDate = activeBooking.date_from
+        } else {
+          endDate = item.adjusted_end_date
+        }
+      } else {
+        endDate = activeBooking.date_to
+      }
+    } else {
+      endDate = item.adjusted_end_date
     }
-    return days;
+
+    if (item.site === "1NLXBLC104-1AA01") {
+      console.log(item, endDate);
+    }
+    return endDate
+      ? differenceInDays(new Date(endDate), new Date())
+      : undefined;
+
   }, [item]);
 
   return (

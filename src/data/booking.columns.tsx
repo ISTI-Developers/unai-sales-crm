@@ -14,18 +14,26 @@ export const columns: ColumnDef<BookingTable>[] = [
       const item = row;
       let endDate = item.end_date;
       let remainingDays = item.remaining_days;
-
       const activeBooking = item.bookings.find(
-        (b) => new Date(b.date_from) <= new Date() && !['CANCELLED', 'PRE-TERMINATION'].includes(b.booking_status)
+        (b) => new Date(b.date_from) <= new Date() && !['CANCELLED'].includes(b.booking_status)
       );
 
-      endDate = activeBooking
-        ? item.adjusted_end_date
-          ? new Date(activeBooking.date_from) < new Date(item.adjusted_end_date)
-            ? activeBooking.date_from
-            : item.adjusted_end_date
-          : activeBooking.date_to
-        : item.adjusted_end_date ?? endDate;
+
+      if (activeBooking) {
+        if (activeBooking.booking_status === "PRE-TERMINATION") {
+          endDate = activeBooking.modified_at;
+        } else if (item.adjusted_end_date) {
+          if (new Date(activeBooking.date_from) < new Date(item.adjusted_end_date)) {
+            endDate = activeBooking.date_from
+          } else {
+            endDate = item.adjusted_end_date
+          }
+        } else {
+          endDate = activeBooking.date_to
+        }
+      } else {
+        endDate = item.adjusted_end_date
+      }
 
       remainingDays = endDate
         ? differenceInDays(new Date(endDate), new Date())
@@ -70,7 +78,7 @@ export const columns: ColumnDef<BookingTable>[] = [
       let item: number = row.getValue("site_rental");
       const bookings: Booking[] = row.original.bookings;
       if (
-        bookings.filter((booking) => !['CANCELLED', 'PRE-TERMINATION'].includes(booking.booking_status))
+        bookings.filter((booking) => !['CANCELLED'].includes(booking.booking_status))
           .length > 0
       ) {
         const activeBooking = bookings.find(
@@ -98,9 +106,7 @@ export const columns: ColumnDef<BookingTable>[] = [
       if (
         bookings.some((b) => b.booking_status !== "CANCELLED")
       ) {
-        const ongoingBookings = bookings.filter(
-          (booking) => new Date(booking.date_from) <= new Date() && !['CANCELLED', 'PRE-TERMINATION'].includes(booking.booking_status)
-        );
+        const ongoingBookings = bookings.filter((booking) => new Date(booking.date_from) <= new Date());
 
         const activeBooking = ongoingBookings.find(booking => booking.booking_status !== "QUEUEING");
         if (activeBooking) {
@@ -129,7 +135,7 @@ export const columns: ColumnDef<BookingTable>[] = [
       let remainingDays = item.remaining_days;
 
       const ongoingBookings = item.bookings.filter(
-        (booking) => new Date(booking.date_from) <= new Date() && !['CANCELLED', 'PRE-TERMINATION'].includes(booking.booking_status)
+        (booking) => new Date(booking.date_from) <= new Date() && !['CANCELLED'].includes(booking.booking_status)
       );
 
       const activeBooking = ongoingBookings.find(booking => booking.booking_status !== "QUEUEING");
@@ -165,7 +171,7 @@ export const columns: ColumnDef<BookingTable>[] = [
       let daysVacant = item.days_vacant ?? 0;
 
       const ongoingBookings = item.bookings.filter(
-        (booking) => new Date(booking.date_from) <= new Date() && !['CANCELLED', 'PRE-TERMINATION'].includes(booking.booking_status)
+        (booking) => new Date(booking.date_from) <= new Date() && !['CANCELLED'].includes(booking.booking_status)
       );
 
       const activeBooking = ongoingBookings.find(booking => booking.booking_status !== "QUEUEING");

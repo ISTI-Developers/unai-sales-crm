@@ -51,9 +51,8 @@ const DateCell = ({ row }: CellContext<BookingTable, unknown>) => {
   };
 
   const originalBookingDate = useMemo(() => {
-    if (!endDate) return undefined;
     const ongoingBookings = bookings.filter(
-      (booking) => new Date(booking.date_from) <= new Date() && booking.booking_status !== "CANCELLED"
+      (booking) => new Date(booking.date_from) <= new Date() && !['CANCELLED'].includes(booking.booking_status)
     );
 
     const activeBooking = ongoingBookings.find(booking => booking.booking_status !== "QUEUEING");
@@ -62,8 +61,9 @@ const DateCell = ({ row }: CellContext<BookingTable, unknown>) => {
       return new Date(activeBooking.date_to)
     }
 
-    return new Date(endDate);
-  }, [bookings, endDate])
+
+    return undefined;
+  }, [bookings])
 
   const initialDate = useMemo(() => {
     if (!originalBookingDate) return undefined;
