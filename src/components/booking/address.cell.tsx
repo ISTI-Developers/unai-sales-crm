@@ -11,21 +11,28 @@ export const AddressCell = ({ row }: CellContext<BookingTable, unknown>) => {
   const ongoingBookings = item.bookings.filter(
     (booking) => new Date(booking.date_from) <= new Date() && booking.booking_status !== "CANCELLED"
   );
-  
-  const activeBooking = ongoingBookings.find(booking => booking.booking_status !== "QUEUEING");
-  
-  endDate = activeBooking ?
-    item.adjusted_end_date ?
-      new Date(activeBooking.date_from) < new Date(item.adjusted_end_date) ?
-        activeBooking.date_from :
-        item.adjusted_end_date :
-      activeBooking.date_to
-    : item.adjusted_end_date ?? endDate;
 
-  remainingDays = endDate ? differenceInDays(
-    new Date(endDate),
-    new Date()
-  ) : undefined;
+  const activeBooking = ongoingBookings.find(booking => booking.booking_status !== "QUEUEING");
+
+  if (activeBooking) {
+    if (activeBooking.booking_status === "PRE-TERMINATION") {
+      endDate = activeBooking.modified_at;
+    } else if (item.adjusted_end_date) {
+      if (new Date(activeBooking.date_from) < new Date(item.adjusted_end_date)) {
+        endDate = activeBooking.date_from
+      } else {
+        endDate = item.adjusted_end_date
+      }
+    } else {
+      endDate = activeBooking.date_to
+    }
+  } else {
+    endDate = item.adjusted_end_date
+  }
+
+  remainingDays = endDate
+    ? differenceInDays(new Date(endDate), new Date())
+    : undefined;
 
   remainingDays = remainingDays ? remainingDays >= 0 ? remainingDays : undefined : undefined;
   return (
