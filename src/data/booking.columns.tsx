@@ -82,7 +82,7 @@ export const columns: ColumnDef<BookingTable>[] = [
           .length > 0
       ) {
         const activeBooking = bookings.find(
-          (booking) => new Date(booking.date_from) <= new Date()
+          (booking) => new Date(booking.date_from) <= new Date() && new Date(booking.date_to) >= new Date()
         );
         if (activeBooking) {
           item = activeBooking.site_rental;
@@ -108,7 +108,7 @@ export const columns: ColumnDef<BookingTable>[] = [
       ) {
         const ongoingBookings = bookings.filter((booking) => new Date(booking.date_from) <= new Date());
 
-        const activeBooking = ongoingBookings.find(booking => booking.booking_status !== "QUEUEING");
+        const activeBooking = ongoingBookings.find(booking => booking.booking_status !== "QUEUEING" && new Date(booking.date_to) >= new Date());
         if (activeBooking) {
           item = activeBooking.client;
         }
@@ -138,7 +138,7 @@ export const columns: ColumnDef<BookingTable>[] = [
         (booking) => new Date(booking.date_from) <= new Date() && !['CANCELLED'].includes(booking.booking_status)
       );
 
-      const activeBooking = ongoingBookings.find(booking => booking.booking_status !== "QUEUEING");
+      const activeBooking = ongoingBookings.find(booking => booking.booking_status !== "QUEUEING" && new Date(booking.date_to) >= new Date());
       endDate = activeBooking ?
         item.adjusted_end_date ?
           new Date(activeBooking.date_from) < new Date(item.adjusted_end_date) ?
@@ -174,7 +174,7 @@ export const columns: ColumnDef<BookingTable>[] = [
         (booking) => new Date(booking.date_from) <= new Date() && !['CANCELLED'].includes(booking.booking_status)
       );
 
-      const activeBooking = ongoingBookings.find(booking => booking.booking_status !== "QUEUEING");
+      const activeBooking = ongoingBookings.find(booking => booking.booking_status !== "QUEUEING" && new Date(booking.date_to) >= new Date());
       endDate = activeBooking ?
         item.adjusted_end_date ?
           new Date(activeBooking.date_from) < new Date(item.adjusted_end_date) ?

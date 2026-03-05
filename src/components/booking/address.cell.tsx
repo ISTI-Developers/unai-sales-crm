@@ -12,7 +12,7 @@ export const AddressCell = ({ row }: CellContext<BookingTable, unknown>) => {
     (booking) => new Date(booking.date_from) <= new Date() && booking.booking_status !== "CANCELLED"
   );
 
-  const activeBooking = ongoingBookings.find(booking => booking.booking_status !== "QUEUEING");
+  const activeBooking = ongoingBookings.find(booking => booking.booking_status !== "QUEUEING" && new Date(booking.date_to) >= new Date());
 
   if (activeBooking) {
     if (activeBooking.booking_status === "PRE-TERMINATION") {

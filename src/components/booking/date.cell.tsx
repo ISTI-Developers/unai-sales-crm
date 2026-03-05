@@ -55,7 +55,7 @@ const DateCell = ({ row }: CellContext<BookingTable, unknown>) => {
       (booking) => new Date(booking.date_from) <= new Date() && !['CANCELLED'].includes(booking.booking_status)
     );
 
-    const activeBooking = ongoingBookings.find(booking => booking.booking_status !== "QUEUEING");
+    const activeBooking = ongoingBookings.find(booking => booking.booking_status !== "QUEUEING" && new Date(booking.date_to) >= new Date());
 
     if (activeBooking) {
       return new Date(activeBooking.date_to)
