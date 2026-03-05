@@ -69,19 +69,13 @@ export interface AvailableSites {
   structure: string;
   site: string;
   category: string;
-  // contract_no?: string;
   product?: string;
   client?: string;
   address: string;
   date_from?: string;
   end_date?: string;
-  // date_created: string;
-  // lease_contract_id?: number;
-  // lease_contract_code?: string;
   net_contract_amount?: number;
   payment_term_id?: number;
-  // lease_date_from?: string;
-  // lease_date_to?: string;
   days_vacant?: number;
   remaining_days?: number;
   adjusted_end_date?: string;
@@ -92,6 +86,7 @@ export interface AvailableSites {
 
 export interface BookingTable extends Omit<AvailableSites, "category"> {
   bookings: Booking[];
+  site_code: string;
   site_rental: number;
   facing: string;
   remarks?: string;
