@@ -111,7 +111,7 @@ const CreateBookingDialog = ({
               body = `Site ${site.site} has been pre-terminated.`;
             }
 
-            if (import.meta.env.MODE === "development"){
+            if (import.meta.env.MODE === "development") {
               body = `IT TESTING: ${body}`;
             }
 
@@ -163,21 +163,33 @@ const CreateBookingDialog = ({
     if (bookings.length > 0) {
       const activeBooking = bookings.filter(b => b.booking_status !== "CANCELLED");
 
+
       const ongoingBooking = activeBooking.reduce((latest, current) =>
-        new Date(current.date_to) > new Date(latest.date_to) ? current : latest, {} as Booking
+        new Date(current.date_to) > new Date(latest.date_to) ? current : latest
       );
+
+
       if (Object.keys(ongoingBooking).length > 0) {
         endDate = addDays(new Date(ongoingBooking.date_to), 1);
       }
+
+      if (site.adjusted_end_date) {
+        if (new Date(ongoingBooking.date_from) < new Date(site.adjusted_end_date)) {
+          endDate = addDays(new Date(ongoingBooking.date_from), 1);
+        } else {
+          endDate = addDays(new Date(site.adjusted_end_date), 1);
+        }
+      }
+    } else {
+      if (site.adjusted_end_date) {
+        endDate = addDays(new Date(site.adjusted_end_date), 1);
+      }
     }
-    if (site.adjusted_end_date) {
-      endDate = addDays(new Date(site.adjusted_end_date), 1);
-    }
+    
     if (endDate && !(bookings.length || site.adjusted_end_date)) {
       endDate = addDays(new Date(endDate), 1);
     }
 
-    console.log(endDate);
     setBooking(prev => {
       if (!prev) return prev;
 
