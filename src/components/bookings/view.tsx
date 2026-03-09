@@ -17,11 +17,13 @@ import { differenceInDays } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { DatePicker } from '../ui/datepicker';
 import { Input } from '../ui/input';
+import { getLatestBooking } from '@/lib/fetch';
 
 function ViewBooking({ site }: { site: SiteAvailability }) {
     const [openBooking, setOpenBooking] = useState(false);
     const [show, onShow] = useState(true);
     const headers = ["status", "client", "AE", "SRP", "term details", "action"];
+    const ongoing = getLatestBooking(site.bookings);
 
     const bookings = useMemo(() => {
         return site.bookings
@@ -39,9 +41,7 @@ function ViewBooking({ site }: { site: SiteAvailability }) {
                 )
                     return -1;
                 // Otherwise, sort by date_from descending (latest first)
-                return (
-                    new Date(b.date_from).getTime() - new Date(a.date_from).getTime()
-                );
+                return b.ID - a.ID;
             });
     }, [site, show]);
     return (
@@ -90,16 +90,9 @@ function ViewBooking({ site }: { site: SiteAvailability }) {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {bookings.sort((a, b) => {
-                                    const now = new Date()
-
-                                    const aOngoing = new Date(a.date_from) <= now && new Date(a.date_to) > now
-                                    const bOngoing = new Date(b.date_from) <= now && new Date(b.date_to) > now
-
-                                    return Number(bOngoing) - Number(aOngoing)
-                                }).map((item) => {
+                                {bookings.map((item) => {
                                     return (
-                                        <BookingItem item={item} key={`${item.site_code}-${item.ID}`} show={show} />
+                                        <BookingItem item={item} key={`${item.site_code}-${item.ID}`} show={show} ongoingBooking={ongoing} />
                                     );
                                 })}
                             </TableBody>
@@ -110,7 +103,7 @@ function ViewBooking({ site }: { site: SiteAvailability }) {
     )
 }
 
-const BookingItem = ({ item, show }: { item: Booking; show: boolean }) => {
+const BookingItem = ({ item, show, ongoingBooking }: { item: Booking; show: boolean; ongoingBooking?: Booking }) => {
     const { data: users } = useUsers();
     const { mutate: cancelBooking } = useCancelBooking();
     const [open, setOpen] = useState(false);
@@ -121,23 +114,24 @@ const BookingItem = ({ item, show }: { item: Booking; show: boolean }) => {
         item.date_to,
         item.monthly_rate
     );
-
-    const ongoingBooking = useMemo(() => {
-        return (
-            new Date(item.date_from) <= new Date() &&
-            new Date(item.date_to) > new Date() &&
-            item.booking_status !== "CANCELLED"
-        );
-    }, [item]);
     const status = useMemo(() => {
         const invalid = ['CANCELLED', 'PRE-TERMINATION']
         if (new Date(item.date_to) < new Date() && !invalid.includes(item.booking_status)) {
             return 'COMPLETED'
         }
-        if (ongoingBooking) return 'RUNNING'
+        if (ongoingBooking) {
+            if (ongoingBooking.ID === item.ID) {
+                if (ongoingBooking.booking_status === "PRE-TERMINATION") return "PRE-TERMINATED";
+                return "RUNNING"
+            }
+            if (ongoingBooking.date_from === item.date_from && item.booking_status === "NEW") {
+                return "STOPPED";
+            }
+        }
         return item.booking_status
-    }, [item.booking_status, item.date_to, ongoingBooking])
+    }, [item.ID, item.booking_status, item.date_from, item.date_to, ongoingBooking])
 
+    const current = ongoingBooking ? ongoingBooking.ID === item.ID : false;
     const onContinue = async () => {
         onSend(true);
         cancelBooking({ booking_id: item.ID, reason: reason }, {
@@ -175,11 +169,11 @@ const BookingItem = ({ item, show }: { item: Booking; show: boolean }) => {
                 show && item.booking_status === "CANCELLED"
                     ? "bg-red-50 text-red-300"
                     : "",
-                ongoingBooking
+                current
                     ? item.booking_status === "PRE-TERMINATION"
                         ? "bg-amber-50 text-amber-700"
                         : "bg-emerald-100 hover:bg-emerald-200 text-emerald-600"
-                    : status === "COMPLETED" ? "opacity-50 pointer-events-none" : ""
+                    : ['COMPLETED','STOPPED'].includes(status) ? "opacity-50 pointer-events-none" : ""
             )}
         >
             <TableCell className="font-semibold whitespace-nowrap">
@@ -193,7 +187,7 @@ const BookingItem = ({ item, show }: { item: Booking; show: boolean }) => {
             <TableCell className='text-[0.65rem]'>{formatAmount(item.srp)}</TableCell>
             <TableCell className='text-[0.65rem]'>{termDetails}</TableCell>
             <TableCell align="center">
-                {!['CANCELLED', 'PRE-TERMINATION', 'COMPLETED'].includes(status) && (
+                {!['CANCELLED', 'PRE-TERMINATION', 'COMPLETED','STOPPED'].includes(status) && (
                     <div className="flex items-center justify-center">
                         <EditBookingDialog item={item} />
                         <Dialog open={open} onOpenChange={setOpen}>

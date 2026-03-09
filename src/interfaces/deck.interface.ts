@@ -11,8 +11,6 @@ import { v4 } from "uuid";
 
 export interface DeckSite extends SiteDetailswithMapping {
   availability: string | null;
-  traffic_count: number;
-  vicinity_population: number;
   client?: string;
   product?: string;
   image?: number;

@@ -23,6 +23,8 @@ export interface Site {
   is_prime: number;
   bound: string;
   status: number;
+  traffic_count: number;
+  vicinity_population: number;
 }
 
 export interface SiteDetailswithMapping extends Site {

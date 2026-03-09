@@ -1,8 +1,9 @@
-import { Booking, useBookings } from "@/hooks/useBookings";
+import { useBookings } from "@/hooks/useBookings";
 import { useDeck as useOneDeck } from "@/hooks/useDeck";
-import { useAvailableSites, useOverridenSiteEndDates, useSitelandmarks, useSites } from "@/hooks/useSites";
+import { useOverridenSiteEndDates, useSitelandmarks, useSites } from "@/hooks/useSites";
 import { ProviderProps } from "@/interfaces";
 import { DeckProvider as DeckProviderType, DeckSite } from "@/interfaces/deck.interface";
+import { getEndDate, getLatestBooking } from "@/lib/fetch";
 import { haversineDistance } from "@/lib/utils";
 import { DeckFilters, DeckOptions } from "@/misc/deckTemplate";
 import { addDays, differenceInCalendarDays, format, isBefore } from "date-fns";
@@ -26,7 +27,6 @@ export function DeckProvider({ children }: ProviderProps) {
 
   const { data: landmarks } = useSitelandmarks();
   const { data: allSites } = useSites();
-  const { data: availableSites } = useAvailableSites();
   const { data: bookings } = useBookings();
   const { data: adjustments } = useOverridenSiteEndDates();
   const { data: deckData } = useOneDeck(deckID);
@@ -38,126 +38,31 @@ export function DeckProvider({ children }: ProviderProps) {
 
   const isLoading =
     !allSites ||
-    !availableSites ||
     !bookings ||
     !adjustments ||
     !landmarks;
 
-
   const sites: DeckSite[] = useMemo(() => {
     if (isLoading) return [];
 
-    const availableSiteCodes = new Set(availableSites.map(d => d.site));
+    const activeSites = allSites.filter(site => site.status === 1);
 
-    const inStoredButNotInAvailable = allSites.filter(
-      site => !availableSiteCodes.has(site.site_code)
-    );
+    const contracts = activeSites.map(site => {
+      const siteBookings = bookings.filter(booking => booking.site_code === site.site_code);
+      const adjustment = adjustments.find(adjustment => adjustment.site_code === site.site_code);
+      const booking = getLatestBooking(siteBookings);
+      const endDate = getEndDate(booking, adjustment);
 
-    const getSiteBookings = (site_code: string) => {
-      const siteBookings = bookings.filter(booking => booking.site_code === site_code);
-
-      const activeBookings = siteBookings.filter(
-        (booking) => {
-          const from = new Date(booking.date_from);
-          const to = new Date(booking.date_to);
-
-          // Include upcoming OR currently active bookings
-          return (
-            !['CANCELLED', 'QUEUEING'].includes(booking.booking_status) &&
-            (from >= new Date() || (from <= new Date() && to >= new Date()))
-          );
-        }).sort((a, b) => new Date(a.date_from).getTime() - new Date(b.date_from).getTime())
-      return activeBookings;
-    }
-    // 🧠 Utility to get site availability
-    const getAvailability = (siteBookings: Booking[]) => {
-      if (!siteBookings.length) return null;
-
-      const now = new Date();
-
-      // Sort by start date
-      const sorted = [...siteBookings].sort(
-        (a, b) => new Date(a.date_from).getTime() - new Date(b.date_from).getTime()
-      );
-
-      // Find ongoing (now is within date range)
-      const ongoing = sorted.find(
-        b => new Date(b.date_from) <= now && new Date(b.date_to) >= now
-      );
-
-      // Find next booking that starts *after now*
-      const next = sorted.find(b => new Date(b.date_from) > now);
-
-      // ✅ If there's a next booking, always prioritize its end date
-      if (next) {
-        return next.date_to;
-      }
-
-      // Otherwise fallback to ongoing’s end
-      if (ongoing) {
-        return ongoing.date_to;
-      }
-
-      return null;
-    };
-
-    // 🟩 Sites currently active / available
-    const mappedAvailableSites = availableSites
-      .map(item => {
-        const site = allSites.find(s => s.site_code === item.site);
-        const adjustment = adjustments.find(a => a.site_code === item.site);
-
-        if (!site) {
-          return null;
-        }
-
-        const siteBookings = getSiteBookings(item.site);
-        const available = getAvailability(siteBookings);
-
-        let availability = item.end_date ? format(addDays(new Date(item.end_date), 1), "MMM d, yyyy") : null;
-
-        if (available && !adjustment) {
-          availability = format(addDays(new Date(available), 1), "MMM d, yyyy");
-        }
-        if (adjustment && !available && item.end_date) {
-          if (new Date(adjustment.adjusted_end_date) > new Date(item.end_date)) {
-            availability = format(addDays(new Date(adjustment.adjusted_end_date), 1), "MMM d, yyyy");
-          }
-        }
-        if (adjustment && available) {
-          if (new Date(adjustment.adjusted_end_date) > new Date(available)) {
-            availability = format(addDays(new Date(adjustment.adjusted_end_date), 1), "MMM d, yyyy");
-          } else {
-            availability = format(addDays(new Date(available), 1), "MMM d, yyyy");
-          }
-        }
-
-        return {
-          ...site,
-          client: available ? siteBookings.find(booking => booking.date_to === available)?.client ?? "" : `${item.client}(${item.product})`,
-          availability: availability,
-        } as DeckSite;
-      })
-      .filter((item) => item !== null);
-
-    // 🟦 Sites in storage but not in active list
-    const mappedSites = inStoredButNotInAvailable.map(item => {
-      const siteBookings = getSiteBookings(item.site_code);
-      const available = getAvailability(siteBookings);
+      const availability = endDate ? format(addDays(new Date(endDate), 1), "MMM d, yyyy") : null;
 
       return {
-        ...item,
-        availability: available ? format(addDays(new Date(available), 1), "yyyy-MM-dd") : null,
-      } as DeckSite;
-    });
+        ...site,
+        availability: availability,
+      }
+    })
+    return contracts;
 
-    const finalSites = [...mappedAvailableSites ?? [], ...mappedSites];
-
-    const uniqueSites = [
-      ...new Map(finalSites.map(item => [item.ID, item])).values()
-    ];
-    return uniqueSites.filter(site => site.status === 1);
-  }, [isLoading, availableSites, allSites, bookings, adjustments]);
+  }, [isLoading, allSites, bookings, adjustments])
 
   const searchedSites: DeckSite[] = useMemo(() => {
     if (!sites) return sites;

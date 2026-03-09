@@ -459,48 +459,57 @@ export function useImageUrls(filename: string) {
     },
   });
 }
-
 export const getLatestBooking = (bookings: Booking[]) => {
-  if (bookings.length === 0) return;
+  if (!bookings.length) return;
 
-  const runningContracts = bookings.filter(
-    (booking) =>
-      (new Date(booking.date_from) <= new Date() ||
-        differenceInDays(new Date(), new Date(booking.date_from)) < 30) &&
-      // new Date(booking.date_to) >= new Date() &&
-      booking.booking_status !== "CANCELLED",
-  );
-  
-  if (runningContracts.length === 0) return;
-  let activeContract = runningContracts[0];
+  const now = new Date();
 
-  const hasQueueing = runningContracts.find((contract) => {
-    const difference = differenceInDays(
-      new Date(contract.date_from),
-      new Date(),
-    );
-    return (
-      contract.booking_status === "QUEUEING" &&
-      difference <= 30 &&
-      difference >= 0
-    );
+  const valid = bookings
+    .filter(
+      (b) =>
+        b.booking_status !== "CANCELLED" 
+    )
+    .sort((a, b) => b.ID - a.ID); // newest first
+
+  if (!valid.length) return;
+
+  // 1️⃣ Queueing within 30 days
+  const queueing = valid.find((b) => {
+    if (b.booking_status !== "QUEUEING") return false;
+
+    const diff = differenceInDays(new Date(b.date_from), now);
+    return diff >= 0 && diff <= 30;
   });
 
-  const newContract = runningContracts.find(
-    (contract) =>
-      contract.booking_status !== "QUEUEING" &&
-      new Date(contract.date_to) >= new Date(),
+  if (queueing) return queueing;
+
+  // 2️⃣ Upcoming booking within 30 days
+  const upcoming = valid.find((b) => {
+    const diff = differenceInDays(new Date(b.date_from), now);
+
+    return diff >= 0 && diff <= 30;
+  });
+
+  if (upcoming) return upcoming;
+
+  // 3️⃣ Preterminated
+  const preterminated = valid.find(
+    (b) => b.booking_status === "PRE-TERMINATION"
   );
 
-  if (hasQueueing && !newContract) {
-    activeContract = hasQueueing;
-  } else if ((!hasQueueing && newContract) || (hasQueueing && newContract)) {
-    activeContract = newContract;
-  }
+  if (preterminated) return preterminated;
 
-  return activeContract;
+  // 4️⃣ Current active contract
+  const active = valid.find(
+    (b) =>
+      new Date(b.date_from) <= now &&
+      new Date(b.date_to) >= now
+  );
+
+  if (active) return active;
+
+  return valid[0];
 };
-
 export const getEndDate = (
   booking?: Booking,
   adjustment?: ContractOverride,
