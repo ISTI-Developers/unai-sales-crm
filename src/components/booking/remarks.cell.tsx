@@ -1,4 +1,4 @@
-import { BookingTable } from "@/interfaces/sites.interface";
+import { SiteAvailability } from "@/interfaces/sites.interface";
 import { CellContext } from "@tanstack/react-table";
 import { useMemo, useState } from "react";
 import { Textarea } from "../ui/textarea";
@@ -9,7 +9,7 @@ import { useUpdateRemarks } from "@/hooks/useSites";
 import { useAuth } from "@/providers/auth.provider";
 import { useAccess } from "@/hooks/useClients";
 
-const RemarksCell = ({ row, column }: CellContext<BookingTable, unknown>) => {
+const RemarksCell = ({ row, column }: CellContext<SiteAvailability, unknown>) => {
   const { mutate } = useUpdateRemarks();
   const remarks: string = row.getValue(column.id);
   const [remark, setRemark] = useState<string>(remarks ?? "");
@@ -34,7 +34,7 @@ const RemarksCell = ({ row, column }: CellContext<BookingTable, unknown>) => {
     return [1, 21].includes(user.ID as number) || add;
   }, [user, add]);
   return (
-    <div className="min-w-[300px] text-[0.65rem] relative group flex flex-col gap-2">
+    <div className="text-[0.65rem] relative group flex flex-col gap-2">
       {!toggle ? (
         <>
           <p className="text-start">{remarks !== remark ? remarks ?? "---" : remark}</p>

@@ -1,5 +1,6 @@
 import React, { InputHTMLAttributes, useEffect, useState } from 'react'
-import { Input } from './input'
+import { InputGroup, InputGroupAddon, InputGroupInput } from './input-group';
+import { PhilippinePesoIcon } from 'lucide-react';
 
 const InputNumber = React.forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(({ value, onChange, ...props }, ref) => {
     const [display, setDisplay] = useState("");
@@ -39,15 +40,20 @@ const InputNumber = React.forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLI
     }, [value]);
 
     return (
-        <Input
-            {...props}
-            id={props.id}
-            value={display}
-            onChange={handleChange}
-            inputMode="decimal"
-            // placeholder=""
-            ref={ref}
-        />
+        <InputGroup>
+            <InputGroupAddon>
+                <PhilippinePesoIcon />
+            </InputGroupAddon>
+            <InputGroupInput
+                {...props}
+                id={props.id}
+                value={display}
+                onChange={handleChange}
+                inputMode="decimal"
+                // placeholder=""
+                ref={ref}
+            />
+        </InputGroup>
     )
 })
 
