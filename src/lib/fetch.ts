@@ -11,9 +11,17 @@ import { useStatuses } from "@/hooks/useClientOptions";
 import { useAvailableSites, useSites } from "@/hooks/useSites";
 import { Booking, useBookings } from "@/hooks/useBookings";
 import { differenceInDays } from "date-fns";
-import { AvailableSites, Landmarks, Site } from "@/interfaces/sites.interface";
+import {
+  AvailableSites,
+  ContractOverride,
+  Landmarks,
+  Site,
+} from "@/interfaces/sites.interface";
 import { useCurrentWeekReport } from "@/hooks/useDashboard";
 import { wp } from "@/providers/api";
+import { useQuery } from "@tanstack/react-query";
+import { getDownloadURL, ref } from "firebase/storage";
+import { storage } from "@/firebase";
 
 export async function fetchFromLark(url: string, options: RequestInit) {
   const response = await fetch(url, options);
@@ -433,4 +441,88 @@ const filterClients = (clients: Client[], filter: SourceFilter[]) => {
   }
 
   return filteredClients;
+};
+
+export function useImageUrls(filename: string) {
+  return useQuery({
+    queryKey: ["image-urls", filename],
+    enabled: !!filename,
+    queryFn: async () => {
+      const filenames = filename
+        .split(",")
+        .map((name) => name.trim())
+        .filter(Boolean);
+
+      return Promise.all(
+        filenames.map((name) => getDownloadURL(ref(storage, name))),
+      );
+    },
+  });
+}
+export const getLatestBooking = (bookings: Booking[]) => {
+  if (!bookings.length) return;
+
+  const now = new Date();
+
+  const valid = bookings
+    .filter(
+      (b) =>
+        b.booking_status !== "CANCELLED" 
+    )
+    .sort((a, b) => b.ID - a.ID); // newest first
+
+  if (!valid.length) return;
+
+  // 1️⃣ Queueing within 30 days
+  const queueing = valid.find((b) => {
+    if (b.booking_status !== "QUEUEING") return false;
+
+    const diff = differenceInDays(new Date(b.date_from), now);
+    return diff >= 0 && diff <= 30;
+  });
+
+  if (queueing) return queueing;
+
+  // 2️⃣ Upcoming booking within 30 days
+  const upcoming = valid.find((b) => {
+    const diff = differenceInDays(new Date(b.date_from), now);
+
+    return diff >= 0 && diff <= 30;
+  });
+
+  if (upcoming) return upcoming;
+
+  // 3️⃣ Preterminated
+  const preterminated = valid.find(
+    (b) => b.booking_status === "PRE-TERMINATION"
+  );
+
+  if (preterminated) return preterminated;
+
+  // 4️⃣ Current active contract
+  const active = valid.find(
+    (b) =>
+      new Date(b.date_from) <= now &&
+      new Date(b.date_to) >= now
+  );
+
+  if (active) return active;
+
+  return valid[0];
+};
+export const getEndDate = (
+  booking?: Booking,
+  adjustment?: ContractOverride,
+) => {
+  if (!booking && !adjustment) return;
+
+  if (booking) {
+    if (adjustment) {
+      if (new Date(booking.date_to) > new Date(adjustment.adjusted_end_date)) {
+        return booking.date_to;
+      }
+      return adjustment.adjusted_end_date;
+    }
+    return booking.date_to;
+  }
 };

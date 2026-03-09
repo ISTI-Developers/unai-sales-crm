@@ -20,6 +20,8 @@ export function DatePicker({
   disabled?: boolean;
   min?: Date;
 }) {
+
+  console.log(date);
   return (
     <Popover modal>
       <PopoverTrigger asChild>

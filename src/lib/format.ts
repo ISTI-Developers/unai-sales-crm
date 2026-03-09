@@ -1,7 +1,7 @@
 import { addDays, addWeeks, format, getISOWeek, parse } from "date-fns";
 export function formatAmount(
   amount: string | number,
-  options?: Intl.NumberFormatOptions
+  options?: Intl.NumberFormatOptions,
 ) {
   return Intl.NumberFormat("en-PH", {
     style: "currency",
@@ -21,7 +21,7 @@ export function formatNumber(num: string | number) {
 export function formatTermDetails(
   dateFrom: string | Date,
   dateTo: string | Date,
-  rate: number | string
+  rate: number | string,
 ) {
   const from = new Date(dateFrom);
   const to = new Date(dateTo);
@@ -67,7 +67,7 @@ export const applyPriceAdjustment = (
     amount: number;
     type: "%" | "---";
     operation?: "+" | "-";
-  }
+  },
 ): number => {
   let adjustedAmount = Number(adjustment.amount);
 
@@ -87,7 +87,7 @@ export const Inches = (number: number) => number / 2.54;
 export function cropImageFromURL(
   imageURL: string,
   cropLeft: number,
-  cropRight: number
+  cropRight: number,
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -127,7 +127,7 @@ export function cropImageFromURL(
           0,
           0,
           cropWidth,
-          cropHeight
+          cropHeight,
         );
 
         // Convert the cropped image to a Data URL
@@ -160,7 +160,7 @@ export const collator = new Intl.Collator(undefined, {
 
 export function getISOWeekFromMonthWeek(
   monthWeekStr: string,
-  year = new Date().getFullYear()
+  year = new Date().getFullYear(),
 ): number | null {
   const [monthStr, wkStr] = monthWeekStr.trim().split(/\s+/);
   const weekNum = parseInt(wkStr.replace(/Wk/i, ""), 10);
@@ -210,7 +210,7 @@ export function getFridayFromISOWeek(year: number, week: number): Date | null {
  */
 export function downloadPptxFromArrayBuffer(
   buffer: string | ArrayBuffer | Blob | Uint8Array<ArrayBufferLike>,
-  fileName = "presentation.pptx"
+  fileName = "presentation.pptx",
 ) {
   const blob = new Blob([buffer as ArrayBuffer], {
     type: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
@@ -221,4 +221,29 @@ export function downloadPptxFromArrayBuffer(
   a.download = fileName;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+type ClientParts = {
+  client: string;
+  product: string;
+};
+/**
+ * Split client and their product
+ * @param input - Generated file
+ * @returns Object that contains both client and product.
+ */
+export function splitClientName(input: string): ClientParts {
+  const match = input.match(/\((.*?)\)/);
+
+  if (!match) {
+    return {
+      client: input.trim(),
+      product: "",
+    };
+  }
+
+  const product = match[1].trim();
+  const client = input.replace(match[0], "").trim();
+
+  return { client, product };
 }

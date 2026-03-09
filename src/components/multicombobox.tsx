@@ -38,7 +38,6 @@ export function MultiComboBox({
   disabled,
 }: ComboboxProps) {
   const [open, onOpenChange] = useState(false);
-  console.log(value);
   return (
     <Popover open={open} onOpenChange={onOpenChange} modal>
       <PopoverTrigger disabled={disabled} asChild>
@@ -85,8 +84,8 @@ export function MultiComboBox({
       </PopoverTrigger>
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
         <Command>
-          <CommandInput className="text-xs" placeholder={`Search ${title.toLowerCase()}...`} />
-          <CommandList>
+          <CommandInput className="text-xs pointer-events-auto" placeholder={`Search ${title.toLowerCase()}...`} />
+          <CommandList onWheel={(e) => e.stopPropagation()}>
             <CommandEmpty>{title} not found</CommandEmpty>
             <CommandGroup>
               {list.map((item) => (

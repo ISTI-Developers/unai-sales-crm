@@ -23,6 +23,8 @@ export interface Site {
   is_prime: number;
   bound: string;
   status: number;
+  traffic_count: number;
+  vicinity_population: number;
 }
 
 export interface SiteDetailswithMapping extends Site {
@@ -91,6 +93,21 @@ export interface BookingTable extends Omit<AvailableSites, "category"> {
   facing: string;
   remarks?: string;
   booking_id?: number;
+  price: string;
+}
+
+export interface SiteAvailability extends Site {
+  bookings: Booking[];
+  client?: string;
+  product?: string;
+  date_from?: string;
+  end_date?: string;
+  adjusted_end_date?: string;
+  adjustment_reason?: string;
+  site_rental: number;
+  days_vacant?: number;
+  remaining_days?: number;
+  booking_status?: string;
 }
 
 export interface LatestSites {

@@ -21,7 +21,7 @@ import { DatePicker } from "../ui/datepicker";
 import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
 import { BookingTable } from "@/interfaces/sites.interface";
-import { Booking, useCreateBooking } from "@/hooks/useBookings";
+import { useCreateBooking } from "@/hooks/useBookings";
 import { toast } from "@/hooks/use-toast";
 import { useSite } from "@/hooks/useSites";
 import { addDays, differenceInDays } from "date-fns";
@@ -156,6 +156,7 @@ const CreateBookingDialog = ({
   const canSubmit = useMemo(() => {
     return booking.client.length > 0 && booking.account_executive.length > 0 && differenceInDays(booking.end, booking.start) > 1;
   }, [booking])
+  
   useEffect(() => {
     let endDate: string | Date | undefined = site.end_date;
     const bookings = site.bookings;
