@@ -11,9 +11,17 @@ import { useStatuses } from "@/hooks/useClientOptions";
 import { useAvailableSites, useSites } from "@/hooks/useSites";
 import { Booking, useBookings } from "@/hooks/useBookings";
 import { differenceInDays } from "date-fns";
-import { AvailableSites, Landmarks, Site } from "@/interfaces/sites.interface";
+import {
+  AvailableSites,
+  ContractOverride,
+  Landmarks,
+  Site,
+} from "@/interfaces/sites.interface";
 import { useCurrentWeekReport } from "@/hooks/useDashboard";
 import { wp } from "@/providers/api";
+import { useQuery } from "@tanstack/react-query";
+import { getDownloadURL, ref } from "firebase/storage";
+import { storage } from "@/firebase";
 
 export async function fetchFromLark(url: string, options: RequestInit) {
   const response = await fetch(url, options);
@@ -433,4 +441,79 @@ const filterClients = (clients: Client[], filter: SourceFilter[]) => {
   }
 
   return filteredClients;
+};
+
+export function useImageUrls(filename: string) {
+  return useQuery({
+    queryKey: ["image-urls", filename],
+    enabled: !!filename,
+    queryFn: async () => {
+      const filenames = filename
+        .split(",")
+        .map((name) => name.trim())
+        .filter(Boolean);
+
+      return Promise.all(
+        filenames.map((name) => getDownloadURL(ref(storage, name))),
+      );
+    },
+  });
+}
+
+export const getLatestBooking = (bookings: Booking[]) => {
+  if (bookings.length === 0) return;
+
+  const runningContracts = bookings.filter(
+    (booking) =>
+      (new Date(booking.date_from) <= new Date() ||
+        differenceInDays(new Date(), new Date(booking.date_from)) < 30) &&
+      // new Date(booking.date_to) >= new Date() &&
+      booking.booking_status !== "CANCELLED",
+  );
+  
+  if (runningContracts.length === 0) return;
+  let activeContract = runningContracts[0];
+
+  const hasQueueing = runningContracts.find((contract) => {
+    const difference = differenceInDays(
+      new Date(contract.date_from),
+      new Date(),
+    );
+    return (
+      contract.booking_status === "QUEUEING" &&
+      difference <= 30 &&
+      difference >= 0
+    );
+  });
+
+  const newContract = runningContracts.find(
+    (contract) =>
+      contract.booking_status !== "QUEUEING" &&
+      new Date(contract.date_to) >= new Date(),
+  );
+
+  if (hasQueueing && !newContract) {
+    activeContract = hasQueueing;
+  } else if ((!hasQueueing && newContract) || (hasQueueing && newContract)) {
+    activeContract = newContract;
+  }
+
+  return activeContract;
+};
+
+export const getEndDate = (
+  booking?: Booking,
+  adjustment?: ContractOverride,
+) => {
+  if (!booking && !adjustment) return;
+
+  if (booking) {
+    if (adjustment) {
+      if (new Date(booking.date_to) > new Date(adjustment.adjusted_end_date)) {
+        return booking.date_to;
+      }
+      return adjustment.adjusted_end_date;
+    }
+    return booking.date_to;
+  }
 };
