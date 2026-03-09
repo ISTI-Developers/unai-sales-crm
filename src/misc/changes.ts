@@ -1,7 +1,6 @@
 export const changes = {
-  "2.5.1": [
-    "Added the link definitions and the helper functions",
-  ],
+  "2.5.2": ["Updated bookings"],
+  "2.5.1": ["Added the link definitions and the helper functions"],
   "2.5": [
     "Revamped the site availability and booking",
     "Fixed the rendering of end dates",
