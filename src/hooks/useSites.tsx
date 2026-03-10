@@ -7,6 +7,7 @@ import {
   LatestSites,
   SiteImpressions,
   ContractOverride,
+  SiteRental,
 } from "@/interfaces/sites.interface";
 import { catchError, getQuery, ooh, saveQuery, spAPI, wp } from "@/providers/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -233,6 +234,47 @@ export const useAvailableSites = () => {
       }
     },
     select: (data) => data?.sort((a, b) => a.site.localeCompare(b.site)),
+    throwOnError: true,
+    staleTime: 360000,
+    enabled: companyID ? companyID === "5" : false,
+  });
+};
+
+export const useSiteRentals = () => {
+  const companyID = localStorage.getItem("companyID");
+
+  return useQuery({
+    queryKey: ["sites", "rentals"],
+    queryFn: async () => {
+
+      const response = await wp.get<WorkplaceRes<SiteRental[]>>("rentals");
+
+      if (response.data.success) {
+        return response.data.data.map((site) => {
+          let rental = 0;
+          if (site.net_contract_amount) {
+            switch (Number(site.payment_term_id)) {
+              case 1:
+                rental = site.net_contract_amount;
+                break;
+              case 2:
+              case 5:
+                rental = site.net_contract_amount / 12;
+                break;
+              case 3:
+                rental = site.net_contract_amount / 6;
+                break;
+              case 4:
+                rental = site.net_contract_amount / 3;
+            }
+          }
+          return {
+            ...site,
+            site_rental: rental,
+          };
+        })
+      }
+    },
     throwOnError: true,
     staleTime: 360000,
     enabled: companyID ? companyID === "5" : false,

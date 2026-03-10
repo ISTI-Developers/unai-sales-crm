@@ -169,11 +169,11 @@ const BookingItem = ({ item, show, ongoingBooking }: { item: Booking; show: bool
                 show && item.booking_status === "CANCELLED"
                     ? "bg-red-50 text-red-300"
                     : "",
-                current
-                    ? item.booking_status === "PRE-TERMINATION"
+                ['COMPLETED', 'STOPPED'].includes(status) ? "opacity-50 pointer-events-none" :
+                    current ? item.booking_status === "PRE-TERMINATION"
                         ? "bg-amber-50 text-amber-700"
-                        : "bg-emerald-100 hover:bg-emerald-200 text-emerald-600"
-                    : ['COMPLETED','STOPPED'].includes(status) ? "opacity-50 pointer-events-none" : ""
+                        : "bg-emerald-100 hover:bg-emerald-200 text-emerald-600" : ""
+                    
             )}
         >
             <TableCell className="font-semibold whitespace-nowrap">
@@ -187,7 +187,7 @@ const BookingItem = ({ item, show, ongoingBooking }: { item: Booking; show: bool
             <TableCell className='text-[0.65rem]'>{formatAmount(item.srp)}</TableCell>
             <TableCell className='text-[0.65rem]'>{termDetails}</TableCell>
             <TableCell align="center">
-                {!['CANCELLED', 'PRE-TERMINATION', 'COMPLETED','STOPPED'].includes(status) && (
+                {!['CANCELLED', 'PRE-TERMINATION', 'COMPLETED', 'STOPPED'].includes(status) && (
                     <div className="flex items-center justify-center">
                         <EditBookingDialog item={item} />
                         <Dialog open={open} onOpenChange={setOpen}>

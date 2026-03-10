@@ -1,7 +1,7 @@
 import { DataTable } from '@/data/data-table';
 import { columns } from "@/data/bookings.columns";
 import { useBookings } from "@/hooks/useBookings";
-import { useOverridenSiteEndDates, useSites } from '@/hooks/useSites';
+import { useOverridenSiteEndDates, useSiteRentals, useSites } from '@/hooks/useSites';
 import { SiteAvailability as SiteAvailabilityType } from '@/interfaces/sites.interface';
 import { useMemo } from 'react';
 import { useAccess } from '@/hooks/useClients';
@@ -12,10 +12,12 @@ const SiteAvailability = () => {
     const { data: sites } = useSites();
     const { data: bookings, isLoading } = useBookings();
     const { data: adjustments } = useOverridenSiteEndDates();
+    const { data: rentals } = useSiteRentals();
     const { access: edit } = useAccess("booking.update");
+    console.log(rentals);
 
     const availableSites: SiteAvailabilityType[] = useMemo(() => {
-        if (!sites || !bookings || !adjustments || isLoading) return [];
+        if (!sites || !bookings || !adjustments || isLoading || !rentals) return [];
 
         const activeSites = sites.filter(site => site.status === 1);
 
@@ -24,10 +26,11 @@ const SiteAvailability = () => {
             const adjustment = adjustments.find(adjustment => adjustment.site_code === site.site_code);
             const booking = getLatestBooking(siteBookings);
             const endDate = getEndDate(booking, adjustment);
+            const siteRental = rentals.find(rent => rent.site_code === site.site_code);
             const { client, product } = splitClientName(booking ? booking.client : "");
             return {
                 ...site,
-                site_rental: booking ? booking.site_rental : 0,
+                site_rental: siteRental ? siteRental.site_rental : booking ? booking.site_rental : 0,
                 client: client,
                 product: product,
                 date_from: booking?.date_from,
@@ -41,7 +44,7 @@ const SiteAvailability = () => {
             }
         })
         return contracts;
-    }, [sites, bookings, adjustments, isLoading]);
+    }, [sites, bookings, adjustments, isLoading, rentals]);
     return (
         <DataTable columns={columns.filter(column => {
             if (!edit) return column.id !== "action";
