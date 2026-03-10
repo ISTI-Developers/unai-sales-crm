@@ -21,8 +21,6 @@ const BookingsCard = () => {
     const bookings: BookingCard[] = useMemo(() => {
         if (!data || isLoading || !sites || !otherBookings) return []
 
-        console.log(otherBookings);
-
         let tempBookings = data.map(item => {
 
             const siteDetails = sites.find(site => site.site_code === item.site_code);

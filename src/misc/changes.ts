@@ -1,4 +1,5 @@
 export const changes = {
+  "2.5.3": ["Fixed the display of the booking graph in dashboard.","Fixed the booking restrictions."],
   "2.5.2": ["Updated bookings"],
   "2.5.1": ["Added the link definitions and the helper functions"],
   "2.5": [

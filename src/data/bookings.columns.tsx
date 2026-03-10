@@ -95,8 +95,8 @@ export const columns: ColumnDef<SiteAvailability>[] = [
         cell: RemarksCell,
     },
     {
-        id: "actions",
-        header: "Actions",
+        id: "action",
+        header: "Action",
         cell: ActionCell
     }
 ]
