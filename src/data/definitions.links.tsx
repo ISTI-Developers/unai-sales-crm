@@ -26,7 +26,7 @@ const Dashboard = lazy(() => import("@/views/Dashboard"));
 const Sites = lazy(() => import("@/views/Sites"));
 const Clients = lazy(() => import("@/views/Clients"));
 const Deck = lazy(() => import("@/views/Deck"));
-const Booking = lazy(() => import("@/views/Booking"));
+// const Booking = lazy(() => import("@/views/Booking"));
 const Bookings = lazy(() => import("@/views/Bookings"));
 const Reports = lazy(() => import("@/views/Reports"));
 const Meetings = lazy(() => import("@/views/Meetings"));
@@ -56,8 +56,8 @@ export const linkDefinitions: LinkDefinitions[] = [
   { title: "sites", handler: "/sites", icon: Monitor, group: 'asset', element: Sites, },
   { title: "clients", handler: "/clients", icon: BookUser, group: 'clients', element: Clients, },
   { title: "deck", handler: "/deck", icon: Gpu, group: 'general', element: Deck, },
-  { title: "booking", handler: "/booking", icon: Tags, group: 'general', element: Booking, },
-  { title: "bookings", handler: "/bookings", icon: Tags, group: 'general', element: Bookings, },
+  { title: "booking", handler: "/booking", icon: Tags, group: 'general', element: Bookings, },
+  // { title: "bookings", handler: "/bookings", icon: Tags, group: 'general', element: Bookings, },
   { title: "reports", handler: "/reports", icon: FileChartColumnIncreasing, group: 'clients', element: Reports, },
   { title: "meetings", handler: "/meetings", icon: NotepadText, group: 'clients', element: Meetings, },
   // { title: "LRT", handler: "/lrt", icon: TrainFront, group: 'asset', element: LRT, },

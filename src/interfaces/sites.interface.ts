@@ -86,6 +86,15 @@ export interface AvailableSites {
   site_rental?: number;
 }
 
+export interface SiteRental {
+  structure_code: string;
+  site_code: string;
+  date_from: string;
+  date_to: string;
+  net_contract_amount: number;
+  payment_term_id: number;
+}
+
 export interface BookingTable extends Omit<AvailableSites, "category"> {
   bookings: Booking[];
   site_code: string;

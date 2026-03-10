@@ -21,11 +21,6 @@ const WeeklyReportsCard = () => {
               if (isToday(dateSubmitted)) {
                 timestamp = format(dateSubmitted, "p");
               }
-              console.log(reportsSummaryConfig[
-                report.sales_unit
-                  .split(" ")
-                  .join("_") as keyof typeof reportsSummaryConfig
-              ])
               const color =
                 reportsSummaryConfig[
                   report.sales_unit

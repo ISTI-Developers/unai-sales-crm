@@ -460,55 +460,55 @@ export function useImageUrls(filename: string) {
   });
 }
 export const getLatestBooking = (bookings: Booking[]) => {
-  if (!bookings.length) return;
-
   const now = new Date();
 
-  const valid = bookings
-    .filter(
-      (b) =>
-        b.booking_status !== "CANCELLED" 
-    )
-    .sort((a, b) => b.ID - a.ID); // newest first
+  const valid = bookings.filter(
+    (b) =>
+      b.booking_status !== "CANCELLED" &&
+      b.booking_status !== "COMPLETED"
+  );
 
   if (!valid.length) return;
 
-  // 1️⃣ Queueing within 30 days
-  const queueing = valid.find((b) => {
-    if (b.booking_status !== "QUEUEING") return false;
+  let best: Booking | undefined;
+  let bestScore = -1;
 
-    const diff = differenceInDays(new Date(b.date_from), now);
-    return diff >= 0 && diff <= 30;
-  });
+  for (const booking of valid) {
+    let score = 0;
 
-  if (queueing) return queueing;
+    const from = new Date(booking.date_from);
+    const to = new Date(booking.date_to);
+    const diff = differenceInDays(from, now);
 
-  // 2️⃣ Upcoming booking within 30 days
-  const upcoming = valid.find((b) => {
-    const diff = differenceInDays(new Date(b.date_from), now);
+    if (booking.booking_status === "QUEUEING" && diff >= 0 && diff <= 30)
+      score = 100;
 
-    return diff >= 0 && diff <= 30;
-  });
+    else if (booking.booking_status === "RENEWAL" && diff >= 0 && diff <= 60)
+      score = 90;
 
-  if (upcoming) return upcoming;
+    else if (booking.booking_status === "NEW" && diff >= 0 && diff <= 30)
+      score = 80;
 
-  // 3️⃣ Preterminated
-  const preterminated = valid.find(
-    (b) => b.booking_status === "PRE-TERMINATION"
-  );
+    else if (booking.booking_status === "PRE-TERMINATION")
+      score = 70;
 
-  if (preterminated) return preterminated;
+    else if (from <= now && to >= now)
+      score = 60;
 
-  // 4️⃣ Current active contract
-  const active = valid.find(
-    (b) =>
-      new Date(b.date_from) <= now &&
-      new Date(b.date_to) >= now
-  );
+    // OLD CONTRACT
+    else if (to < now)
+      score = 50;
 
-  if (active) return active;
+    if (
+      score > bestScore ||
+      (score === bestScore && booking.ID > (best?.ID ?? 0))
+    ) {
+      best = booking;
+      bestScore = score;
+    }
+  }
 
-  return valid[0];
+  return best;
 };
 export const getEndDate = (
   booking?: Booking,
