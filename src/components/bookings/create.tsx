@@ -20,6 +20,7 @@ import { addDays, differenceInDays } from 'date-fns';
 import { useCreateBooking } from '@/hooks/useBookings';
 import { toast } from '@/hooks/use-toast';
 import { Notification, sendNotification } from '@/hooks/useNotifications';
+import { getLatestBooking } from '@/lib/fetch';
 // import SelectSearch from '../ui/select-search';
 // import { useClients } from '@/hooks/useClients';
 
@@ -81,12 +82,20 @@ function CreateBooking({ site }: { site: SiteAvailability }) {
 
     const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        onSend(true);
+        onSend(true)
+        const previousBooking = getLatestBooking(site.bookings);
+        let AEs = booking.account_executive;
+
+        if (previousBooking) {
+            AEs = salesUnits.filter(sales => previousBooking.account_executive.split(",").some(ae => ae.trim() === sales.label));
+
+        }
         createBooking(
             {
                 ...booking,
+                account_executive: booking.booking_status === "PRE-TERMINATION" ? AEs : booking.account_executive,
                 site_rental: String(site.site_rental ?? 0),
-                old_client: site.product ? `${site.client}(${site.product})` : "---",
+                old_client: site.product ? `${site.client}(${site.product})` : site.client,
             },
             {
                 onSuccess: async (data, variables) => {
@@ -94,16 +103,16 @@ function CreateBooking({ site }: { site: SiteAvailability }) {
 
                         // if (import.meta.env.MODE === "development") {
 
-                        let body = `Site ${site.site} has a new booking.`;
+                        let body = `Site ${site.site_code} has a new booking.`;
 
                         if (variables.booking_status === "CANCELLED") {
-                            body = `Site ${site.site}'s booking has been cancelled.`
+                            body = `Site ${site.site_code}'s booking has been cancelled.`
                         } else if (variables.booking_status === "QUEUEING") {
-                            body = `A reservation for site ${site.site} has been made.`
+                            body = `A reservation for site ${site.site_code} has been made.`
                         } else if (variables.booking_status === "RENEWAL") {
-                            body = `Site ${site.site}'s booking has been renewed.`
+                            body = `Site ${site.site_code}'s booking has been renewed.`
                         } else if (variables.booking_status === "PRE-TERMINATION") {
-                            body = `Site ${site.site} has been pre-terminated.`;
+                            body = `Site ${site.site_code} has been pre-terminated.`;
                         }
 
                         if (import.meta.env.MODE === "development") {
@@ -152,7 +161,7 @@ function CreateBooking({ site }: { site: SiteAvailability }) {
         if (booking.booking_status === "PRE-TERMINATION") {
             return booking.remarks.trim().length > 0
         }
-         if (booking.booking_status === "CHANGE OF CONTRACT PERIOD/DURATION") {
+        if (booking.booking_status === "CHANGE OF CONTRACT PERIOD/DURATION") {
             return booking.remarks.trim().length > 0 && differenceInDays(booking.end, booking.start) > 1
         }
         return booking.client.length > 0 && booking.account_executive.length > 0 && differenceInDays(booking.end, booking.start) > 1;

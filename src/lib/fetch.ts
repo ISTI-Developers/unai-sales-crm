@@ -10,7 +10,7 @@ import { chartColors } from "./utils";
 import { useStatuses } from "@/hooks/useClientOptions";
 import { useAvailableSites, useSites } from "@/hooks/useSites";
 import { Booking, useBookings } from "@/hooks/useBookings";
-import { differenceInDays } from "date-fns";
+import { differenceInCalendarDays, differenceInDays } from "date-fns";
 import {
   AvailableSites,
   ContractOverride,
@@ -459,52 +459,87 @@ export function useImageUrls(filename: string) {
     },
   });
 }
+
 export const getLatestBooking = (bookings: Booking[]) => {
   const now = new Date();
+  const latestPerStartDate = new Map<string, Booking>();
 
-  const valid = bookings.filter(
-    (b) =>
-      b.booking_status !== "CANCELLED" &&
-      b.booking_status !== "COMPLETED"
+  for (const booking of bookings) {
+    const key = booking.date_from;
+
+    const existing = latestPerStartDate.get(key);
+
+    if (!existing || booking.ID > existing.ID) {
+      latestPerStartDate.set(key, booking);
+    }
+  }
+
+  const valid = Array.from(latestPerStartDate.values()).filter(
+    (b) => b.booking_status !== "CANCELLED",
   );
-
   if (!valid.length) return;
 
   let best: Booking | undefined;
   let bestScore = -1;
+  let bestDistance = Infinity;
 
   for (const booking of valid) {
-    let score = 0;
-
     const from = new Date(booking.date_from);
     const to = new Date(booking.date_to);
-    const diff = differenceInDays(from, now);
 
-    if (booking.booking_status === "QUEUEING" && diff >= 0 && diff <= 30)
+    const diff = differenceInCalendarDays(from, now);
+
+    if (valid[0].site_code === "1SLXBNN002-2AA01") {
+      console.log(diff);
+    }
+
+    let score = 0;
+    let distance = Infinity;
+
+    // QUEUEING within 30 days
+    if (booking.booking_status === "QUEUEING" && diff >= 0 && diff <= 30) {
       score = 100;
+      distance = diff;
+    }
 
-    else if (booking.booking_status === "RENEWAL" && diff >= 0 && diff <= 60)
+    // RENEWAL within 60 days
+    else if (booking.booking_status === "RENEWAL" && diff >= 0 && diff <= 60) {
       score = 90;
+      distance = diff;
+    }
 
-    else if (booking.booking_status === "NEW" && diff >= 0 && diff <= 30)
+    // NEW booking within 30 days
+    else if (booking.booking_status === "NEW" && diff >= 0 && diff <= 30) {
       score = 80;
-
-    else if (booking.booking_status === "PRE-TERMINATION")
+      distance = diff;
+    } else if (
+      booking.booking_status === "PRE-TERMINATION" &&
+      from <= now &&
+      to >= now
+    ) {
       score = 70;
-
-    else if (from <= now && to >= now)
+    }
+    // CURRENT ACTIVE
+    else if (from <= now && to >= now) {
       score = 60;
+    }
 
     // OLD CONTRACT
-    else if (to < now)
+    else if (to < now) {
       score = 50;
+    }
 
-    if (
+    const isBetter =
       score > bestScore ||
-      (score === bestScore && booking.ID > (best?.ID ?? 0))
-    ) {
+      (score === bestScore && distance < bestDistance) ||
+      (score === bestScore &&
+        distance === bestDistance &&
+        booking.ID > (best?.ID ?? 0));
+
+    if (isBetter) {
       best = booking;
       bestScore = score;
+      bestDistance = distance;
     }
   }
 
