@@ -1,4 +1,5 @@
 export const changes = {
+  "2.5.4": ["Fixed an issue where pre-termination contracts don't override the previous contract."],
   "2.5.3": ["Fixed the display of the booking graph in dashboard.","Fixed the booking restrictions."],
   "2.5.2": ["Updated bookings"],
   "2.5.1": ["Added the link definitions and the helper functions"],
