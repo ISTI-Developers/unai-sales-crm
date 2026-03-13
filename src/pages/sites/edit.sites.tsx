@@ -29,7 +29,7 @@ const EditSite = () => {
             }
         })
     }
-    const exclude = ['remarks', 'created_at', 'status', 'ID', 'modified_at','is_prime'];
+    const exclude = ['remarks', 'created_at', 'status', 'ID', 'modified_at', 'is_prime'];
     return (
         <Page className="flex flex-col gap-4">
             <Helmet>
@@ -52,7 +52,7 @@ const EditSite = () => {
 
                                 return <div key={key} className='grid grid-cols-[200px_auto] items-center gap-2'>
                                     <Label>{capitalize(key, "_")}</Label>
-                                    <InputType required id={key} value={site[key as keyof typeof site] ?? ""} onChange={(e) => setSite(prev => {
+                                    <InputType required id={key} value={site[key as keyof typeof site] ?? ""} isMoney={key === "price"} onChange={(e) => setSite(prev => {
                                         if (!prev) return prev;
                                         return {
                                             ...prev,
