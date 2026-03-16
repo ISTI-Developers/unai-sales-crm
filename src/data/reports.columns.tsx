@@ -46,17 +46,16 @@ interface Cell {
   row: Row<ReportTable>;
   column: Column<ReportTable, unknown>;
 }
-export const generateWeeks = () => {
-  const startDate = startOfYear(new Date());
-  const adjustedDate =
-    startDate.getDay() > 1
-      ? startDate.getDate() - startDate.getDay()
-      : startDate;
+export const generateWeeks = (year: number = 2026) => {
+  const startDate = startOfYear(new Date(year, 0, 1));
+
   const weeks = [];
-  let currentMonth = format(adjustedDate, "MMMM");
+  let currentMonth = format(startDate, "MMM");
   let weekOfMonth = 1;
 
-  for (let i = 0; i < getISOWeeksInYear(new Date()); i++) {
+  const totalWeeks = getISOWeeksInYear(startDate);
+
+  for (let i = 0; i < totalWeeks; i++) {
     const weekStart = addWeeks(startDate, i);
     const month = format(weekStart, "MMM");
 
@@ -71,7 +70,6 @@ export const generateWeeks = () => {
 
   return weeks;
 };
-
 const renderColumn = (id: string) => ({
   id,
   accessorKey: id,

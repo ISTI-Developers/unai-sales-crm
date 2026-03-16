@@ -4,8 +4,7 @@ import { catchError, spAPI } from "@/providers/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getISOWeek, getYear } from "date-fns";
 
-export const useMeetings = (week: number[]) => {
-    const year = new Date().getFullYear();
+export const useMeetings = (week: number[], year: number = 2026) => {
     return useQuery({
         queryKey: ["meetings", year, week],
         queryFn: async () => {
