@@ -6,10 +6,10 @@ import { toast, useToast } from "@/hooks/use-toast";
 import { useCreateMinute, useDeleteMinute, useUpdateMinute } from "@/hooks/useMeetings";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Check, Pen, Plus, Trash2, X } from "lucide-react";
+import { Pen, Plus, Trash2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Textarea } from "@/components/ui/textarea";
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupTextarea } from "@/components/ui/input-group";
 
 const WeekCell = (cell: CellContext<WeekRow, unknown>) => {
     const value = cell.getValue() as RawMinutes | null;
@@ -17,7 +17,7 @@ const WeekCell = (cell: CellContext<WeekRow, unknown>) => {
     const [open, setOpen] = useState(false);
     const [edit, setEdit] = useState(false);
 
-const onDelete = async (ID: number) => {
+    const onDelete = async (ID: number) => {
         if (ID) {
             deleteActivity(ID, {
                 onSuccess: () => {
@@ -35,7 +35,7 @@ const onDelete = async (ID: number) => {
 
     return <div>
         {open ? <ActivityForm week={cell.column.id} edit={edit} setEdit={setEdit} setOpen={setOpen} data={value} /> : <>
-            <div className={cn("relative group p-2 flex items-center", value ? "justify-start" : "justify-center")}>
+            <div className={cn("relative group p-2 flex items-start", value ? "justify-start" : "justify-center")}>
                 <p className={cn("block indent-0 transition-all", !value ? "group-hover:hidden" : "whitespace-break-spaces text-xs")}>
                     {value ? value.activity : "---"}
                 </p>
@@ -189,48 +189,36 @@ const ActivityForm = ({
     const weeks = useMemo(() => generateWeeks(), []);
 
     return <form onSubmit={onSubmit} className="flex flex-col items-end relative gap-2">
-        <Textarea
-            value={activity}
-            className="border-none outline-none min-h-[300px] focus-visible:ring-0 px-1 py-1 text-xs"
-            // onKeyDown={(e) => {
-            //     if (e.key === "Enter" && !e.shiftKey) {
-            //         e.preventDefault();
-            //         if (!loading && activity.length > 0) {
-            //             e.currentTarget.form?.requestSubmit();
-            //         }
-            //     }
-            // }}
-
-            onChange={(e) => setActivity(e.target.value)}
-            placeholder="Enter the minutes here..."
-        />
-        <div className="flex gap-2 items-center">
-            <Button
-                type="submit"
-                variant="ghost"
-                disabled={loading || activity.length === 0}
-                className="p-1 h-6 w-6 rounded-full border border-emerald-400 bg-emerald-100 hover:bg-emerald-400 hover:text-white text-emerald-400 transition-all z-[2]"
-            >
-                <Check size={16} />
-            </Button>
-            <Button
-                type="reset"
-                variant="ghost"
-                onClick={() => {
-                    setEdit(false);
-                    setOpen(false);
-                }}
-                className="p-1 h-6 w-6 rounded-full border border-zinc-400 bg-zinc-100 hover:bg-zinc-400 hover:text-white text-zinc-400 transition-all z-[2]"
-            >
-                <X size={16} />
-            </Button>
-        </div>
+        <InputGroup>
+            <InputGroupTextarea value={activity}
+                className="border-none outline-none min-h-[300px] focus-visible:ring-0 p-2 text-xs"
+                onChange={(e) => setActivity(e.target.value)}
+                placeholder="Enter the minutes here..." />
+            <InputGroupAddon align="block-end" className="justify-end">
+                <InputGroupButton
+                    type="reset"
+                    variant="ghost"
+                    className="p-1 px-2 rounded-full text-zinc-400 transition-all z-[2]"
+                    onClick={() => {
+                        setEdit(false);
+                        setOpen(false);
+                    }}>Cancel</InputGroupButton>
+                <InputGroupButton
+                    type="submit"
+                    disabled={loading || activity.length === 0}
+                    className="p-1 px-2 rounded-full border border-emerald-400 bg-emerald-100 hover:bg-emerald-400 hover:text-white text-emerald-600 transition-all z-[2]">Submit</InputGroupButton>
+            </InputGroupAddon>
+        </InputGroup>
     </form>
 }
 
-export const columns: ColumnDef<WeekRow>[] = generateWeeks().map(week => ({
-    accessorKey: week,
-    header: week,
-    cell: WeekCell
-}))
+export const useColumns = (year: number) => {
+    const columns: ColumnDef<WeekRow>[] = generateWeeks(year).map(week => ({
+        accessorKey: week,
+        header: week,
+        cell: WeekCell
+    }))
+
+    return { columns }
+}
 
