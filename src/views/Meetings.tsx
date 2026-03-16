@@ -89,7 +89,7 @@ const Main = () => {
       }
     } else {
       const weeks = generateWeeks();
-      setWeeks([weeks[getISOWeek(new Date())] as `${string} Wk${number}`])
+      setWeeks([weeks[getISOWeek(new Date()) - 1] as `${string} Wk${number}`])
     }
   }, []);
 
