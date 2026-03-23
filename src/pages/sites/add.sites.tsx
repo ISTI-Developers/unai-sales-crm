@@ -89,7 +89,7 @@ const AddSite = () => {
 
                                 return <div key={key} className='grid grid-cols-[200px_auto] items-center gap-2'>
                                     <Label>{capitalize(key, "_")}</Label>
-                                    <InputType required id={key} value={site[key as keyof typeof site] ?? ""} onChange={(e) => setSite(prev => {
+                                    <InputType required id={key} value={site[key as keyof typeof site] ?? ""} isMoney={false} onChange={(e) => setSite(prev => {
                                         if (!prev) return prev;
                                         return {
                                             ...prev,
