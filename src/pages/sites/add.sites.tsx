@@ -24,11 +24,10 @@ const AddSite = () => {
     const [site, setSite] = useState<NewSite>()
 
     const finalSites = useMemo(() => {
-        console.count("render");
         if (!sites || !newSites) return [];
 
         return newSites.filter(ns => {
-            return !sites.some(s => ns.structure_code === s.structure_code);
+            return !sites.some(s => ns.site_code === s.site_code);
         })
     }, [sites, newSites]);
 
