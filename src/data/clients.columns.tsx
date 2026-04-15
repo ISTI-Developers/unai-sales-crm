@@ -57,6 +57,12 @@ const ActionCell = ({ row }: { row: Row<ClientTable> }) => {
       };
     }
 
+    if (user.role.role_id === 15) {
+      return {
+        edit: true,
+        delete: true,
+      }
+    }
 
     return {
       edit: salesUnit.sales_unit_id === client.sales_unit_id && edit,
