@@ -20,8 +20,12 @@ const progressMap = {
         label: "Awaiting changes",
         className: "bg-zinc-500 ",
     },
-    SAVED: {
+    STORED: {
         label: "Draft saved!",
+        className: "bg-emerald-100 hover:bg-emerald-100 text-emerald-600",
+    },
+    SAVED: {
+        label: "Deck is up to date",
         className: "bg-emerald-100 hover:bg-emerald-100 text-emerald-600",
     },
     SAVING: {
@@ -71,9 +75,9 @@ const TitleBar = () => {
             onSuccess: () => {
                 toast({
                     variant: "success",
-                    title: status ? "Your draft has been saved" : "Deck has been saved successfully"
+                    title: status === 3 ? "Your draft has been saved" : "Deck has been saved successfully"
                 })
-                setProgress(progressMap.SAVED)
+                setProgress(status === 3 ? progressMap.STORED : progressMap.SAVED)
 
             }
         });
@@ -84,10 +88,14 @@ const TitleBar = () => {
 
         const originalCodes = data.sites.map(site => site.site_code);
         const selectedCodes = selectedSites.map(site => site.site_code);
+        const tempSelectedSites = selectedSites.map(site => ({
+            image: site.image,
+            site_code: site.site_code,
+        }));
 
         const isSameSites =
             originalCodes.length === selectedCodes.length &&
-            originalCodes.every(code => selectedCodes.includes(code!));
+            originalCodes.every(code => selectedCodes.includes(code!)) && JSON.stringify(data.sites) === JSON.stringify(tempSelectedSites);
 
         const isSameFilters =
             JSON.stringify(data.filters) === JSON.stringify(selectedFilters);
@@ -106,7 +114,7 @@ const TitleBar = () => {
         const timeout = setTimeout(() => {
             if (!isActive || selectedSites.length === 0 || !shouldSave) return;
             setProgress(progressMap.SAVING)
-            // onSave(3)
+            onSave(3)
         }, 1500);
 
         return () => {

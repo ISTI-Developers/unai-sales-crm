@@ -93,7 +93,7 @@ const ImageItem = ({
                     loading="lazy"
                     alt={`image_${item.upload_id}`}
                 />
-                <Button onClick={() => setShow(true)} className="bg-white absolute bottom-0 right-0 opacity-0 group-hover:opacity-100 transition-all" variant="outline" size="sm">Change</Button>
+                <Button onClick={() => setShow(true)} className="bg-white absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-all" variant="outline" size="sm">Change</Button>
             </div>
             {show &&
                 <Suspense fallback={<>Loading</>}>

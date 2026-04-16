@@ -9,6 +9,7 @@ function SiteImageSelector({ site_code, images, selectedImage, setSelectedImage,
     const { setSelectedSites } = useDeck();
     const onImageSelected = (item: SiteImage) => {
         setSelectedImage(item);
+        localStorage.setItem(`${site_code}_selected`, `${item.upload_id}`)
         setSelectedSites((prev) =>
             prev.map((site) =>
                 site.site_code === site_code
@@ -68,11 +69,11 @@ function SiteImageSelector({ site_code, images, selectedImage, setSelectedImage,
             </header>
             <main className='grid grid-cols-3 gap-2 p-2 px-4 overflow-y-auto'>
                 {siteImages ? siteImages.map((img,) => {
-                    return <div className='relative'>
+                    return <div className='relative aspect-video overflow-hidden'>
                         <img
                             src={img.url ?? undefined}
                             role="button"
-                            className="w-full max-w-full rounded-md"
+                            className="w-full max-w-full h-full object-cover rounded-md"
                             loading="lazy"
                             alt={`image_${img.upload_id}`}
                             onClick={() => onImageSelected(img)}

@@ -4,7 +4,7 @@ import { catchError } from "@/providers/api";
 import PptxGenJS from "pptxgenjs";
 import { applyPriceAdjustment, downloadPptxFromArrayBuffer, formatAmount, formatNumber, Inches } from "@/lib/format";
 import { capitalize } from "@/lib/utils";
-import { format, isBefore } from "date-fns";
+import { addDays, format, isBefore } from "date-fns";
 import { DeckSite } from "@/interfaces/deck.interface";
 import { getSiteLandmarks } from "./useSites";
 import mockup from "@/assets/mockup.png";
@@ -12,16 +12,14 @@ import mockup from "@/assets/mockup.png";
 export const useGeneratePowerpoint = () => {
     const { title, selectedSites, selectedOptions } = useDeck();
     const start = new Date().getTime();
-    const margin = 0.3;
+    const defaultHeight = Inches(0.81);
+    const labelHeight = Inches(0.5);
     const width = Inches(36.107);
     const height = Inches(20.311);
     const headerHeight = Inches(2.02);
     const detailsSection = Inches(21.48);
-    const colWidth = (width - detailsSection);
-    const halfColWidth = (width - detailsSection) / 2;
-    const textHeight = 0.2;
-    const details2ndColumnSection = detailsSection + halfColWidth;
-    const contentSection = headerHeight + 0.2;
+    const details2ndColumnSection = Inches(28.61);
+    const contentSection = Inches(2.52);
 
     const applyOptions = (site: DeckSite, price: string, baseRate: number) => {
         if (Object.keys(selectedOptions).length !== 0) {
@@ -63,41 +61,13 @@ export const useGeneratePowerpoint = () => {
 
     const addText = (slide: PptxGenJS.Slide, text: string, options: PptxGenJS.TextPropsOptions) => {
         return slide.addText(text, {
-            fontSize: 8,
+            fontSize: 8.5,
             fontFace: "Inter",
             color: "76899E",
             align: 'left',
-            h: margin,
+            h: defaultHeight,
             ...options,
         })
-    }
-    function measureLinesCanvas(text: string, widthIn: number, fontSize: number, fontFamily = 'Century Gothic') {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return 1;
-        ctx.font = `${fontSize}pt ${fontFamily}`;
-
-        const maxWidthPx = widthIn * 96; // PPT ≈ 96 DPI
-
-        const words = text.split(' ');
-        const lines = [];
-        let line = '';
-
-        for (const word of words) {
-            const testLine = line ? `${line} ${word}` : word;
-            const { width } = ctx.measureText(testLine);
-
-            if (width <= maxWidthPx) {
-                line = testLine;
-            } else {
-                lines.push(line);
-                line = word;
-            }
-        }
-
-        if (line) lines.push(line);
-
-        return lines.length;
     }
 
     const print = async () => {
@@ -128,6 +98,7 @@ export const useGeneratePowerpoint = () => {
                 const availability = site.availability
                     ? isBefore(new Date(site.availability), new Date()) ? "OPEN" : format(new Date(site.availability), "MMM d, yyyy")
                     : "OPEN";
+                const rofr = availability === "OPEN" ? "N/A" : format(addDays(new Date(site.availability!), site.is_prime ? 44 : 29), "MMM d, yyy");
 
                 baseRate = applyOptions(site, price, baseRate);
                 const DPI = 96;
@@ -164,229 +135,195 @@ export const useGeneratePowerpoint = () => {
                 });
 
                 addText(slide, "AVAILABILITY:", {
-                    w: Inches(2.34),
-                    h: margin,
+                    w: Inches(2.97),
+                    h: labelHeight,
                     x: detailsSection,
                     y: contentSection,
                 });
 
                 addText(slide, availability, {
-                    w: Inches(4.23),
-                    x: detailsSection + Inches(2.34) - 0.15,
-                    y: contentSection,
+                    w: Inches(4.57),
+                    x: Inches(23.93),
+                    y: Inches(2.31),
                     color: "d22735",
-                    fontFace: "Century Gothic",
                     bold: true,
-                    fontSize: 12,
+                    fontSize: 12.8,
                 });
                 addText(slide, "ROFR:", {
-                    w: Inches(2.34),
+                    w: Inches(2.5),
                     x: details2ndColumnSection,
-                    y: contentSection,
+                    y: Inches(2.35),
                 });
 
-                addText(slide, 'TBA', {
-                    w: Inches(4.23),
-                    x: details2ndColumnSection + Inches(1.39) - 0.15,
-                    y: contentSection,
-                    color: "1E2C3C",
+                addText(slide, rofr, {
+                    w: Inches(4.89),
+                    x: Inches(30.89),
+                    y: Inches(2.3),
+                    color: "d22735",
                     bold: true,
-                    fontFace: "Century Gothic",
-                    fontSize: 10,
+                    fontSize: 12.8,
                 });
                 addText(slide, "SITE CODE:", {
-                    w: halfColWidth,
-                    h: textHeight,
-                    x: detailsSection,
-                    y: contentSection + textHeight,
+                    w: Inches(2.17),
+                    h: labelHeight,
+                    x: Inches(21.45),
+                    y: Inches(3.07),
                     align: "left",
                     color: "76899E",
-                    fontFace: "Aptos",
-                    fontSize: 8,
                 });
                 addText(slide, site.site_code, {
-                    w: halfColWidth,
-                    h: textHeight,
-                    x: detailsSection,
-                    y: contentSection + (textHeight * 1.75),
+                    w: Inches(4.58),
+                    h: labelHeight,
+                    x: Inches(23.91),
+                    y: Inches(3.05),
                     align: "left",
                     color: "1E2C3C",
                     bold: true,
-                    fontFace: "Century Gothic",
-                    fontSize: 10,
+                    fontSize: 10.7,
                 });
                 addText(slide, "SIZE (H x W):", {
-                    w: halfColWidth,
-                    h: textHeight,
+                    w: Inches(6.58),
+                    h: labelHeight,
                     x: details2ndColumnSection,
-                    y: contentSection + textHeight,
+                    y: Inches(3.05),
                     align: "left",
                     color: "76899E",
-                    fontFace: "Aptos",
-                    fontSize: 8,
+                    fontSize: 8.5,
                 });
                 addText(slide, site.size, {
-                    w: halfColWidth,
-                    h: textHeight,
-                    x: details2ndColumnSection,
-                    y: contentSection + (textHeight * 1.75),
+                    w: Inches(4.37),
+                    h: labelHeight,
+                    x: Inches(30.88),
+                    y: Inches(3.05),
                     align: "left",
                     color: "1E2C3C",
                     bold: true,
-                    fontFace: "Century Gothic",
-                    fontSize: 10,
+                    fontSize: 10.7,
                 });
                 addText(slide, "ADDRESS:", {
-                    w: colWidth,
-                    h: textHeight,
-                    x: detailsSection,
-                    y: contentSection + (textHeight * 2.75),
+                    w: Inches(2.25),
+                    h: labelHeight,
+                    x: Inches(21.45),
+                    y: Inches(3.65),
                     align: "left",
                     color: "76899E",
-                    fontFace: "Aptos",
-                    fontSize: 8,
+                    fontSize: 8.5,
                 });
 
-                const addressLines = measureLinesCanvas(site.address, colWidth - 0.3, 8);
-                const addressLineHeight = (addressLines * 14 * 1.2) / 72;
-                const addressPosition = contentSection + (addressLines > 1 ? textHeight * 0.8 : textHeight * 2.2) + addressLineHeight
 
                 addText(slide, site.address, {
-                    w: colWidth,
-                    h: addressLineHeight,
-                    x: detailsSection,
-                    y: addressPosition,
+                    w: Inches(14.01),
+                    h: Inches(0.94),
+                    x: Inches(21.45),
+                    y: Inches(3.93),
                     align: "left",
                     color: "1E2C3C",
                     bold: true,
-                    fontFace: "Century Gothic",
-                    fontSize: 8,
+                    fontSize: 8.5,
                 });
-
-                const facingPosition = addressLines > 1 ? addressPosition * 1.21 : addressPosition * 1.1
                 addText(slide, "FACING:", {
-                    w: colWidth,
-                    h: textHeight,
-                    x: detailsSection,
-                    y: facingPosition,
+                    w: Inches(13.2),
+                    h: labelHeight,
+                    x: Inches(21.44),
+                    y: Inches(4.92),
                     align: "left",
                     color: "76899E",
-                    fontFace: "Aptos",
-                    fontSize: 8,
+                    fontSize: 8.5,
                 });
 
                 addText(slide, site.board_facing, {
-                    w: colWidth,
-                    h: textHeight,
-                    x: detailsSection,
-                    y: facingPosition + (textHeight * 0.75),
+                    w: Inches(13.2),
+                    h: labelHeight,
+                    x: Inches(21.44),
+                    y: Inches(5.22),
                     align: "left",
                     color: "1E2C3C",
                     bold: true,
-                    fontFace: "Century Gothic",
-                    fontSize: 10,
+                    fontSize: 9.6,
                 });
-                const boundPosition = addressLines > 1 ? facingPosition * 1.17 : facingPosition * 1.165
                 addText(slide, "BOUND:", {
-                    w: colWidth,
-                    h: textHeight,
-                    x: detailsSection,
-                    y: boundPosition,
+                    w: Inches(13.2),
+                    h: labelHeight,
+                    x: Inches(21.44),
+                    y: Inches(5.81),
                     align: "left",
                     color: "76899E",
-                    fontFace: "Aptos",
-                    fontSize: 8,
+                    fontSize: 8.5,
                 });
 
-                addText(slide, site.bound, {
-                    w: colWidth,
-                    h: textHeight,
-                    x: detailsSection,
-                    y: boundPosition + (textHeight * 0.75),
+                addText(slide, site.bound?.toUpperCase() ?? "N/A", {
+                    w: Inches(13.2),
+                    h: labelHeight,
+                    x: Inches(21.44),
+                    y: Inches(6.11),
                     align: "left",
                     color: "1E2C3C",
                     bold: true,
-                    fontFace: "Century Gothic",
-                    fontSize: 10,
+                    fontSize: 9.6,
                 });
 
-                const countYPosition = boundPosition * 1.145
                 addText(slide, "TRAFFIC COUNT:", {
-                    w: halfColWidth,
-                    h: textHeight,
-                    x: detailsSection,
-                    y: countYPosition,
+                    w: Inches(6.6),
+                    h: labelHeight,
+                    x: Inches(21.45),
+                    y: Inches(6.75),
                     align: "left",
                     color: "76899E",
-                    fontFace: "Aptos",
-                    fontSize: 8,
+                    fontSize: 8.5,
                 });
 
                 addText(slide, formatNumber(site.traffic_count), {
-                    w: halfColWidth,
-                    h: textHeight,
-                    x: detailsSection,
-                    y: countYPosition + (textHeight * 0.75),
+                    w: Inches(6.6),
+                    h: labelHeight,
+                    x: Inches(21.47),
+                    y: Inches(7.06),
                     align: "left",
                     color: "1E2C3C",
                     bold: true,
-                    fontFace: "Century Gothic",
-                    fontSize: 10,
+                    fontSize: 10.7,
                 });
                 addText(slide, "POPULATION:", {
-                    w: halfColWidth,
-                    h: textHeight,
+                    w: Inches(6.6),
+                    h: labelHeight,
                     x: details2ndColumnSection,
-                    y: countYPosition,
+                    y: Inches(6.75),
                     align: "left",
                     color: "76899E",
-                    fontFace: "Aptos",
-                    fontSize: 8,
+                    fontSize: 8.5,
                 });
 
                 addText(slide, formatNumber(site.vicinity_population), {
-                    w: halfColWidth,
-                    h: textHeight,
+                    w: Inches(6.6),
+                    h: labelHeight,
                     x: details2ndColumnSection,
-                    y: countYPosition + (textHeight * 0.75),
+                    y: Inches(7.06),
                     align: "left",
                     color: "1E2C3C",
                     bold: true,
-                    fontFace: "Century Gothic",
-                    fontSize: 10,
+                    fontSize: 10.7,
                 });
-                let landmarkPosition = countYPosition;
-                let landmarkLines = 1
-                if (landmarks.length > 0) {
-                    const mappedLandmarks = landmarks.map(lm => lm.display_name).slice(0, 5).join(" • ");
-                    landmarkLines = measureLinesCanvas(mappedLandmarks, colWidth, 8);
-                    const landmarkLineHeight = (landmarkLines * 14 * 1.2) / 72;
-                    landmarkPosition = boundPosition + (landmarkLines > 1 ? textHeight * 0.8 : textHeight * 2.1) + landmarkLineHeight
-                    addText(slide, "LANDMARKS:", {
-                        w: colWidth,
-                        h: textHeight,
-                        x: detailsSection,
-                        y: landmarkPosition,
-                        align: "left",
-                        color: "76899E",
-                        fontFace: "Aptos",
-                        fontSize: 8,
-                    });
 
-                    addText(slide, mappedLandmarks, {
-                        w: colWidth,
-                        h: textHeight * landmarkLines,
-                        x: detailsSection,
-                        y: landmarkPosition + (textHeight * 0.875),
-                        align: "left",
-                        color: "1E2C3C",
-                        fontFace: "Century Gothic",
-                        fontSize: 8,
-                    });
-                }
+                const mappedLandmarks = landmarks.map(lm => lm.display_name).slice(0, 5).join(" • ").toUpperCase();
 
+                addText(slide, "LANDMARKS:", {
+                    w: Inches(13.2),
+                    h: labelHeight,
+                    x: detailsSection,
+                    y: Inches(7.75),
+                    align: "left",
+                    color: "76899E",
+                    fontSize: 8.5,
+                });
 
-                landmarkPosition = landmarkLines > 1 ? landmarkPosition * 1.2 : landmarkPosition * 1.13
+                addText(slide, mappedLandmarks, {
+                    w: Inches(14),
+                    h: Inches(1.15),
+                    x: detailsSection,
+                    y: Inches(7.99),
+                    align: "left",
+                    color: "1E2C3C",
+                    fontSize: 8,
+                });
 
                 if (selectedOptions.rate_generator) {
                     const rates = selectedOptions.rate_generator;
@@ -396,7 +333,6 @@ export const useGeneratePowerpoint = () => {
                             text: "MATERIAL",
                             options: {
                                 align: "center" as PptxGenJS.HAlign,
-                                fontFace: "Aptos",
                                 bold: true,
                                 fontSize: 10,
                                 fill: { color: "F2F2F2" },
@@ -409,7 +345,6 @@ export const useGeneratePowerpoint = () => {
                             text: "INSTALLATION",
                             options: {
                                 align: "center" as PptxGenJS.HAlign,
-                                fontFace: "Aptos",
                                 bold: true,
                                 fontSize: 10,
                                 fill: { color: "F2F2F2" },
@@ -427,7 +362,6 @@ export const useGeneratePowerpoint = () => {
                                 text: `${selectedOptions.display_options.material_inclusions[index].count}x`,
                                 options: {
                                     align: "center" as PptxGenJS.HAlign,
-                                    fontFace: "Aptos",
                                     fontSize: 10,
                                     fill: { color: "FFFFFF" },
                                     color: "1E2C3C",
@@ -436,10 +370,9 @@ export const useGeneratePowerpoint = () => {
                         }
                         if (selectedOptions.display_options?.installation_inclusions && Array.isArray(selectedOptions.display_options.installation_inclusions)) {
                             displayRates.push({
-                                text: `${selectedOptions.display_options.installation_inclusions[index].count}x`,
+                                text: `${selectedOptions.display_options.installation_inclusions[index].count}x free`,
                                 options: {
                                     align: "center" as PptxGenJS.HAlign,
-                                    fontFace: "Aptos",
                                     fontSize: 10,
                                     fill: { color: "FFFFFF" },
                                     color: "1E2C3C",
@@ -451,7 +384,6 @@ export const useGeneratePowerpoint = () => {
                                 text: `${duration}`,
                                 options: {
                                     align: "center" as PptxGenJS.HAlign,
-                                    fontFace: "Aptos",
                                     fontSize: 10,
                                     fill: { color: "FFFFFF" },
                                     color: "1E2C3C",
@@ -463,7 +395,6 @@ export const useGeneratePowerpoint = () => {
                                 })} + VAT`,
                                 options: {
                                     align: "center" as PptxGenJS.HAlign,
-                                    fontFace: "Century Gothic",
                                     fontSize: 9,
                                     fill: { color: "FFFFFF" },
                                     color: "1E2C3C",
@@ -479,7 +410,6 @@ export const useGeneratePowerpoint = () => {
                                 text: "MONTHS",
                                 options: {
                                     align: "center" as PptxGenJS.HAlign,
-                                    fontFace: "Aptos",
                                     bold: true,
                                     fontSize: 10,
                                     fill: { color: "F2F2F2" },
@@ -490,7 +420,6 @@ export const useGeneratePowerpoint = () => {
                                 text: "RATE/MONTH",
                                 options: {
                                     align: "center" as PptxGenJS.HAlign,
-                                    fontFace: "Aptos",
                                     bold: true,
                                     fontSize: 10,
                                     fill: { color: "F2F2F2" },
@@ -502,79 +431,77 @@ export const useGeneratePowerpoint = () => {
                         ...rateRows /*.filter(row => row !== null)*/,
                     ];
                     slide.addTable(rows, {
-                        w: Inches(11.55),
-                        h: 1.08,
-                        colW: [Inches(2), Inches(3.7), Inches(3), Inches(3)],
-                        x: detailsSection + Inches(0.2),
-                        y: landmarkPosition + Inches(0.2),
+                        w: Inches(13.92),
+                        h: Inches(2.74),
+                        colW: [Inches(3), Inches(3.92), Inches(3.5), Inches(3.5)],
+                        x: Inches(21.7),
+                        y: Inches(9.46),
                         rowH: 0.27,
                         border: { color: "F2F2F2", pt: 1 },
                     });
-                    landmarkPosition = landmarkPosition + 1.1
                 } else {
                     addText(slide, "MONTHLY RATE:", {
-                        w: Inches(3),
-                        h: textHeight,
+                        w: Inches(4.36),
+                        h: labelHeight,
                         x: detailsSection,
-                        y: landmarkPosition,
+                        y: Inches(9.36),
                         align: "left",
-                        color: "1E2C3C",
+                        color: "76899E",
                         bold: true,
-                        fontFace: "Aptos",
-                        fontSize: 9,
+                        fontSize: 9.6,
                     });
-                    addText(slide, `${formatAmount(baseRate)} + VAT`, {
-                        w: colWidth - Inches(2.89),
-                        h: textHeight,
-                        x: detailsSection + Inches(2.65),
-                        y: landmarkPosition,
+                    const amount = selectedOptions.currency_exchange?.currency !== "PHP" ? formatAmount(baseRate) : formatAmount(baseRate) + " + VAT";
+                    addText(slide, amount, {
+                        w: Inches(6.63),
+                        h: labelHeight,
+                        x: detailsSection,
+                        y: Inches(9.82),
                         align: "left",
                         color: "1E2C3C",
                         bold: true,
-                        fontFace: "Century Gothic",
-                        fontSize: 12,
+                        fontSize: 14.9,
                     });
                     if (selectedOptions.display_options?.material_inclusions || selectedOptions.display_options?.installation_inclusions) {
-                        let text = `FREE `;
+                        let text = `w/ free `;
                         if (selectedOptions.display_options.installation_inclusions) {
-                            text += `${selectedOptions.display_options.installation_inclusions}x Installation and `
+                            text += ` ${selectedOptions.display_options.installation_inclusions}x Installation`
+                        }
+                        if (selectedOptions.display_options.installation_inclusions && selectedOptions.display_options.material_inclusions) {
+                            text += ` & `
                         }
                         if (selectedOptions.display_options.material_inclusions) {
-                            text += `${selectedOptions.display_options.material_inclusions}x Material`
+                            text += ` ${selectedOptions.display_options.material_inclusions}x Material`
                         }
                         addText(slide, text, {
-                            w: colWidth,
-                            h: textHeight,
+                            w: Inches(14.23),
+                            h: Inches(0.62),
                             x: detailsSection,
-                            y: landmarkPosition + textHeight,
+                            y: Inches(10.23),
                             align: "left",
-                            color: "1E2C3C",
+                            color: "76899E",
                             bold: false,
-                            fontFace: "Century Gothic",
-                            fontSize: 9,
+                            fontSize: 8.5,
                         })
                     }
                 }
-                const mapSize = landmarkLines > 1 || addressLines > 1 ? Inches(7.25) : Inches(7.5)
                 slide.addImage({
                     data: site.map,
-                    x: detailsSection + Inches(0.2),
-                    y: landmarkPosition + (selectedOptions.rate_generator ? textHeight * 1.2 : textHeight * 2),
-                    w: mapSize,
-                    h: mapSize,
+                    x: Inches(21.68),
+                    y: selectedOptions.rate_generator ? Inches(12.84) : Inches(11.02),
+                    w: selectedOptions.rate_generator ? Inches(6.97) : Inches(8),
+                    h: selectedOptions.rate_generator ? Inches(6.97) : Inches(8),
                 })
                 if (site.ideal_view) {
                     slide.addText("View Google Map", {
                         hyperlink: {
                             url: site.ideal_view ?? "",
                         },
-                        w: mapSize,
-                        h: Inches(0.68),
-                        x: detailsSection + Inches(0.2),
-                        y: landmarkPosition + (selectedOptions.rate_generator ? textHeight * 1.2 : textHeight * 2) + mapSize - Inches(0.68),
+                        w: selectedOptions.rate_generator ? Inches(6.97) : Inches(8),
+                        h: Inches(0.73),
+                        x: Inches(21.68),
+                        y: selectedOptions.rate_generator ? Inches(19.18) : Inches(18.29),
                         align: "center",
                         color: "25589D",
-                        fontFace: "Aptos",
                         fontSize: 11,
                         isTextBox: true,
                         fill: { color: "#F2F2F2" },
