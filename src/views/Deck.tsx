@@ -16,6 +16,7 @@ import { useDecks, useDeleteDeck } from "@/hooks/useDeck";
 import { useAuth } from "@/providers/auth.provider";
 import { v4 } from "uuid";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 
 const EditDeck = lazy(() => import("@/pages/deck/deck.edit"))
 
@@ -71,17 +72,6 @@ const Main = () => {
           Add
         </TooltipContent>
       </Tooltip>
-      {/* <Tooltip>
-        <TooltipTrigger asChild>
-          <Button className="h-7 px-2" variant="outline" size="sm">
-            <Pen />
-            <span className="hidden lg:flex">Edit Decks</span>
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent className="lg:hidden">
-          Edit
-        </TooltipContent>
-      </Tooltip> */}
     </header >
     {deckList.length > 0 ?
       < main className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
@@ -101,6 +91,8 @@ const DeckCard = ({ deck }: { deck: Deck_1 }) => {
   const { mutate } = useDeleteDeck();
 
   return <div className="relative flex flex-col gap-2 border p-2 shadow rounded-lg max-w-sm group overflow-hidden">
+    {deck.status === 3 &&
+      <Badge className="absolute bg-yellow-200 text-yellow-600 right-4 top-4 uppercase">Draft</Badge>}
     <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center gap-2 bg-black/5 opacity-0 group-hover:opacity-100 group-hover:pointer-events-auto">
       <Button asChild className="rounded-full border-t shadow-sm shadow-white/50 text-white backdrop-blur-[2px] text-sm" variant="ghost">
         <Link to={`/deck/edit?token=${deck.token}`} >VIEW</Link>

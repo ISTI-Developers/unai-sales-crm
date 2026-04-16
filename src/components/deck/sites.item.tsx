@@ -1,10 +1,9 @@
 import { DeckSite } from "@/interfaces/deck.interface";
 import { cn } from "@/lib/utils";
 import SiteImages from "./sites.images";
-import { Landmarks, SiteImage } from "@/interfaces/sites.interface";
+import { Landmarks } from "@/interfaces/sites.interface";
 import { ReactNode, useEffect, useMemo, useState } from "react";
-import { getSiteLandmarks, useSiteImages } from "@/hooks/useSites";
-import { fetchImage } from "@/lib/fetch";
+import { getSiteLandmarks } from "@/hooks/useSites";
 import { format, isBefore, subDays } from "date-fns";
 import { applyPriceAdjustment, formatAmount } from "@/lib/format";
 import { getRecord, saveRecord } from "@/providers/api";
@@ -17,9 +16,9 @@ import { Trash2 } from "lucide-react";
 
 export const SiteItem = ({ item, width, className }: { item: DeckSite; width: number; className?: string }) => {
     const { setSelectedSites } = useDeck()
-    const imageResult = useSiteImages(item.site_code);
-    const [siteImages, setSiteImages] = useState<SiteImage[]>([]);
-    const [loading, setLoading] = useState(false);
+    // const imageResult = useSiteImages(item.site_code);
+    // const [siteImages, setSiteImages] = useState<SiteImage[]>([]);
+    // const [loading, setLoading] = useState(false);
 
     const availability = useMemo(() => {
         if (!item.availability) return "AVAILABLE";
@@ -39,40 +38,40 @@ export const SiteItem = ({ item, width, className }: { item: DeckSite; width: nu
         return format(rofrDate, "PP");
     }, [item.availability, item.is_prime])
 
-    useEffect(() => {
-        let isCancelled = false;
-        const objectUrls: string[] = []; // Track all created object URLs
+    // useEffect(() => {
+    //     let isCancelled = false;
+    //     const objectUrls: string[] = []; // Track all created object URLs
 
-        const setup = async () => {
-            console.log(imageResult.error);
-            if (!imageResult.data) return;
+    //     const setup = async () => {
+    //         console.log(imageResult.error);
+    //         if (!imageResult.data) return;
 
-            const processedImagePromises = imageResult.data.map(async (image) => {
-                setLoading(true)
-                const imgUrl = await fetchImage(image.upload_path); // returns object URL
-                if (imgUrl) {
-                    objectUrls.push(imgUrl); // Track it for cleanup
-                }
-                return {
-                    ...image,
-                    url: imgUrl ?? "",
-                };
-            });
+    //         const processedImagePromises = imageResult.data.map(async (image) => {
+    //             setLoading(true)
+    //             const imgUrl = await fetchImage(image.upload_path); // returns object URL
+    //             if (imgUrl) {
+    //                 objectUrls.push(imgUrl); // Track it for cleanup
+    //             }
+    //             return {
+    //                 ...image,
+    //                 url: imgUrl ?? "",
+    //             };
+    //         });
 
-            const processedImages = await Promise.all(processedImagePromises);
-            if (!isCancelled) {
-                setSiteImages(processedImages);
-                setLoading(false);
-            }
-        };
+    //         const processedImages = await Promise.all(processedImagePromises);
+    //         if (!isCancelled) {
+    //             setSiteImages(processedImages);
+    //             setLoading(false);
+    //         }
+    //     };
 
-        setup();
+    //     setup();
 
-        return () => {
-            isCancelled = true;
-            objectUrls.forEach((url) => URL.revokeObjectURL(url)); // Clean up blob URLs
-        };
-    }, [imageResult.data]);
+    //     return () => {
+    //         isCancelled = true;
+    //         objectUrls.forEach((url) => URL.revokeObjectURL(url)); // Clean up blob URLs
+    //     };
+    // }, [imageResult.data]);
 
     const imageWidth = useMemo(() => {
         if (width > 600) {
@@ -85,7 +84,7 @@ export const SiteItem = ({ item, width, className }: { item: DeckSite; width: nu
         <div
             id={item.site_code}
             className={cn(
-                "group w-full bg-white bg-contain bg-no-repeat rounded overflow-hidden relative flex-shrink-0",
+                "relative group w-full bg-white bg-contain bg-no-repeat rounded overflow-hidden relative flex-shrink-0",
 
                 className
             )}
@@ -106,7 +105,7 @@ export const SiteItem = ({ item, width, className }: { item: DeckSite; width: nu
                 </Button>
             </div>
             <div className="grid grid-cols-[1.75fr_1fr] h-full">
-                <SiteImages site_code={item.site_code} images={siteImages} isLoading={loading} isFetching={imageResult.isFetching} />
+                <SiteImages site_code={item.site_code} />
                 {/* BASIC INFO */}
                 <div className="py-4 grid grid-cols-2 h-fit gap-y-2 gap-x-4 pr-3">
                     <div className="flex gap-1">

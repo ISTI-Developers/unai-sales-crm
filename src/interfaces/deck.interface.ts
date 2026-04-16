@@ -15,6 +15,8 @@ export interface DeckSite extends SiteDetailswithMapping {
   product?: string;
   image?: number;
   url?: string;
+  width?: number;
+  height?: number;
   map?: string;
   landmarks?: Landmarks[];
 }

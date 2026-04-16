@@ -7,7 +7,7 @@ import { getEndDate, getLatestBooking } from "@/lib/fetch";
 import { haversineDistance } from "@/lib/utils";
 import { DeckFilters, DeckOptions } from "@/misc/deckTemplate";
 import { addDays, differenceInCalendarDays, format, isBefore } from "date-fns";
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 export const DeckProviderContext = createContext<DeckProviderType | null>(null);
 
@@ -25,6 +25,7 @@ export function DeckProvider({ children }: ProviderProps) {
   const [searchParams] = useSearchParams()
   const deckID = searchParams.get("token");
 
+  const initializedRef = useRef(false);
   const { data: landmarks } = useSitelandmarks();
   const { data: allSites } = useSites();
   const { data: bookings } = useBookings();
@@ -178,19 +179,20 @@ export function DeckProvider({ children }: ProviderProps) {
   }, [landmarks, searchedSites, selectedFilters]);
 
   useEffect(() => {
-    if (!deckData || !deckID || isLoading) return;
+    if (!deckData || !deckID || isLoading || initializedRef.current) return;
+
+    const siteCodes = new Set(deckData.sites.map(s => s.site_code));
 
     const loadedSites = sites.filter(site =>
-      deckData.sites.some(s => s.site_code === site.site_code)
+      siteCodes.has(site.site_code)
     );
 
-    console.log(deckData.filters)
     setSelectedSites(loadedSites);
     setFilters(deckData.filters ?? {});
     setOptions(deckData.options ?? {});
     setTitle(deckData.title ?? "");
+    initializedRef.current = true;
 
-    console.count(`rendering ${new Date()}`);
   }, [deckData, deckID, isLoading, sites]);
 
 

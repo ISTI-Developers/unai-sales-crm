@@ -13,8 +13,8 @@ export const useGeneratePowerpoint = () => {
     const { title, selectedSites, selectedOptions } = useDeck();
     const start = new Date().getTime();
     const margin = 0.3;
-    const width = Inches(33.858);
-    const height = Inches(20.31);
+    const width = Inches(36.107);
+    const height = Inches(20.311);
     const headerHeight = Inches(2.02);
     const detailsSection = Inches(21.48);
     const colWidth = (width - detailsSection);
@@ -64,7 +64,7 @@ export const useGeneratePowerpoint = () => {
     const addText = (slide: PptxGenJS.Slide, text: string, options: PptxGenJS.TextPropsOptions) => {
         return slide.addText(text, {
             fontSize: 8,
-            fontFace: "Aptos",
+            fontFace: "Inter",
             color: "76899E",
             align: 'left',
             h: margin,
@@ -130,24 +130,30 @@ export const useGeneratePowerpoint = () => {
                     : "OPEN";
 
                 baseRate = applyOptions(site, price, baseRate);
-                const IMAGE_WIDTH = Inches(20.09);
-                const IMAGE_HEIGHT = Inches(10.6194);
+                const DPI = 96;
+                const DEFAULT_WIDTH = 832;
+                const DEFAULT_IMAGE_WIDTH = Inches(DEFAULT_WIDTH / DPI * 2.54);
+                // const DEFAULT_IMAGE_HEIGHT = Inches(10.6194);
+
+                const HEIGHT = site.height ? site.height * (DEFAULT_WIDTH / (site.width ?? DEFAULT_WIDTH)) : 440;
+                const IMAGE_WIDTH = DEFAULT_IMAGE_WIDTH;
+                const IMAGE_HEIGHT = Inches(HEIGHT / DPI * 2.54);
+
 
                 slide.addImage({
                     data: site.url ?? mockup,
                     x: Inches(0.8),
-                    y: ((height - Inches(1.93)) / 4) + Inches(1),
-                    w: IMAGE_WIDTH,
-                    h: IMAGE_HEIGHT,
-                    sizing: {
-                        type: "crop",
-                        w: IMAGE_WIDTH,
-                        h: IMAGE_HEIGHT,
-                    }
+                    // y: ((height - Inches(1.93)) / 4) + Inches(1),
+                    y: headerHeight + ((height - headerHeight) / 2) - ((IMAGE_HEIGHT * 0.91) / 2),
+                    w: IMAGE_WIDTH * 0.91,
+                    h: IMAGE_HEIGHT * 0.91,
+                    // sizing: {
+                    //     type: "contain",
+                    // }
                 });
 
                 addText(slide, area, {
-                    w: width - 0.2,
+                    w: Inches(35.78),
                     h: headerHeight,
                     x: 0,
                     y: 0,

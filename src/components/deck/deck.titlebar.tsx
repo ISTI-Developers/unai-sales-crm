@@ -10,7 +10,27 @@ import { useDeck } from '@/providers/deck.provider';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { format } from 'date-fns';
 import { useAuth } from '@/providers/auth.provider';
+import { useEffect, useMemo, useState } from 'react';
+import { Badge } from '../ui/badge';
+import { cn } from '@/lib/utils';
+import { toast } from '@/hooks/use-toast';
 
+const progressMap = {
+    STALE: {
+        label: "Awaiting changes",
+        className: "bg-zinc-500 ",
+    },
+    SAVED: {
+        label: "Draft saved!",
+        className: "bg-emerald-100 hover:bg-emerald-100 text-emerald-600",
+    },
+    SAVING: {
+        label: "Saving draft...",
+        className: "bg-yellow-100 hover:bg-yellow-100 text-yellow-600 animate-pulse"
+    }
+} as const;
+
+type ProgressItem = (typeof progressMap)[keyof typeof progressMap];
 const TitleBar = () => {
     const { user } = useAuth();
     const [searchParams] = useSearchParams()
@@ -21,12 +41,13 @@ const TitleBar = () => {
     const { selectedSites, selectedFilters, selectedOptions, title, setTitle } = useDeck();
     const { print } = useGeneratePowerpoint();
 
+    const [progress, setProgress] = useState<ProgressItem>(progressMap.STALE)
     const onSaveAndGenerate = async () => {
         await print();
         onSave();
     }
 
-    const onSave = () => {
+    const onSave = (status?: number) => {
         if (!user || !deckID || selectedSites.length === 0) return;
 
         const deck: Deck = {
@@ -42,17 +63,63 @@ const TitleBar = () => {
             thumbnail: selectedSites[0].image!,
             filters: selectedFilters,
             options: selectedOptions,
-            status: 1,
+            status: status ?? 1,
             created_at: format(new Date(), "yyyy-MM-dd HH:mm:ss"),
             modified_at: format(new Date(), "yyyy-MM-dd HH:mm:ss")
         }
-        console.log(deck)
-        mutate(deck);
+        mutate(deck, {
+            onSuccess: () => {
+                toast({
+                    variant: "success",
+                    title: status ? "Your draft has been saved" : "Deck has been saved successfully"
+                })
+                setProgress(progressMap.SAVED)
+
+            }
+        });
     }
+    const shouldSave = useMemo(() => {
+        if (data === undefined) return false;
+        if (!data) return true;
+
+        const originalCodes = data.sites.map(site => site.site_code);
+        const selectedCodes = selectedSites.map(site => site.site_code);
+
+        const isSameSites =
+            originalCodes.length === selectedCodes.length &&
+            originalCodes.every(code => selectedCodes.includes(code!));
+
+        const isSameFilters =
+            JSON.stringify(data.filters) === JSON.stringify(selectedFilters);
+
+        const isSameOptions =
+            JSON.stringify(data.options) === JSON.stringify(selectedOptions);
+
+        const isSameTitle = data.title === title;
+
+        return !(isSameSites && isSameFilters && isSameOptions && isSameTitle);
+    }, [data, selectedFilters, selectedOptions, selectedSites, title]);
 
 
-    return <div className="flex justify-between items-center w-full">
+    useEffect(() => {
+        let isActive = true;
+        const timeout = setTimeout(() => {
+            if (!isActive || selectedSites.length === 0 || !shouldSave) return;
+            setProgress(progressMap.SAVING)
+            // onSave(3)
+        }, 1500);
+
+        return () => {
+            clearTimeout(timeout);
+            isActive = false;
+            setProgress(progressMap.STALE)
+        } // ✅ cancels previous timer
+    }, [shouldSave, selectedSites, selectedFilters, selectedOptions, title]);
+
+
+    return <div className="flex gap-4 justify-between items-center w-full">
         <Input value={title} onChange={(e) => setTitle(e.target.value)} className="shadow-none h-7 w-fit text-xs border-zinc-100 hover:border-zinc-300 focus-visible:ring-0" />
+        <Badge className={cn('ml-auto h-5 font-medium text-[0.65rem]', progress?.className)}>{progress?.label}</Badge>
         <ButtonGroup>
             <Button className="h-6 px-2 text-[0.6rem] " variant="outline" onClick={onSaveAndGenerate} disabled={selectedSites.length === 0}>Save & Generate</Button>
             <DropdownMenu >
@@ -62,7 +129,7 @@ const TitleBar = () => {
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-full">
-                    <DropdownMenuItem className="text-[0.6rem]" onClick={onSave}>Save Only</DropdownMenuItem>
+                    <DropdownMenuItem className="text-[0.6rem]" onClick={() => onSave()}>Save Only</DropdownMenuItem>
                     <DropdownMenuItem className="text-[0.6rem]" onClick={print}>Generate Only</DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>

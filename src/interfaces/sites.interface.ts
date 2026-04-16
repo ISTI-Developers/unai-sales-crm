@@ -39,6 +39,8 @@ export interface SiteImage {
   date_uploaded: string;
   img_from: number;
   url: string;
+  width: number;
+  height: number;
 }
 
 export interface City {

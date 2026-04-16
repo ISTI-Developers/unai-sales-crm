@@ -33,11 +33,15 @@ export async function fetchFromLark(url: string, options: RequestInit) {
 }
 export const fetchImage: (
   imageLink: string,
-) => Promise<string | undefined> = async (imageLink: string) => {
+) => Promise<
+  { url: string; width: number; height: number } | undefined
+> = async (imageLink: string) => {
   try {
     const response = await wp.get(`files?path=${imageLink}`, {
       responseType: "arraybuffer", // This ensures binary data is received
     });
+    const width = response.headers["x-image-width"];
+    const height = response.headers["x-image-height"];
     const bytes = new Uint8Array(response.data);
     let binary = "";
     const chunkSize = 0x8000; // prevent call stack overflow
@@ -47,7 +51,11 @@ export const fetchImage: (
     }
 
     const base64 = btoa(binary);
-    return `data:image/png;base64,${base64}`;
+    return {
+      url: `data:image/png;base64,${base64}`,
+      height: Number(height),
+      width: Number(width),
+    };
   } catch (error) {
     console.error("Error fetching image:", error);
   }
@@ -489,9 +497,9 @@ export const getLatestBooking = (bookings: Booking[]) => {
 
     const diff = differenceInCalendarDays(from, now);
 
-    if (valid[0].site_code === "1SLXBNN002-2AA01") {
-      console.log(diff);
-    }
+    // if (valid[0].site_code === "1SLXBNN002-2AA01") {
+    //   console.log(diff);
+    // }
 
     let score = 0;
     let distance = Infinity;
@@ -509,7 +517,7 @@ export const getLatestBooking = (bookings: Booking[]) => {
     }
 
     // NEW booking within 30 days
-    else if (booking.booking_status === "NEW" && diff >= 0 && diff <= 30) {
+    else if (booking.booking_status === "NEW" && diff >= 0 && diff <= 60) {
       score = 80;
       distance = diff;
     } else if (
