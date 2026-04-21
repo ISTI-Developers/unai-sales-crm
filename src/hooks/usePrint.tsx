@@ -461,6 +461,30 @@ export const useGeneratePowerpoint = () => {
                         bold: true,
                         fontSize: 14.9,
                     });
+                    addText(slide, "PRODUCTION COST:", {
+                        w: Inches(4.36),
+                        h: labelHeight,
+                        x: details2ndColumnSection,
+                        y: Inches(9.36),
+                        align: "left",
+                        color: "76899E",
+                        bold: true,
+                        fontSize: 9.6,
+                    });
+                    const productionCost = site.size
+                        .match(/\d+(\.\d+)?/g)
+                        ?.map(Number)
+                        .reduce((acc, n) => acc * n, 25) ?? 0
+                    addText(slide, formatAmount(productionCost), {
+                        w: Inches(6.63),
+                        h: labelHeight,
+                        x: details2ndColumnSection,
+                        y: Inches(9.82),
+                        align: "left",
+                        color: "1E2C3C",
+                        bold: true,
+                        fontSize: 14.9,
+                    });
                     if (selectedOptions.display_options?.material_inclusions || selectedOptions.display_options?.installation_inclusions) {
                         let text = `w/ free `;
                         if (selectedOptions.display_options.installation_inclusions) {
