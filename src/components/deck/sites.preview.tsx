@@ -1,6 +1,7 @@
 import { useDeck } from "@/providers/deck.provider"
 import { SiteItem } from "./sites.item";
 import { useEffect, useRef, useState } from "react";
+import { ScrollArea } from "../ui/scroll-area";
 
 const SitesPreview = () => {
   const { selectedSites } = useDeck();
@@ -21,11 +22,13 @@ const SitesPreview = () => {
   }, []);
 
   return (
-    <section ref={containerRef} className="bg-zinc-100 rounded-md p-2 flex flex-col items-center max-h-[calc(100vh-278px)] overflow-y-auto gap-2">
-      {selectedSites.map(item => {
-        return <SiteItem item={item} width={width}/>
-      })}
-    </section>
+    <ScrollArea>
+      <section ref={containerRef} className="bg-zinc-100 rounded-md p-2 flex flex-col items-center overflow-y-auto gap-2">
+        {selectedSites.map(item => {
+          return <SiteItem item={item} width={width} />
+        })}
+      </section>
+    </ScrollArea>
   )
 }
 

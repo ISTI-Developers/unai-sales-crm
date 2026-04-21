@@ -65,8 +65,9 @@ export const rateGenerator: RateGenerator = {
   type: "---",
 };
 export const inclusionGenerator: InclusionGenerator = {
-  duration: 3,
-  count: 0,
+  duration: 1,
+  type: "FREE",
+  count: 1,
 };
 export const optionsBaseContent = {
   price_adjustment: [priceAdjustment],
@@ -81,22 +82,30 @@ export const optionsBaseContent = {
   ],
 };
 
+export const regions = {
+  1: "luzon",
+  2: "visayas",
+  3: "mindanao",
+} as const;
+
 export const displayOptions = {
   base: {
-    material_inclusions: 0,
-    installation_inclusions: 0,
+    material_inclusions: [inclusionGenerator],
+    production_cost: { luzon: 25, visayas: 25, mindanao: 25 },
+    installation_inclusions: [inclusionGenerator],
     landmark_visibility: false,
   },
   withRateGenerator: {
     material_inclusions: [
-      inclusionGenerator,
+      { ...inclusionGenerator, duration: 3 },
       { ...inclusionGenerator, duration: 6 },
       { ...inclusionGenerator, duration: 12 },
     ],
+    production_cost: { luzon: 25, visayas: 25, mindanao: 25 },
     installation_inclusions: [
-      inclusionGenerator,
-      { ...inclusionGenerator, duration: 6 },
-      { ...inclusionGenerator, duration: 12 },
+      { ...inclusionGenerator, duration: 3, count: 1 },
+      { ...inclusionGenerator, duration: 6, count: 2 },
+      { ...inclusionGenerator, duration: 12, count: 4 },
     ],
     landmark_visibility: false,
   },

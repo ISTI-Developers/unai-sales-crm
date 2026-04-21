@@ -1,8 +1,9 @@
 import React, { InputHTMLAttributes, useEffect, useState } from 'react'
 import { InputGroup, InputGroupAddon, InputGroupInput } from './input-group';
-import { Hash, PhilippinePesoIcon } from 'lucide-react';
+import { PhilippinePesoIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-const InputNumber = React.forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement> & { isMoney?: boolean }>(({ value, onChange, isMoney = true, ...props }, ref) => {
+const InputNumber = React.forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement> & { isMoney?: boolean; groupClassName?: string }>(({ value, onChange, groupClassName, isMoney = true, ...props }, ref) => {
     const [display, setDisplay] = useState("");
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -40,12 +41,12 @@ const InputNumber = React.forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLI
     }, [value]);
 
     return (
-        <InputGroup>
-            <InputGroupAddon>
-                {isMoney ?
+        <InputGroup className={cn('bg-white', groupClassName)}>
+            {isMoney &&
+                <InputGroupAddon>
                     <PhilippinePesoIcon />
-                    : <Hash />}
-            </InputGroupAddon>
+                </InputGroupAddon>
+            }
             <InputGroupInput
                 {...props}
                 id={props.id}

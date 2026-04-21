@@ -108,7 +108,7 @@ const PriceAdjustmentField = ({ max = 999999, amount, operation, type, apply_to,
                     <SelectItem value='-'>-</SelectItem>
                 </SelectContent>
             </Select>
-            <InputNumber min={0} max={type === "%" ? 100 : max} value={amount} className='h-7 border-none shadow-none text-end' onChange={(e) => onChange("amount", e.target.value)} />
+            <InputNumber min={0} max={type === "%" ? 100 : max} value={amount} groupClassName='border-none' className='h-7 shadow-none' onChange={(e) => onChange("amount", e.target.value)} />
             <Select value={type} onValueChange={(value) => onChange("type", value)}>
                 <SelectTrigger showIcon={false} className='border-none shadow-none w-fit px-2 pr-3 h-7'>
                     <SelectValue />

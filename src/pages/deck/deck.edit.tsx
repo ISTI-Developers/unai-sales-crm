@@ -4,6 +4,7 @@ import PreviewsList from "@/components/deck/preview.list";
 import SitesPreview from "@/components/deck/sites.preview";
 import SiteSelection from "@/components/deck/sites.selection";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useHorizontalWheelScroll } from "@/hooks/useHorizontalScroll";
 import { cn } from "@/lib/utils";
 import Page from "@/misc/Page";
@@ -26,10 +27,10 @@ const EditDeck = () => {
   return (
     <Page>
       <div className={cn("grid w-full overflow-x-hidden gap-2 text-xs", isLeftOpen && isRightOpen ? "grid-cols-[200px_1fr_200px] xl:grid-cols-[240px_1fr_240px] 2xl:grid-cols-[300px_1fr_300px]" : isLeftOpen ? "grid-cols-[200px_1fr] xl:grid-cols-[240px_1fr] 2xl:grid-cols-[300px_1fr]" : isRightOpen ? "grid-cols-[1fr_200px] xl:grid-cols-[1fr_240px] 2xl:grid-cols-[1fr_300px]" : "grid-cols-1")}>
-        <section className={cn("bg-zinc-100 w-full h-[calc(100vh-122px)] rounded-md p-2 gap-2", isLeftOpen ? "flex flex-col" : "hidden")}>
+        <section className={cn("bg-zinc-100 w-full h-[calc(100vh-130px)]  rounded-md p-2 gap-2", isLeftOpen ? "flex flex-col" : "hidden")}>
           <SiteSelection />
         </section>
-        <section className={cn("min-w-0 w-full h-[calc(100vh-122px)] rounded-md grid gap-2 grid-rows-[36px_1fr_auto] 2xl:grid-rows-[36px_1fr_auto]")}>
+        <section className={cn("min-w-0 w-full h-[calc(100vh-130px)]  rounded-md grid gap-2 grid-rows-[36px_1fr_auto] 2xl:grid-rows-[36px_1fr_auto]")}>
           <section className="bg-zinc-100 rounded-md flex justify-between items-center">
             <Button variant="ghost" size="icon" onClick={() => toggleLeftBar(prev => !prev)}>
               {isLeftOpen ? <PanelLeftClose /> : <PanelLeftOpen />}
@@ -44,9 +45,11 @@ const EditDeck = () => {
             <PreviewsList />
           </section>
         </section>
-        <section className={cn("bg-zinc-100 w-full rounded-md p-2  h-[calc(100vh-122px)] overflow-y-auto scrollbar-thin", isRightOpen ? "flex flex-col" : "hidden")}>
-          <OptionsPanel />
-        </section>
+        <ScrollArea className="h-[calc(100vh-130px)] overflow-y-auto">
+          <section className={cn("bg-zinc-100 w-full rounded-md p-2", isRightOpen ? "flex flex-col" : "hidden")}>
+            <OptionsPanel />
+          </section>
+        </ScrollArea>
       </div>
     </Page>
   )

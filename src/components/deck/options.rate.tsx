@@ -12,7 +12,7 @@ const RatesGeneratorOption = () => {
             return <div key={item.duration}>
                 <Label className='text-[0.6rem] uppercase font-semibold'>{`${item.duration} months`}</Label>
                 <div className='flex items-center bg-white rounded-md shadow'>
-                    <InputNumber min={0} value={item.discount} className='h-7 border-none shadow-none text-end' onChange={(e) => setOptions(prev => {
+                    <InputNumber min={0} value={item.discount} groupClassName="border-none" className='h-7 shadow-none' onChange={(e) => setOptions(prev => {
                         if (!prev) return prev;
 
                         return {

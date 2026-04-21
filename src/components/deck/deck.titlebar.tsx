@@ -73,10 +73,12 @@ const TitleBar = () => {
         }
         mutate(deck, {
             onSuccess: () => {
-                toast({
-                    variant: "success",
-                    title: status === 3 ? "Your draft has been saved" : "Deck has been saved successfully"
-                })
+                if (status !== 3) {
+                    toast({
+                        variant: "success",
+                        title: "Deck has been saved successfully"
+                    })
+                }
                 setProgress(status === 3 ? progressMap.STORED : progressMap.SAVED)
 
             }
@@ -115,7 +117,7 @@ const TitleBar = () => {
             if (!isActive || selectedSites.length === 0 || !shouldSave) return;
             setProgress(progressMap.SAVING)
             onSave(3)
-        }, 1500);
+        }, 2000);
 
         return () => {
             clearTimeout(timeout);

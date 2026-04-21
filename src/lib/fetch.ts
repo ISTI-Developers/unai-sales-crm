@@ -497,10 +497,6 @@ export const getLatestBooking = (bookings: Booking[]) => {
 
     const diff = differenceInCalendarDays(from, now);
 
-    // if (valid[0].site_code === "1SLXBNN002-2AA01") {
-    //   console.log(diff);
-    // }
-
     let score = 0;
     let distance = Infinity;
 
@@ -526,6 +522,9 @@ export const getLatestBooking = (bookings: Booking[]) => {
       to >= now
     ) {
       score = 70;
+    } else if (booking.booking_status.includes("CHANGE")) {
+      score = 75;
+      distance = diff;
     }
     // CURRENT ACTIVE
     else if (from <= now && to >= now) {

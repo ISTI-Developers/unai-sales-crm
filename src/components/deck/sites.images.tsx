@@ -57,7 +57,7 @@ const SiteImages = ({ site_code }: { site_code: string; }) => {
     }, [images, site_code, setSelectedSites]);
 
     return (
-        <div className="flex justify-center items-center -mt-4 px-4 w-full min-w-0">
+        <div className="flex justify-center items-center -mt-4 px-4 w-full min-w-0 pb-4">
             {selectedImage ?
                 <ImageItem site_code={site_code} item={selectedImage} images={images} setSelectedImage={setImage} />
                 : isLoading ? <div className="w-full aspect-video bg-zinc-50 flex flex-col items-center justify-center text-zinc-500 font-semibold gap-2">
