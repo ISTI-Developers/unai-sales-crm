@@ -1,10 +1,9 @@
-import { DeckSite } from "@/interfaces/deck.interface";
+import { DeckSite, regions } from "@/interfaces/deck.interface";
 import { cn } from "@/lib/utils";
 import SiteImages from "./sites.images";
-import { Landmarks, SiteImage } from "@/interfaces/sites.interface";
+import { Landmarks } from "@/interfaces/sites.interface";
 import { ReactNode, useEffect, useMemo, useState } from "react";
-import { getSiteLandmarks, useSiteImages } from "@/hooks/useSites";
-import { fetchImage } from "@/lib/fetch";
+import { getSiteLandmarks } from "@/hooks/useSites";
 import { format, isBefore, subDays } from "date-fns";
 import { applyPriceAdjustment, formatAmount } from "@/lib/format";
 import { getRecord, saveRecord } from "@/providers/api";
@@ -14,12 +13,13 @@ import { useGeneratePowerpoint } from "@/hooks/usePrint";
 import classNames from "classnames";
 import { Button } from "../ui/button";
 import { Trash2 } from "lucide-react";
+import { FreeInclusionGenerator, InclusionGenerator, ProductionCost } from "@/misc/deckTemplate";
 
 export const SiteItem = ({ item, width, className }: { item: DeckSite; width: number; className?: string }) => {
     const { setSelectedSites } = useDeck()
-    const imageResult = useSiteImages(item.site_code);
-    const [siteImages, setSiteImages] = useState<SiteImage[]>([]);
-    const [loading, setLoading] = useState(false);
+    // const imageResult = useSiteImages(item.site_code);
+    // const [siteImages, setSiteImages] = useState<SiteImage[]>([]);
+    // const [loading, setLoading] = useState(false);
 
     const availability = useMemo(() => {
         if (!item.availability) return "AVAILABLE";
@@ -39,40 +39,40 @@ export const SiteItem = ({ item, width, className }: { item: DeckSite; width: nu
         return format(rofrDate, "PP");
     }, [item.availability, item.is_prime])
 
-    useEffect(() => {
-        let isCancelled = false;
-        const objectUrls: string[] = []; // Track all created object URLs
+    // useEffect(() => {
+    //     let isCancelled = false;
+    //     const objectUrls: string[] = []; // Track all created object URLs
 
-        const setup = async () => {
-            console.log(imageResult.error);
-            if (!imageResult.data) return;
+    //     const setup = async () => {
+    //         console.log(imageResult.error);
+    //         if (!imageResult.data) return;
 
-            const processedImagePromises = imageResult.data.map(async (image) => {
-                setLoading(true)
-                const imgUrl = await fetchImage(image.upload_path); // returns object URL
-                if (imgUrl) {
-                    objectUrls.push(imgUrl); // Track it for cleanup
-                }
-                return {
-                    ...image,
-                    url: imgUrl ?? "",
-                };
-            });
+    //         const processedImagePromises = imageResult.data.map(async (image) => {
+    //             setLoading(true)
+    //             const imgUrl = await fetchImage(image.upload_path); // returns object URL
+    //             if (imgUrl) {
+    //                 objectUrls.push(imgUrl); // Track it for cleanup
+    //             }
+    //             return {
+    //                 ...image,
+    //                 url: imgUrl ?? "",
+    //             };
+    //         });
 
-            const processedImages = await Promise.all(processedImagePromises);
-            if (!isCancelled) {
-                setSiteImages(processedImages);
-                setLoading(false);
-            }
-        };
+    //         const processedImages = await Promise.all(processedImagePromises);
+    //         if (!isCancelled) {
+    //             setSiteImages(processedImages);
+    //             setLoading(false);
+    //         }
+    //     };
 
-        setup();
+    //     setup();
 
-        return () => {
-            isCancelled = true;
-            objectUrls.forEach((url) => URL.revokeObjectURL(url)); // Clean up blob URLs
-        };
-    }, [imageResult.data]);
+    //     return () => {
+    //         isCancelled = true;
+    //         objectUrls.forEach((url) => URL.revokeObjectURL(url)); // Clean up blob URLs
+    //     };
+    // }, [imageResult.data]);
 
     const imageWidth = useMemo(() => {
         if (width > 600) {
@@ -85,7 +85,7 @@ export const SiteItem = ({ item, width, className }: { item: DeckSite; width: nu
         <div
             id={item.site_code}
             className={cn(
-                "group w-full bg-white bg-contain bg-no-repeat rounded overflow-hidden relative flex-shrink-0",
+                "relative group w-full bg-white bg-contain bg-no-repeat rounded overflow-hidden flex-shrink-0",
 
                 className
             )}
@@ -105,8 +105,8 @@ export const SiteItem = ({ item, width, className }: { item: DeckSite; width: nu
                     <Trash2 />
                 </Button>
             </div>
-            <div className="grid grid-cols-[1.75fr_1fr] h-full">
-                <SiteImages site_code={item.site_code} images={siteImages} isLoading={loading} isFetching={imageResult.isFetching} />
+            <div className="grid grid-cols-[1.75fr_1fr] pb-8 h-full">
+                <SiteImages site_code={item.site_code} />
                 {/* BASIC INFO */}
                 <div className="py-4 grid grid-cols-2 h-fit gap-y-2 gap-x-4 pr-3">
                     <div className="flex gap-1">
@@ -187,28 +187,60 @@ const PriceField = ({ site }: { site: DeckSite }) => {
     const { applyOptions } = useGeneratePowerpoint();
     const updatedPrice = applyOptions(site, site.price, Number(site.price));
 
-    const inclusions = selectedOptions.display_options;
-
-    const hasInclusions = useMemo(() => {
-        if (!inclusions?.material_inclusions && !inclusions?.installation_inclusions) return false;
-
-        if (typeof inclusions.material_inclusions === "number" && typeof inclusions.installation_inclusions === "number") {
-            return inclusions.material_inclusions > 0 || inclusions.installation_inclusions > 0;
-        } else if (Array.isArray(inclusions.material_inclusions) && Array.isArray(inclusions.installation_inclusions)) {
-            return inclusions.material_inclusions.some(rate => rate.count !== 0) || inclusions.installation_inclusions.some(rate => rate.count !== 0)
+    const adtlCost = useMemo(() => {
+        const cost = {
+            material: [] as InclusionGenerator[] | (InclusionGenerator & { type: "PAID", rates?: ProductionCost })[],
+            installation: [] as FreeInclusionGenerator[],
         }
-        return false;
-    }, [inclusions])
+        if (!selectedOptions.display_options) return cost;
+        const inclusions = selectedOptions.display_options;
 
-    return <div className="leading-none flex flex-col gap-1 col-[1/3]">
-        {selectedOptions.rate_generator ?
+        if (!inclusions?.material_inclusions && !inclusions?.installation_inclusions) return cost;
+
+        if (inclusions.material_inclusions) {
+            cost.material = inclusions.material_inclusions;
+        }
+        if (inclusions.installation_inclusions) {
+            cost.installation = inclusions.installation_inclusions;
+        }
+
+        cost.material = cost.material.map(mat => {
+            if (mat.type === "PAID") {
+                return {
+                    ...mat,
+                    rates: inclusions.production_cost
+                }
+            }
+            return mat;
+        })
+        return cost;
+    }, [selectedOptions.display_options])
+
+    const hasMaterialFree = adtlCost.material.every(mat => mat.type === "FREE" && mat.count !== 0);
+
+    const productionCost = useMemo(() => {
+        const production_cost = selectedOptions.display_options!.production_cost!;
+        const prefix = Number(site.site_code.substring(0, 1)) as keyof typeof regions;
+        const rate = production_cost[regions[prefix] as keyof typeof production_cost]
+        const dims = site.size
+            .match(/\d+(\.\d+)?/g)
+            ?.map(Number)
+
+        const cost = dims?.reduce((acc, n) => acc * n, rate) ?? 0
+
+        return cost
+
+    }, [selectedOptions.display_options, site.site_code, site.size])
+
+    return <div className={cn("leading-none flex flex-col gap-1 col-[1/3]", adtlCost.material.length === 1 && !hasMaterialFree && !selectedOptions.rate_generator ? "grid grid-cols-2" : "")}>
+        {adtlCost.material.length > 1 && selectedOptions.rate_generator ?
             <DeckValue className="text-[8px] font-normal">
                 <table className="w-full border">
                     <thead>
                         <tr>
                             <th className="p-1 border">Months</th>
                             <th>Monthly Rate</th>
-                            {hasInclusions && <>
+                            {adtlCost && <>
                                 <th>Material</th>
                                 <th>Installation</th>
                             </>}
@@ -224,32 +256,51 @@ const PriceField = ({ site }: { site: DeckSite }) => {
                                     style: "currency",
                                     currency: selectedOptions.currency_exchange?.currency ?? "PHP",
                                 })}</td>
-                                {inclusions && hasInclusions && <>
-                                    {Array.isArray(inclusions.material_inclusions!) && <td className="lowercase">{inclusions.material_inclusions[index].count}x</td>}
-                                    {Array.isArray(inclusions.installation_inclusions!) && <td className="lowercase">{inclusions.installation_inclusions[index].count}x</td>}
-                                </>}
+                                {adtlCost.material[index].type === "FREE" ? <td className="lowercase">{adtlCost.material[index].count}x free</td> :
+                                    <td className="lowercase">{formatAmount(productionCost, {
+                                        style: "currency",
+                                        currency: selectedOptions.currency_exchange?.currency ?? "PHP",
+                                    })}</td>}
+                                {adtlCost.installation[index].type === "FREE" && <td className="lowercase">{adtlCost.installation[index].count}x free</td>}
                             </tr>
                         })}
                     </tbody>
                 </table>
             </DeckValue>
             : <>
-                <DeckLabel className="text-[#000] font-bold">
-                    Monthly Rate
-                </DeckLabel>
-                <DeckValue className="text-[11px]">
-                    <p>{`${formatAmount(updatedPrice, {
-                        style: "currency",
-                        currency: selectedOptions.currency_exchange?.currency ?? "PHP",
-                    })} + VAT`}</p>
-                    {inclusions && hasInclusions && <p className="font-normal capitalize space-x-1 text-[10px] leading-normal">
-                        <span>FREE</span>
-                        {!!inclusions.installation_inclusions && <span>{inclusions.installation_inclusions}x installation &</span>}
-                        {!!inclusions.material_inclusions && <span>{inclusions.material_inclusions}x material</span>}
-                    </p>}
-                </DeckValue>
+                <div>
+                    <DeckLabel className="text-[#000] font-bold">
+                        Monthly Rate
+                    </DeckLabel>
+                    <DeckValue className={cn("text-[11px] flex flex-col")}>
+                        <p>{`${formatAmount(updatedPrice, {
+                            style: "currency",
+                            currency: selectedOptions.currency_exchange?.currency ?? "PHP",
+                        })} + VAT`}</p>
+                        <p className="font-normal lowercase space-x-1 text-[10px] leading-normal">
+                            {hasMaterialFree &&
+                                <>
+                                    <span>w/ free</span>
+                                    {adtlCost.material[0].type === "FREE" ? ` ${adtlCost.material[0].count}x material` : ''}
+                                </>
+                            }
+                            {adtlCost.installation[0].count !== 0 ? `${hasMaterialFree ? ' &' : 'w/ free'} ${adtlCost.installation[0].count}x installation` : ''}
+                        </p>
+                    </DeckValue>
+                </div>
+                {!hasMaterialFree && <div>
+                    <DeckLabel className="text-[#000] font-bold">
+                        Production Cost
+                    </DeckLabel>
+                    <DeckValue className="text-[11px] flex flex-col">
+                        <p>{`${formatAmount(productionCost, {
+                            style: "currency",
+                            currency: selectedOptions.currency_exchange?.currency ?? "PHP",
+                        })}`}</p>
+                    </DeckValue>
+                </div>}
             </>}
-    </div>
+    </div >
 }
 const MapField = ({ site_code, longitude, latitude, ideal_view, width }: { site_code: string; longitude: string; latitude: string; ideal_view: string, width: number }) => {
 

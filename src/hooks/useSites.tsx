@@ -136,7 +136,7 @@ export const useSiteImages = (id?: string) => {
           new Date(a.date_uploaded).getTime()
       ),
     enabled: !!id,
-    staleTime: 60000,
+    staleTime: Infinity,
     retry: 3
   });
 };

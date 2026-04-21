@@ -1,172 +1,105 @@
 import { SiteImage } from "@/interfaces/sites.interface";
 import { useDeck } from "@/providers/deck.provider";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Skeleton } from "../ui/skeleton";
-import { CircleCheck } from "lucide-react";
-import { Carousel, CarouselApi, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "../ui/carousel";
-const SiteImages = ({
-    site_code,
-    images,
-    isFetching,
-    isLoading,
-}: {
-    site_code: string;
-    images?: SiteImage[];
-    isLoading: boolean;
-    isFetching: boolean;
-}) => {
+import { Dispatch, lazy, SetStateAction, Suspense, useEffect, useRef, useState } from "react";
+import { ImageOff, LoaderIcon } from "lucide-react";
+import { useSiteImages } from "@/hooks/useSites";
+import { fetchImage } from "@/lib/fetch";
+import { Button } from "../ui/button";
 
-    const { selectedSites, setSelectedSites } = useDeck();
-    const [api, setApi] = useState<CarouselApi>();
+const SiteImageSelector = lazy(() => import("./site.image.selector"))
 
-    const initializedRef = useRef(false);
+const SiteImages = ({ site_code }: { site_code: string; }) => {
+    const { data: images, isLoading } = useSiteImages(site_code)
+    const { setSelectedSites } = useDeck();
+    const [selectedImage, setImage] = useState<SiteImage | undefined>()
+
+    const initializedRef = useRef<Record<string, boolean>>({});
 
     useEffect(() => {
-        if (initializedRef.current) return;
+        if (initializedRef.current[site_code]) return;
         if (!images || images.length === 0) return;
 
-        initializedRef.current = true;
+        let isActive = true;
 
         const cached = localStorage.getItem(`${site_code}_selected`);
+        const imageMap = new Map(images.map(img => [img.upload_id, img]));
+
+        let image = images[0];
 
         if (cached) {
-            const storedID = Number(cached);
-            const selectedImage = images.find(img => img.upload_id === storedID);
+            const stored = imageMap.get(Number(cached));
+            if (stored) image = stored;
+        }
 
+        const setup = async () => {
+            if (!image) return;
+
+            const imageData = await fetchImage(image.upload_path);
+            if (!isActive || !imageData) return;
+
+            setImage({ ...image, ...imageData });
             setSelectedSites(prev =>
                 prev.map(site =>
                     site.site_code === site_code
-                        ? { ...site, image: selectedImage?.upload_id, url: selectedImage?.url }
+                        ? { ...site, image: image.upload_id, ...imageData }
                         : site
                 )
             );
-        } else {
-            const first = images[0];
-            setSelectedSites(prev =>
-                prev.map(site =>
-                    site.site_code === site_code
-                        ? { ...site, image: first.upload_id, url: first.url }
-                        : site
-                )
-            );
-        }
-    }, [images, site_code]);
 
+            initializedRef.current[site_code] = true;
+        };
 
-    useEffect(() => {
-        const targetSite = selectedSites.find(
-            (site) => site.site_code === site_code
-        );
-        if (targetSite?.image) {
-            localStorage.setItem(
-                `${site_code}_selected`,
-                String(targetSite.image)
-            );
-        }
-    }, [selectedSites, site_code]);
+        setup();
 
-    const sortedImages = useMemo(() => {
-        if (!images || images.length === 0) return [];
+        return () => {
+            isActive = false;
+        };
+    }, [images, site_code, setSelectedSites]);
 
-        const site = selectedSites.find(s => s.site_code === site_code);
-        if (!site?.image) return images; // no selection yet → keep original order
-
-        const selectedIndex = images.findIndex(img => img.upload_id === site.image);
-        if (selectedIndex === -1 || selectedIndex === 0) return images;
-
-        const selected = images[selectedIndex];
-        const others = [
-            ...images.slice(0, selectedIndex),
-            ...images.slice(selectedIndex + 1),
-        ];
-
-        return [selected, ...others];
-    }, [images, selectedSites, site_code]);
     return (
-        <div className="flex justify-center items-center -mt-4 px-4 w-full min-w-0">
-            <Carousel setApi={setApi} className="overflow-hidden">
-                <CarouselContent>
-                    {(isFetching || isLoading) ?
-                        <Skeleton className="w-full aspect-[1.926/1]" /> :
-                        images && sortedImages.length > 0
-                            ? sortedImages.map((item) => (
-                                <CarouselItem key={item.upload_id} className="w-full min-w-0">
-                                    <ImageItem item={item} site_code={site_code} api={api} />
-                                </CarouselItem>
-                            ))
-                            : <div className="p-4 w-full bg-zinc-100 h-full">
-                                <p className="ml-4">No images found.</p>
-                            </div>}
-                </CarouselContent>
-                <CarouselPrevious />
-                <CarouselNext />
-            </Carousel>
+        <div className="flex justify-center items-center -mt-4 px-4 w-full min-w-0 pb-4">
+            {selectedImage ?
+                <ImageItem site_code={site_code} item={selectedImage} images={images} setSelectedImage={setImage} />
+                : isLoading ? <div className="w-full aspect-video bg-zinc-50 flex flex-col items-center justify-center text-zinc-500 font-semibold gap-2">
+                    <LoaderIcon className="animate-spin" />
+                    <p>Loading image preview</p>
+                </div> :
+                    <div className="w-full aspect-video bg-zinc-50 flex flex-col items-center justify-center text-zinc-500 font-semibold gap-2">
+                        <ImageOff />
+                        <p>No image available</p>
+                    </div>}
         </div>
     )
 }
 const ImageItem = ({
     site_code,
     item,
-    api
+    images,
+    setSelectedImage
 }: {
     site_code: string;
     item: SiteImage;
-    api: CarouselApi
+    images?: SiteImage[];
+    setSelectedImage: Dispatch<SetStateAction<SiteImage | undefined>>;
 }) => {
-    const { selectedSites, setSelectedSites } = useDeck();
-
-    const onImageSelected = () => {
-        if (!api) return;
-
-        api?.scrollTo(0);
-        setSelectedSites((prev) =>
-            prev.map((site) =>
-                site.site_code === site_code
-                    ? {
-                        ...site,
-                        image: item.upload_id, // Append new image
-                        url: item.url,
-                    }
-                    : site
-            )
-        );
-    };
-
-    const isSelected = useMemo(() => {
-        const site = selectedSites.find((site) => site.site_code === site_code);
-
-        if (site) {
-            if (site.image) {
-                return site.image === item.upload_id;
-            }
-            return false;
-        }
-
-        return false;
-    }, [item.upload_id, selectedSites, site_code]);
+    const [show, setShow] = useState(false)
 
     return (
-        <div className="relative overflow-hidden aspect-[1.926/1]">
-            <img
-                src={item.url ?? undefined}
-                role="button"
-                className="w-full max-w-full"
-                loading="lazy"
-                alt={`image_${item.upload_id}`}
-                onClick={onImageSelected}
-            />
-            {/* Overlay for selected images */}
-            {isSelected && (
-                <div
-                    id={`selected-${site_code}`}
-                    role="button"
-                    title="check"
-                    className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-30 flex items-center justify-center"
-                    onClick={onImageSelected}
-                >
-                    <CircleCheck className="text-white" size={50} />
-                </div>
-            )}
+        <div>
+            <div className="relative overflow-hidden rounded-md group">
+                <img
+                    src={item.url ?? undefined}
+                    className="w-full max-w-full"
+                    loading="lazy"
+                    alt={`image_${item.upload_id}`}
+                />
+                <Button onClick={() => setShow(true)} className="bg-white absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-all" variant="outline" size="sm">Change</Button>
+            </div>
+            {show &&
+                <Suspense fallback={<>Loading</>}>
+                    <SiteImageSelector site_code={site_code} images={images} selectedImage={item} setSelectedImage={setSelectedImage} setShow={setShow} />
+                </Suspense>
+            }
         </div>
     );
 };

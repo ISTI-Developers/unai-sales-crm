@@ -56,14 +56,33 @@ export interface RateGenerator {
   type: "---" | "%";
 }
 
-export interface InclusionGenerator {
-  duration: 3 | 6 | 12;
-  count: number;
+export interface BaseInclusionGenerator {
+  duration: 1 | 3 | 6 | 12;
+  type: "FREE" | "PAID";
 }
 
+export interface FreeInclusionGenerator extends BaseInclusionGenerator {
+  type: "FREE";
+  count: number;
+}
+export interface PaidInclusionGenerator extends BaseInclusionGenerator {
+  type: "PAID";
+}
+
+export interface ProductionCost {
+  luzon: number;
+  visayas: number;
+  mindanao: number;
+}
+
+export type InclusionGenerator =
+  | FreeInclusionGenerator
+  | PaidInclusionGenerator;
+
 export interface DisplayOptions {
-  material_inclusions: number | InclusionGenerator[];
-  installation_inclusions: number | InclusionGenerator[];
+  material_inclusions: InclusionGenerator[];
+  production_cost: ProductionCost;
+  installation_inclusions: FreeInclusionGenerator[];
   landmark_visibility: false;
 }
 
@@ -91,36 +110,3 @@ export interface Deck {
   filters: Partial<DeckFilters>;
   options: Partial<DeckOptions>;
 }
-
-export const decks: Deck[] = [
-  {
-    ID: 1,
-    token: "23cc4676-4224-46f6-8ce0-6c18cb178bf4",
-    user_id: 1,
-    title: "Sales Deck 1",
-    description: "A beautiful sales deck.",
-    created_at: "2025-11-24T11:40:30",
-    modified_at: "2025-11-24T11:40:30",
-    thumbnail: 46906,
-    status: 1, // 1 active / 0 deleted
-    sites: [
-      {
-        site_code: "1CC5MKT001-1AA01",
-        image: 46906,
-      },
-    ],
-    filters: {},
-    options: {
-      price_adjustment: [
-        {
-          id: "fdsdfsd",
-          amount: 50000,
-          type: "---", // flat / percent
-          operation: "+", // add / subtract
-          apply_to: "ALL",
-        },
-      ],
-      display_options: { landmark_visibility: false },
-    },
-  },
-];

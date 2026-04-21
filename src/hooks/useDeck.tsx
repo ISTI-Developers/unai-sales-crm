@@ -38,7 +38,7 @@ export const useDeck = (deckID: string | null) => {
 export const useUpdateDeck = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: async (deck: Omit<Deck, "token" | "description" | "created_at" | "thumbnail" | "status">) => {
+        mutationFn: async (deck: Omit<Deck, "description" | "created_at" | "thumbnail" | "status">) => {
             const response = await spAPI.put("deck", deck);
 
             if (response.data) {
@@ -47,11 +47,7 @@ export const useUpdateDeck = () => {
         },
         onSuccess: (_, variables) => {
             queryClient.refetchQueries({ queryKey: ["decks", variables.user_id] })
-            queryClient.refetchQueries({ queryKey: ["decks", { ID: variables.ID }] });
-            toast({
-                variant: "success",
-                title: "Deck saved successfully."
-            })
+            queryClient.refetchQueries({ queryKey: ["decks", { ID: variables.token }] });
         },
         onError: catchError,
     });

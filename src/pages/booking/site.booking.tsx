@@ -43,7 +43,7 @@ const SiteBookingsTab = () => {
     if (isLoading || !bookings) return <>Loading...</>
     return (
         <div>
-            <DataTable columns={filteredColumns} data={filteredBookings!} className='justify-start gap-4' size={1000} getRowClassName={(row) => {
+            <DataTable columns={filteredColumns} data={filteredBookings!} className='justify-start gap-4' size={100} getRowClassName={(row) => {
                 if (row.booking_status === "CANCELLED") return "opacity-50 cursor-not-allowed bg-red-100/50 text-red-400 hover:bg-red-100/50 hover:text-red-400 select-none"
                 return ""
             }}>
