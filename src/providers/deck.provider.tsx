@@ -5,7 +5,7 @@ import { ProviderProps } from "@/interfaces";
 import { DeckProvider as DeckProviderType, DeckSite } from "@/interfaces/deck.interface";
 import { getEndDate, getLatestBooking } from "@/lib/fetch";
 import { haversineDistance } from "@/lib/utils";
-import { DeckFilters, DeckOptions } from "@/misc/deckTemplate";
+import { DeckFilters, DeckOptions, FreeInclusionGenerator, InclusionGenerator } from "@/misc/deckTemplate";
 import { addDays, differenceInCalendarDays, format, isBefore } from "date-fns";
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -106,7 +106,6 @@ export function DeckProvider({ children }: ProviderProps) {
           if (!site.availability) return true;
           return isBefore(new Date(site.availability), new Date()) || differenceInCalendarDays(new Date(site.availability), new Date()) <= 60;
         })
-        console.log(temp);
       }
       if (availability.includes("booked")) {
         temp = temp.filter(site => {
@@ -178,6 +177,45 @@ export function DeckProvider({ children }: ProviderProps) {
     return temp;
   }, [landmarks, searchedSites, selectedFilters]);
 
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const normalizeMaterialInclusions = (inclusions: number | any[]): InclusionGenerator[] => {
+    if (typeof inclusions === "number") {
+      return [{
+        type: "FREE",
+        count: inclusions,
+        duration: 1,
+      }];
+    }
+
+    return inclusions.map((item) => {
+      if ("type" in item) return item;
+
+      return {
+        type: "FREE",
+        count: item.count ?? 0,
+        duration: item.duration,
+      };
+    });
+  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const normalizeInstallationInclusions = (inclusions: number | any[]): FreeInclusionGenerator[] => {
+    if (typeof inclusions === "number") {
+      return [{
+        type: "FREE",
+        count: inclusions,
+        duration: 1,
+      }];
+    }
+    return inclusions.map((item) => {
+      return {
+        type: "FREE",
+        count: item.count ?? 0,
+        duration: item.duration,
+      };
+    });
+  };
+
   useEffect(() => {
     if (!deckData || !deckID || isLoading || initializedRef.current) return;
 
@@ -189,7 +227,20 @@ export function DeckProvider({ children }: ProviderProps) {
 
     setSelectedSites(loadedSites);
     setFilters(deckData.filters ?? {});
-    setOptions(deckData.options ?? {});
+    const normalizedOptions = {
+      ...deckData.options,
+      display_options: {
+        ...deckData.options?.display_options,
+        material_inclusions: normalizeMaterialInclusions(
+          deckData.options?.display_options?.material_inclusions ?? [],
+        ),
+        installation_inclusions: normalizeInstallationInclusions(
+          deckData.options?.display_options?.installation_inclusions ?? [],
+        ),
+      },
+    };
+
+    setOptions(normalizedOptions);
     setTitle(deckData.title ?? "");
     initializedRef.current = true;
 

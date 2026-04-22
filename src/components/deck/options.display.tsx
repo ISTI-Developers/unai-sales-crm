@@ -5,7 +5,7 @@ import InputNumber from "../ui/number-input";
 import { cn } from "@/lib/utils";
 import { InclusionGenerator } from "@/misc/deckTemplate";
 import { Switch } from "../ui/switch";
-
+import { displayOptions as displayOptionsDefault } from "@/interfaces/deck.interface";
 
 const DisplayOption = () => {
     const { selectedOptions, setOptions } = useDeck();
@@ -14,7 +14,7 @@ const DisplayOption = () => {
 
     const hasRateGenerator = !!selectedOptions.rate_generator;
     const displayOptions = selectedOptions.display_options;
-    const productionCost = displayOptions.production_cost!;
+    const productionCost = displayOptions.production_cost ?? displayOptionsDefault.base.production_cost;
     return (<>
         <div className={cn("flex flex-col justify-between w-full gap-2")}>
             <MaterialCost materialCost={displayOptions.material_inclusions} isSingle={!hasRateGenerator} />
@@ -81,7 +81,9 @@ const DisplayOption = () => {
 const MaterialCost = ({ materialCost, isSingle }: { materialCost?: InclusionGenerator[]; isSingle: boolean }) => {
     const { setOptions } = useDeck();
 
-    if (!materialCost) return;
+    if (!materialCost || materialCost.length === 0) return;
+
+    console.log(materialCost);
     return <div className="flex flex-col justify-between py-1">
         <Label className="text-xs font-bold" htmlFor="material">Material Inclusions</Label>
         {isSingle ?

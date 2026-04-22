@@ -1,4 +1,4 @@
-import { DeckSite, regions } from "@/interfaces/deck.interface";
+import { DeckSite, displayOptions, regions } from "@/interfaces/deck.interface";
 import { cn } from "@/lib/utils";
 import SiteImages from "./sites.images";
 import { Landmarks } from "@/interfaces/sites.interface";
@@ -216,10 +216,12 @@ const PriceField = ({ site }: { site: DeckSite }) => {
         return cost;
     }, [selectedOptions.display_options])
 
+    const hasAdtlCost = Object.values(adtlCost).every(item => item.length > 0);
     const hasMaterialFree = adtlCost.material.every(mat => mat.type === "FREE" && mat.count !== 0);
 
     const productionCost = useMemo(() => {
-        const production_cost = selectedOptions.display_options!.production_cost!;
+        if (!selectedOptions.display_options) return 0;
+        const production_cost = selectedOptions.display_options.production_cost ?? displayOptions.base.production_cost;
         const prefix = Number(site.site_code.substring(0, 1)) as keyof typeof regions;
         const rate = production_cost[regions[prefix] as keyof typeof production_cost]
         const dims = site.size
@@ -278,13 +280,13 @@ const PriceField = ({ site }: { site: DeckSite }) => {
                             currency: selectedOptions.currency_exchange?.currency ?? "PHP",
                         })} + VAT`}</p>
                         <p className="font-normal lowercase space-x-1 text-[10px] leading-normal">
-                            {hasMaterialFree &&
+                            {hasAdtlCost && hasMaterialFree &&
                                 <>
                                     <span>w/ free</span>
                                     {adtlCost.material[0].type === "FREE" ? ` ${adtlCost.material[0].count}x material` : ''}
                                 </>
                             }
-                            {adtlCost.installation[0].count !== 0 ? `${hasMaterialFree ? ' &' : 'w/ free'} ${adtlCost.installation[0].count}x installation` : ''}
+                            {hasAdtlCost && adtlCost.installation[0].count !== 0 ? `${hasMaterialFree ? ' &' : 'w/ free'} ${adtlCost.installation[0].count}x installation` : ''}
                         </p>
                     </DeckValue>
                 </div>

@@ -79,6 +79,10 @@ export type InclusionGenerator =
   | FreeInclusionGenerator
   | PaidInclusionGenerator;
 
+export type OldInclusion = {
+  count: number;
+  duration: number;
+};
 export interface DisplayOptions {
   material_inclusions: InclusionGenerator[];
   production_cost: ProductionCost;
