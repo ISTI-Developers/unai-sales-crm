@@ -2,7 +2,7 @@ import { useBookings } from "@/hooks/useBookings";
 import { useDeck as useOneDeck } from "@/hooks/useDeck";
 import { useOverridenSiteEndDates, useSitelandmarks, useSites } from "@/hooks/useSites";
 import { ProviderProps } from "@/interfaces";
-import { DeckProvider as DeckProviderType, DeckSite } from "@/interfaces/deck.interface";
+import { DeckProvider as DeckProviderType, DeckSite, displayOptions } from "@/interfaces/deck.interface";
 import { getEndDate, getLatestBooking } from "@/lib/fetch";
 import { haversineDistance } from "@/lib/utils";
 import { DeckFilters, DeckOptions, FreeInclusionGenerator, InclusionGenerator } from "@/misc/deckTemplate";
@@ -231,6 +231,7 @@ export function DeckProvider({ children }: ProviderProps) {
       ...deckData.options,
       display_options: {
         ...deckData.options?.display_options,
+        production_cost: displayOptions.base.production_cost,
         material_inclusions: normalizeMaterialInclusions(
           deckData.options?.display_options?.material_inclusions ?? [],
         ),

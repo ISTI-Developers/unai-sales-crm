@@ -121,11 +121,12 @@ const MaterialCost = ({ materialCost, isSingle }: { materialCost?: InclusionGene
                                         ...updatedMaterials[0],
                                         type: "PAID",
                                     };
+                                    
                                 } else {
                                     updatedMaterials[0] = {
                                         ...updatedMaterials[0],
                                         type: "FREE",
-                                        count: 0
+                                        count: 1
                                     };
                                 }
 
@@ -193,7 +194,7 @@ const MaterialCost = ({ materialCost, isSingle }: { materialCost?: InclusionGene
                                         updatedMaterials[index] = {
                                             ...updatedMaterials[index],
                                             type: "FREE",
-                                            count: 0
+                                            count: 1
                                         };
                                     }
 

@@ -374,9 +374,9 @@ export const useGeneratePowerpoint = () => {
                         const displayRates: PptxGenJS.TableRow = [];
                         if (selectedOptions.display_options?.material_inclusions) {
                             const material = selectedOptions.display_options?.material_inclusions;
-                            const materialValue = material[index].type === "FREE" ? material[index].count : prodCost;
+                            const materialValue = material[index].type === "FREE" ? `${material[index].count}x free` : formatAmount(prodCost);
                             displayRates.push({
-                                text: `${materialValue}x`,
+                                text: materialValue,
                                 options: {
                                     align: "center" as PptxGenJS.HAlign,
                                     fontSize: 10,

@@ -10,7 +10,12 @@ import { chartColors } from "./utils";
 import { useStatuses } from "@/hooks/useClientOptions";
 import { useAvailableSites, useSites } from "@/hooks/useSites";
 import { Booking, useBookings } from "@/hooks/useBookings";
-import { differenceInCalendarDays, differenceInDays } from "date-fns";
+import {
+  differenceInCalendarDays,
+  differenceInDays,
+  format,
+  subDays,
+} from "date-fns";
 import {
   AvailableSites,
   ContractOverride,
@@ -561,9 +566,15 @@ export const getEndDate = (
   if (booking) {
     if (adjustment) {
       if (new Date(booking.date_to) > new Date(adjustment.adjusted_end_date)) {
+        if (booking.booking_status === "PRE-TERMINATION") {
+          return format(subDays(new Date(booking.date_to), 1), "yyyy-MM-dd");
+        }
         return booking.date_to;
       }
       return adjustment.adjusted_end_date;
+    }
+    if (booking.booking_status === "PRE-TERMINATION") {
+      return format(subDays(new Date(booking.date_to), 1), "yyyy-MM-dd");
     }
     return booking.date_to;
   }
