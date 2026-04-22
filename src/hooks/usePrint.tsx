@@ -62,7 +62,7 @@ export const useGeneratePowerpoint = () => {
     const addText = (slide: PptxGenJS.Slide, text: string, options: PptxGenJS.TextPropsOptions) => {
         return slide.addText(text, {
             fontSize: 8.5,
-            fontFace: "Inter",
+            fontFace: "Arial",
             color: "76899E",
             align: 'left',
             h: defaultHeight,
@@ -176,7 +176,7 @@ export const useGeneratePowerpoint = () => {
                     fontSize: 12.8,
                 });
                 addText(slide, "SITE CODE:", {
-                    w: Inches(2.17),
+                    w: Inches(3.14),
                     h: labelHeight,
                     x: Inches(21.45),
                     y: Inches(3.07),
@@ -229,6 +229,7 @@ export const useGeneratePowerpoint = () => {
                     x: Inches(21.45),
                     y: Inches(3.93),
                     align: "left",
+                    valign: "top",
                     color: "1E2C3C",
                     bold: true,
                     fontSize: 8.5,
@@ -333,6 +334,7 @@ export const useGeneratePowerpoint = () => {
                     x: detailsSection,
                     y: Inches(7.99),
                     align: "left",
+                    valign: "top",
                     color: "1E2C3C",
                     fontSize: 8,
                 });
