@@ -24,15 +24,15 @@ export const SiteItem = ({ item, width, className }: { item: DeckSite; width: nu
     const availability = useMemo(() => {
         if (!item.availability) return "AVAILABLE";
 
-        if (!item.is_prime) {
-            const rofrDate = subDays(new Date(item.availability), 60);
+        if (item.is_prime) {
+            const rofrDate = subDays(new Date(item.availability), 61);
             if (isBefore(rofrDate, new Date())) {
                 return 'AVAILABLE'
             }
             return format(rofrDate, "PP");
         }
 
-        const rofrDate = subDays(new Date(item.availability), 30);
+        const rofrDate = subDays(new Date(item.availability), 31);
         if (isBefore(rofrDate, new Date())) {
             return 'AVAILABLE'
         }

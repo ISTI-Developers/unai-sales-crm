@@ -4,7 +4,7 @@ import { catchError } from "@/providers/api";
 import PptxGenJS from "pptxgenjs";
 import { applyPriceAdjustment, downloadPptxFromArrayBuffer, formatAmount, formatNumber, Inches } from "@/lib/format";
 import { capitalize } from "@/lib/utils";
-import { addDays, format, isBefore } from "date-fns";
+import { format, isBefore, subDays } from "date-fns";
 import { DeckSite, displayOptions, regions } from "@/interfaces/deck.interface";
 import { getSiteLandmarks } from "./useSites";
 import mockup from "@/assets/mockup.png";
@@ -98,7 +98,7 @@ export const useGeneratePowerpoint = () => {
                 const availability = site.availability
                     ? isBefore(new Date(site.availability), new Date()) ? "OPEN" : format(new Date(site.availability), "MMM d, yyyy")
                     : "OPEN";
-                const rofr = availability === "OPEN" ? "N/A" : format(addDays(new Date(site.availability!), site.is_prime ? 44 : 29), "MMM d, yyy");
+                const rofr = availability === "OPEN" ? "N/A" : format(subDays(new Date(site.availability!), site.is_prime ? 61 : 31), "MMM d, yyy");
 
                 baseRate = applyOptions(site, price, baseRate);
 
