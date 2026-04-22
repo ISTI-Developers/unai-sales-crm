@@ -84,8 +84,10 @@ export const optionsBaseContent = {
 
 export const regions = {
   1: "luzon",
-  2: "visayas",
-  3: "mindanao",
+  2: "luzon",
+  3: "luzon",
+  4: "visayas",
+  5: "mindanao",
 } as const;
 
 export const displayOptions = {

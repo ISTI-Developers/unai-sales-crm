@@ -5,7 +5,6 @@ import InputNumber from "../ui/number-input";
 import { cn } from "@/lib/utils";
 import { InclusionGenerator } from "@/misc/deckTemplate";
 import { Switch } from "../ui/switch";
-import { displayOptions as displayOptionsDefault } from "@/interfaces/deck.interface";
 
 const DisplayOption = () => {
     const { selectedOptions, setOptions } = useDeck();
@@ -14,19 +13,38 @@ const DisplayOption = () => {
 
     const hasRateGenerator = !!selectedOptions.rate_generator;
     const displayOptions = selectedOptions.display_options;
-    const productionCost = displayOptions.production_cost ?? displayOptionsDefault.base.production_cost;
+    const productionCost = displayOptions.production_cost;
     return (<>
         <div className={cn("flex flex-col justify-between w-full gap-2")}>
             <MaterialCost materialCost={displayOptions.material_inclusions} isSingle={!hasRateGenerator} />
-            <div className="space-y-2">
-                <Label className="text-xs">Material Cost<br /><span className="text-[0.65rem]">(used if Free Material is ticked off)</span></Label>
-                {Object.entries(productionCost).map(([region, value]) => {
-                    return <div key={region} className="grid grid-cols-2 items-center">
-                        <Label className="capitalize text-xs">{region}</Label>
-                        <InputNumber value={value} />
-                    </div>
-                })}
-            </div>
+            {productionCost &&
+                <div className="space-y-2">
+                    <Label className="text-xs">Material Cost<br /><span className="text-[0.65rem]">(used if Free Material is ticked off)</span></Label>
+                    {Object.entries(productionCost).map(([region, value]) => {
+                        return <div key={region} className="grid grid-cols-2 items-center">
+                            <Label className="capitalize text-xs">{region}</Label>
+                            <InputNumber value={value} onChange={(e) => {
+                                const value = Number(e.target.value);
+                                setOptions(prev => {
+                                    if (!prev) return prev;
+
+                                    const updatedProdCost = prev.display_options!.production_cost!;
+
+
+
+                                    return {
+                                        ...prev,
+                                        display_options: {
+                                            ...prev.display_options,
+                                            production_cost: { ...updatedProdCost, [region]: value }
+                                        },
+                                    };
+                                });
+                            }} />
+                        </div>
+                    })}
+                </div>
+            }
             <div className="flex flex-col w-full ">
                 <Label className="text-xs font-bold" htmlFor="installation">Installation Inclusions</Label>
                 <div className="flex flex-col gap-1 justify-between items-center w-full">

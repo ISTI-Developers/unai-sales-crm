@@ -224,6 +224,7 @@ const PriceField = ({ site }: { site: DeckSite }) => {
         const production_cost = selectedOptions.display_options.production_cost ?? displayOptions.base.production_cost;
         const prefix = Number(site.site_code.substring(0, 1)) as keyof typeof regions;
         const rate = production_cost[regions[prefix] as keyof typeof production_cost]
+        
         const dims = site.size
             .match(/\d+(\.\d+)?/g)
             ?.map(Number)
@@ -263,7 +264,7 @@ const PriceField = ({ site }: { site: DeckSite }) => {
                                         style: "currency",
                                         currency: selectedOptions.currency_exchange?.currency ?? "PHP",
                                     })}</td>}
-                                {adtlCost.installation[index].type === "FREE" && <td className="lowercase">{adtlCost.installation[index].count}x free</td>}
+                                {adtlCost.installation[index].type === "FREE" && adtlCost.installation[index].count ? <td className="lowercase">{adtlCost.installation[index].count}x free</td> : <td>n/a</td>}
                             </tr>
                         })}
                     </tbody>
