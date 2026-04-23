@@ -479,12 +479,16 @@ export const useGeneratePowerpoint = () => {
                         bold: true,
                         fontSize: 14.9,
                     });
-                    let text = `w/ free `;
+                    let text = ``;
 
                     const material = selectedOptions.display_options?.material_inclusions;
                     const installation = selectedOptions.display_options?.installation_inclusions;
+
+                    if ((material && material[0].type === "FREE" && material[0].count !== 0) || (installation && installation[0].count !== 0)) {
+                        text = `w/ free `
+                    }
                     if (material && material[0].type === "FREE" && material[0].count !== 0) {
-                        text += ` ${material[0].count}x material`
+                        text += `${material[0].count}x material`
                     }
                     else {
                         addText(slide, "PRODUCTION COST:", {
@@ -512,7 +516,7 @@ export const useGeneratePowerpoint = () => {
                         text += ` & `
                     }
                     if (installation && installation[0].count !== 0) {
-                        text += ` ${installation[0].count}x installation`
+                        text += `${installation[0].count}x installation`
                     }
                     addText(slide, text, {
                         w: Inches(14.23),

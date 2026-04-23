@@ -22,19 +22,19 @@ export const SiteItem = ({ item, width, className }: { item: DeckSite; width: nu
     // const [loading, setLoading] = useState(false);
 
     const availability = useMemo(() => {
-        if (!item.availability) return "AVAILABLE";
+        if (!item.availability) return "N/A";
 
         if (item.is_prime) {
             const rofrDate = subDays(new Date(item.availability), 61);
             if (isBefore(rofrDate, new Date())) {
-                return 'AVAILABLE'
+                return 'N/A'
             }
             return format(rofrDate, "PP");
         }
 
         const rofrDate = subDays(new Date(item.availability), 31);
         if (isBefore(rofrDate, new Date())) {
-            return 'AVAILABLE'
+            return 'N/A'
         }
         return format(rofrDate, "PP");
     }, [item.availability, item.is_prime])
@@ -224,7 +224,7 @@ const PriceField = ({ site }: { site: DeckSite }) => {
         const production_cost = selectedOptions.display_options.production_cost ?? displayOptions.base.production_cost;
         const prefix = Number(site.site_code.substring(0, 1)) as keyof typeof regions;
         const rate = production_cost[regions[prefix] as keyof typeof production_cost]
-        
+
         const dims = site.size
             .match(/\d+(\.\d+)?/g)
             ?.map(Number)
