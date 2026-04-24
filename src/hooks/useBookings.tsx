@@ -20,7 +20,8 @@ export interface Booking {
   old_client: string;
   created_at: string;
   modified_at: string;
-  remarks: string
+  remarks: string;
+  is_prime: number;
 }
 export interface PreSiteBooking {
   ID: number;

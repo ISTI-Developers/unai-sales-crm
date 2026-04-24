@@ -16,16 +16,17 @@ const SiteAvailability = () => {
 
         const endDates = sites.map(item => {
             const siteBookings = bookings.filter(booking => booking.site_code === item.site_code)
+            const updatedBookings = siteBookings.map(sb => ({ ...sb, is_prime: item.is_prime }))
 
-            const currentBooking = getLatestBooking(siteBookings);
+            const currentBooking = getLatestBooking(updatedBookings);
             const endDate = getEndDate(currentBooking);
             return endDate;
         })
 
         return endDates.filter(date => {
-            if(!date) return false;
+            if (!date) return false;
 
-            return differenceInDays(new Date(date),new Date()) > 60;
+            return differenceInDays(new Date(date), new Date()) > 60;
         })
     }, [sites, bookings]);
 

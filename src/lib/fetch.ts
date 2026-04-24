@@ -497,6 +497,7 @@ export const getLatestBooking = (bookings: Booking[]) => {
   let bestDistance = Infinity;
 
   for (const booking of valid) {
+    const windowPeriod = booking.is_prime ? 60 : 45;
     const from = new Date(booking.date_from);
     const to = new Date(booking.date_to);
 
@@ -517,8 +518,12 @@ export const getLatestBooking = (bookings: Booking[]) => {
       distance = diff;
     }
 
-    // NEW booking within 30 days
-    else if (booking.booking_status === "NEW" && diff >= 0 && diff <= 60) {
+    // NEW booking within 45 | 60 days
+    else if (
+      booking.booking_status === "NEW" &&
+      diff >= 0 &&
+      diff <= windowPeriod
+    ) {
       score = 80;
       distance = diff;
     } else if (

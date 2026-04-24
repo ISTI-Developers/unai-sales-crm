@@ -51,7 +51,9 @@ export function DeckProvider({ children }: ProviderProps) {
     const contracts = activeSites.map(site => {
       const siteBookings = bookings.filter(booking => booking.site_code === site.site_code);
       const adjustment = adjustments.find(adjustment => adjustment.site_code === site.site_code);
-      const booking = getLatestBooking(siteBookings);
+      const updatedBookings = siteBookings.map(sb => ({ ...sb, is_prime: site.is_prime }))
+
+      const booking = getLatestBooking(updatedBookings);
       const endDate = getEndDate(booking, adjustment);
 
       const availability = endDate ? format(addDays(new Date(endDate), 1), "MMM d, yyyy") : null;

@@ -24,7 +24,9 @@ const SiteAvailability = () => {
         const contracts = activeSites.map(site => {
             const siteBookings = bookings.filter(booking => booking.site_code === site.site_code);
             const adjustment = adjustments.find(adjustment => adjustment.site_code === site.site_code);
-            const booking = getLatestBooking(siteBookings);
+            const updatedBookings = siteBookings.map(sb => ({ ...sb, is_prime: site.is_prime }))
+
+            const booking = getLatestBooking(updatedBookings);
             const endDate = getEndDate(booking, adjustment);
             const siteRental = rentals.find(rent => rent.site_code === site.site_code);
             const { client, product } = splitClientName(booking ? booking.client : "");
