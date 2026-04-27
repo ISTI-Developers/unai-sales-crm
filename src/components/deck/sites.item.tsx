@@ -1,4 +1,4 @@
-import { DeckSite, regions } from "@/interfaces/deck.interface";
+import { DeckSite, displayOptions, regions } from "@/interfaces/deck.interface";
 import { cn } from "@/lib/utils";
 import SiteImages from "./sites.images";
 import { Landmarks } from "@/interfaces/sites.interface";
@@ -22,19 +22,19 @@ export const SiteItem = ({ item, width, className }: { item: DeckSite; width: nu
     // const [loading, setLoading] = useState(false);
 
     const availability = useMemo(() => {
-        if (!item.availability) return "AVAILABLE";
+        if (!item.availability) return "N/A";
 
-        if (!item.is_prime) {
-            const rofrDate = subDays(new Date(item.availability), 60);
+        if (item.is_prime) {
+            const rofrDate = subDays(new Date(item.availability), 61);
             if (isBefore(rofrDate, new Date())) {
-                return 'AVAILABLE'
+                return 'N/A'
             }
             return format(rofrDate, "PP");
         }
 
-        const rofrDate = subDays(new Date(item.availability), 30);
+        const rofrDate = subDays(new Date(item.availability), 31);
         if (isBefore(rofrDate, new Date())) {
-            return 'AVAILABLE'
+            return 'N/A'
         }
         return format(rofrDate, "PP");
     }, [item.availability, item.is_prime])
@@ -216,12 +216,15 @@ const PriceField = ({ site }: { site: DeckSite }) => {
         return cost;
     }, [selectedOptions.display_options])
 
+    const hasAdtlCost = Object.values(adtlCost).every(item => item.length > 0);
     const hasMaterialFree = adtlCost.material.every(mat => mat.type === "FREE" && mat.count !== 0);
 
     const productionCost = useMemo(() => {
-        const production_cost = selectedOptions.display_options!.production_cost!;
+        if (!selectedOptions.display_options) return 0;
+        const production_cost = selectedOptions.display_options.production_cost ?? displayOptions.base.production_cost;
         const prefix = Number(site.site_code.substring(0, 1)) as keyof typeof regions;
         const rate = production_cost[regions[prefix] as keyof typeof production_cost]
+
         const dims = site.size
             .match(/\d+(\.\d+)?/g)
             ?.map(Number)
@@ -261,7 +264,7 @@ const PriceField = ({ site }: { site: DeckSite }) => {
                                         style: "currency",
                                         currency: selectedOptions.currency_exchange?.currency ?? "PHP",
                                     })}</td>}
-                                {adtlCost.installation[index].type === "FREE" && <td className="lowercase">{adtlCost.installation[index].count}x free</td>}
+                                {adtlCost.installation[index].type === "FREE" && adtlCost.installation[index].count ? <td className="lowercase">{adtlCost.installation[index].count}x free</td> : <td>n/a</td>}
                             </tr>
                         })}
                     </tbody>
@@ -278,13 +281,13 @@ const PriceField = ({ site }: { site: DeckSite }) => {
                             currency: selectedOptions.currency_exchange?.currency ?? "PHP",
                         })} + VAT`}</p>
                         <p className="font-normal lowercase space-x-1 text-[10px] leading-normal">
-                            {hasMaterialFree &&
+                            {hasAdtlCost && hasMaterialFree &&
                                 <>
                                     <span>w/ free</span>
                                     {adtlCost.material[0].type === "FREE" ? ` ${adtlCost.material[0].count}x material` : ''}
                                 </>
                             }
-                            {adtlCost.installation[0].count !== 0 ? `${hasMaterialFree ? ' &' : 'w/ free'} ${adtlCost.installation[0].count}x installation` : ''}
+                            {hasAdtlCost && adtlCost.installation[0].count !== 0 ? `${hasMaterialFree ? ' &' : 'w/ free'} ${adtlCost.installation[0].count}x installation` : ''}
                         </p>
                     </DeckValue>
                 </div>

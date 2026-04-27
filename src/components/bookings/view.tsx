@@ -23,7 +23,8 @@ function ViewBooking({ site }: { site: SiteAvailability }) {
     const [openBooking, setOpenBooking] = useState(false);
     const [show, onShow] = useState(true);
     const headers = ["status", "client", "AE", "SRP", "term details", "action"];
-    const ongoing = getLatestBooking(site.bookings);
+    const siteBookings = site.bookings.map(sb => ({ ...sb, is_prime: site.is_prime }))
+    const ongoing = getLatestBooking(siteBookings);
 
     const bookings = useMemo(() => {
         return site.bookings
@@ -173,7 +174,7 @@ const BookingItem = ({ item, show, ongoingBooking }: { item: Booking; show: bool
                     current ? item.booking_status === "PRE-TERMINATION"
                         ? "bg-amber-50 text-amber-700"
                         : "bg-emerald-100 hover:bg-emerald-200 text-emerald-600" : ""
-                    
+
             )}
         >
             <TableCell className="font-semibold whitespace-nowrap">

@@ -4,8 +4,8 @@ import { catchError } from "@/providers/api";
 import PptxGenJS from "pptxgenjs";
 import { applyPriceAdjustment, downloadPptxFromArrayBuffer, formatAmount, formatNumber, Inches } from "@/lib/format";
 import { capitalize } from "@/lib/utils";
-import { addDays, format, isBefore } from "date-fns";
-import { DeckSite } from "@/interfaces/deck.interface";
+import { format, isBefore, subDays } from "date-fns";
+import { DeckSite, displayOptions, regions } from "@/interfaces/deck.interface";
 import { getSiteLandmarks } from "./useSites";
 import mockup from "@/assets/mockup.png";
 
@@ -62,7 +62,7 @@ export const useGeneratePowerpoint = () => {
     const addText = (slide: PptxGenJS.Slide, text: string, options: PptxGenJS.TextPropsOptions) => {
         return slide.addText(text, {
             fontSize: 8.5,
-            fontFace: "Inter",
+            fontFace: "Arial",
             color: "76899E",
             align: 'left',
             h: defaultHeight,
@@ -98,9 +98,21 @@ export const useGeneratePowerpoint = () => {
                 const availability = site.availability
                     ? isBefore(new Date(site.availability), new Date()) ? "OPEN" : format(new Date(site.availability), "MMM d, yyyy")
                     : "OPEN";
-                const rofr = availability === "OPEN" ? "N/A" : format(addDays(new Date(site.availability!), site.is_prime ? 44 : 29), "MMM d, yyy");
+                const rofr = availability === "OPEN" ? "N/A" : format(subDays(new Date(site.availability!), site.is_prime ? 61 : 31), "MMM d, yyy");
 
                 baseRate = applyOptions(site, price, baseRate);
+
+                const productionCost = selectedOptions.display_options?.production_cost ?? displayOptions.base.production_cost;
+                const prefix = Number(site.site_code.substring(0, 1)) as keyof typeof regions;
+                const rate = productionCost[regions[prefix] as keyof typeof productionCost]
+
+                const dims = site.size
+                    .match(/\d+(\.\d+)?/g)
+                    ?.map(Number)
+
+                const prodCost = dims?.reduce((acc, n) => acc * n, rate) ?? 0
+
+
                 const DPI = 96;
                 const DEFAULT_WIDTH = 832;
                 const DEFAULT_IMAGE_WIDTH = Inches(DEFAULT_WIDTH / DPI * 2.54);
@@ -164,7 +176,7 @@ export const useGeneratePowerpoint = () => {
                     fontSize: 12.8,
                 });
                 addText(slide, "SITE CODE:", {
-                    w: Inches(2.17),
+                    w: Inches(3.14),
                     h: labelHeight,
                     x: Inches(21.45),
                     y: Inches(3.07),
@@ -217,6 +229,7 @@ export const useGeneratePowerpoint = () => {
                     x: Inches(21.45),
                     y: Inches(3.93),
                     align: "left",
+                    valign: "top",
                     color: "1E2C3C",
                     bold: true,
                     fontSize: 8.5,
@@ -321,6 +334,7 @@ export const useGeneratePowerpoint = () => {
                     x: detailsSection,
                     y: Inches(7.99),
                     align: "left",
+                    valign: "top",
                     color: "1E2C3C",
                     fontSize: 8,
                 });
@@ -355,11 +369,14 @@ export const useGeneratePowerpoint = () => {
                     const rateRows = rates.map((rate, index) => {
                         const { discount, type, duration } = rate;
                         // if (discount === 0) return null;
+
                         const monthlyRate = discount === 0 ? baseRate : applyPriceAdjustment(baseRate, { amount: discount, type: type });
                         const displayRates: PptxGenJS.TableRow = [];
-                        if (selectedOptions.display_options?.material_inclusions && Array.isArray(selectedOptions.display_options.material_inclusions)) {
+                        if (selectedOptions.display_options?.material_inclusions) {
+                            const material = selectedOptions.display_options?.material_inclusions;
+                            const materialValue = material[index].type === "FREE" ? `${material[index].count}x free` : formatAmount(prodCost);
                             displayRates.push({
-                                text: `${selectedOptions.display_options.material_inclusions[index].count}x`,
+                                text: materialValue,
                                 options: {
                                     align: "center" as PptxGenJS.HAlign,
                                     fontSize: 10,
@@ -368,9 +385,10 @@ export const useGeneratePowerpoint = () => {
                                 },
                             })
                         }
-                        if (selectedOptions.display_options?.installation_inclusions && Array.isArray(selectedOptions.display_options.installation_inclusions)) {
+                        if (selectedOptions.display_options?.installation_inclusions) {
+                            const installation = selectedOptions.display_options?.installation_inclusions;
                             displayRates.push({
-                                text: `${selectedOptions.display_options.installation_inclusions[index].count}x free`,
+                                text: installation[index].count === 0 ? '---' : `${installation[index].count}x free`,
                                 options: {
                                     align: "center" as PptxGenJS.HAlign,
                                     fontSize: 10,
@@ -461,52 +479,55 @@ export const useGeneratePowerpoint = () => {
                         bold: true,
                         fontSize: 14.9,
                     });
-                    addText(slide, "PRODUCTION COST:", {
-                        w: Inches(4.36),
-                        h: labelHeight,
-                        x: details2ndColumnSection,
-                        y: Inches(9.36),
-                        align: "left",
-                        color: "76899E",
-                        bold: true,
-                        fontSize: 9.6,
-                    });
-                    const productionCost = site.size
-                        .match(/\d+(\.\d+)?/g)
-                        ?.map(Number)
-                        .reduce((acc, n) => acc * n, 25) ?? 0
-                    addText(slide, formatAmount(productionCost), {
-                        w: Inches(6.63),
-                        h: labelHeight,
-                        x: details2ndColumnSection,
-                        y: Inches(9.82),
-                        align: "left",
-                        color: "1E2C3C",
-                        bold: true,
-                        fontSize: 14.9,
-                    });
-                    if (selectedOptions.display_options?.material_inclusions || selectedOptions.display_options?.installation_inclusions) {
-                        let text = `w/ free `;
-                        if (selectedOptions.display_options.installation_inclusions) {
-                            text += ` ${selectedOptions.display_options.installation_inclusions}x Installation`
-                        }
-                        if (selectedOptions.display_options.installation_inclusions && selectedOptions.display_options.material_inclusions) {
-                            text += ` & `
-                        }
-                        if (selectedOptions.display_options.material_inclusions) {
-                            text += ` ${selectedOptions.display_options.material_inclusions}x Material`
-                        }
-                        addText(slide, text, {
-                            w: Inches(14.23),
-                            h: Inches(0.62),
-                            x: detailsSection,
-                            y: Inches(10.23),
+                    let text = ``;
+
+                    const material = selectedOptions.display_options?.material_inclusions;
+                    const installation = selectedOptions.display_options?.installation_inclusions;
+
+                    if ((material && material[0].type === "FREE" && material[0].count !== 0) || (installation && installation[0].count !== 0)) {
+                        text = `w/ free `
+                    }
+                    if (material && material[0].type === "FREE" && material[0].count !== 0) {
+                        text += `${material[0].count}x material`
+                    }
+                    else {
+                        addText(slide, "PRODUCTION COST:", {
+                            w: Inches(4.36),
+                            h: labelHeight,
+                            x: details2ndColumnSection,
+                            y: Inches(9.36),
                             align: "left",
                             color: "76899E",
-                            bold: false,
-                            fontSize: 8.5,
-                        })
+                            bold: true,
+                            fontSize: 9.6,
+                        });
+                        addText(slide, formatAmount(prodCost), {
+                            w: Inches(6.63),
+                            h: labelHeight,
+                            x: details2ndColumnSection,
+                            y: Inches(9.82),
+                            align: "left",
+                            color: "1E2C3C",
+                            bold: true,
+                            fontSize: 14.9,
+                        });
                     }
+                    if (material && installation && material[0].type === "FREE" && material[0].count !== 0 && installation[0].count !== 0) {
+                        text += ` & `
+                    }
+                    if (installation && installation[0].count !== 0) {
+                        text += `${installation[0].count}x installation`
+                    }
+                    addText(slide, text, {
+                        w: Inches(14.23),
+                        h: Inches(0.62),
+                        x: detailsSection,
+                        y: Inches(10.23),
+                        align: "left",
+                        color: "76899E",
+                        bold: false,
+                        fontSize: 8.5,
+                    })
                 }
                 slide.addImage({
                     data: site.map,

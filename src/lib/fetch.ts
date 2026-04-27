@@ -10,7 +10,12 @@ import { chartColors } from "./utils";
 import { useStatuses } from "@/hooks/useClientOptions";
 import { useAvailableSites, useSites } from "@/hooks/useSites";
 import { Booking, useBookings } from "@/hooks/useBookings";
-import { differenceInCalendarDays, differenceInDays } from "date-fns";
+import {
+  differenceInCalendarDays,
+  differenceInDays,
+  format,
+  subDays,
+} from "date-fns";
 import {
   AvailableSites,
   ContractOverride,
@@ -492,6 +497,7 @@ export const getLatestBooking = (bookings: Booking[]) => {
   let bestDistance = Infinity;
 
   for (const booking of valid) {
+    const windowPeriod = booking.is_prime ? 60 : 45;
     const from = new Date(booking.date_from);
     const to = new Date(booking.date_to);
 
@@ -512,8 +518,12 @@ export const getLatestBooking = (bookings: Booking[]) => {
       distance = diff;
     }
 
-    // NEW booking within 30 days
-    else if (booking.booking_status === "NEW" && diff >= 0 && diff <= 60) {
+    // NEW booking within 45 | 60 days
+    else if (
+      booking.booking_status === "NEW" &&
+      diff >= 0 &&
+      diff <= windowPeriod
+    ) {
       score = 80;
       distance = diff;
     } else if (
@@ -561,9 +571,15 @@ export const getEndDate = (
   if (booking) {
     if (adjustment) {
       if (new Date(booking.date_to) > new Date(adjustment.adjusted_end_date)) {
+        if (booking.booking_status === "PRE-TERMINATION") {
+          return format(subDays(new Date(booking.date_to), 1), "yyyy-MM-dd");
+        }
         return booking.date_to;
       }
       return adjustment.adjusted_end_date;
+    }
+    if (booking.booking_status === "PRE-TERMINATION") {
+      return format(subDays(new Date(booking.date_to), 1), "yyyy-MM-dd");
     }
     return booking.date_to;
   }

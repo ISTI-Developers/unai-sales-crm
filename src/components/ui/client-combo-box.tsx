@@ -34,7 +34,7 @@ export function ClientCombobox({ clients, value, onChange }: ClientComboboxProps
     const [open, setOpen] = React.useState(false)
     const [inputValue, setInputValue] = React.useState("")
 
-    const selectedClient = clients.find((c) => c.id === value)
+    const selectedClient = clients.find((c) => c.name === value)
     const selectedName = selectedClient?.name ?? value ?? ""
 
     return (
@@ -77,14 +77,14 @@ export function ClientCombobox({ clients, value, onChange }: ClientComboboxProps
                                     key={client.id}
                                     value={client.name}
                                     onSelect={() => {
-                                        onChange(client.id)
+                                        onChange(client.name)
                                         setOpen(false)
                                     }}
                                 >
                                     <Check
                                         className={cn(
                                             "mr-2 h-4 w-4",
-                                            value === client.id ? "opacity-100" : "opacity-0"
+                                            value === client.name ? "opacity-100" : "opacity-0"
                                         )}
                                     />
                                     {client.name}

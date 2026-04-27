@@ -29,6 +29,7 @@ interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   size?: number;
+  filter?: boolean,
   children?: ReactNode;
   className?: string;
   getSubRows?: (row: TData) => TData[] | undefined;
@@ -40,6 +41,7 @@ export function DataTable<TData, TValue>({
   data,
   size = 10,
   children,
+  filter = true,
   className,
   getSubRows,
   getRowClassName
@@ -100,6 +102,7 @@ export function DataTable<TData, TValue>({
           data={data}
           columnFilters={columnFilters}
           table={table}
+          filter={filter}
           setColumnFilters={setColumnFilters}
           setGlobalFilter={setGlobalFilter}
         />

@@ -83,7 +83,8 @@ function CreateBooking({ site }: { site: SiteAvailability }) {
     const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         onSend(true)
-        const previousBooking = getLatestBooking(site.bookings);
+        const bookings = site.bookings.map(sb => ({ ...sb, is_prime: site.is_prime }))
+        const previousBooking = getLatestBooking(bookings);
         let AEs = booking.account_executive;
 
         if (previousBooking) {

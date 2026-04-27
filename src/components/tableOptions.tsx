@@ -10,6 +10,7 @@ interface TableOptions<TData> {
   setGlobalFilter: Dispatch<SetStateAction<string>>;
   table: Table<TData>;
   data: TData[];
+  filter?: boolean;
   columnFilters: ColumnFiltersState;
   setColumnFilters: Dispatch<SetStateAction<ColumnFiltersState>>;
 }
@@ -18,6 +19,7 @@ const TableOptions = <TData,>({
   setGlobalFilter,
   table,
   data,
+  filter = true,
   columnFilters,
   setColumnFilters,
 }: TableOptions<TData>) => {
@@ -25,56 +27,59 @@ const TableOptions = <TData,>({
   return (
     <div className="flex items-center gap-4">
       <Search setValue={(value) => setGlobalFilter(value)} />
-      <TableFilters table={table} data={data} filters={columnFilters} />
-      {columnFilters.length > 0 && (
-        <div className="flex items-center bg-base p-1 px-2 rounded-md gap-2">
-          {columnFilters.map((column, index) => {
-            return (
-              <div key={column.id} className="flex items-center gap-2 text-sm">
-                <p className="capitalize">{column.id.replace(/_/g, " ")}</p>
-                {column.value.map((val: string) => {
-                  return (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="flex items-center gap-1.5 text-sm"
-                      onClick={() => {
-                        setColumnFilters((prev) => {
-                          const updatedFilters = [...prev];
+      {filter &&
+        <>
+          <TableFilters table={table} data={data} filters={columnFilters} />
+          {columnFilters.length > 0 && (
+            <div className="flex items-center bg-base p-1 px-2 rounded-md gap-2">
+              {columnFilters.map((column, index) => {
+                return (
+                  <div key={column.id} className="flex items-center gap-2 text-sm">
+                    <p className="capitalize">{column.id.replace(/_/g, " ")}</p>
+                    {column.value.map((val: string) => {
+                      return (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex items-center gap-1.5 text-sm"
+                          onClick={() => {
+                            setColumnFilters((prev) => {
+                              const updatedFilters = [...prev];
 
-                          updatedFilters[index] = {
-                            ...updatedFilters[index],
-                            value: updatedFilters[index].value.filter(
-                              (value) => value !== val
-                            ),
-                          };
-                          let finalFilters = updatedFilters;
-                          if (finalFilters[index].value.length === 0) {
-                            finalFilters = finalFilters.filter(
-                              (filter) => filter.id !== column.id
-                            );
-                          }
+                              updatedFilters[index] = {
+                                ...updatedFilters[index],
+                                value: updatedFilters[index].value.filter(
+                                  (value) => value !== val
+                                ),
+                              };
+                              let finalFilters = updatedFilters;
+                              if (finalFilters[index].value.length === 0) {
+                                finalFilters = finalFilters.filter(
+                                  (filter) => filter.id !== column.id
+                                );
+                              }
 
-                          if (finalFilters.length === 0) {
-                            localStorage.setItem(
-                              `f${pathname}`,
-                              JSON.stringify(finalFilters)
-                            );
-                          }
-                          return finalFilters;
-                        });
-                      }}
-                    >
-                      {val}
-                      <X size={14} />
-                    </Button>
-                  );
-                })}
-              </div>
-            );
-          })}
-        </div>
-      )}
+                              if (finalFilters.length === 0) {
+                                localStorage.setItem(
+                                  `f${pathname}`,
+                                  JSON.stringify(finalFilters)
+                                );
+                              }
+                              return finalFilters;
+                            });
+                          }}
+                        >
+                          {val}
+                          <X size={14} />
+                        </Button>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </>}
     </div>
   );
 };

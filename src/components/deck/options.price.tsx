@@ -5,7 +5,7 @@ import { useDeck } from '@/providers/deck.provider';
 import { PriceAdjustment, PriceRange, Range, Sites } from '@/misc/deckTemplate';
 import InputNumber from '../ui/number-input';
 import { Button } from '../ui/button';
-import { PhilippinePeso, PlusIcon, Trash2 } from 'lucide-react';
+import { PlusIcon, Trash2 } from 'lucide-react';
 import MultiComboBoxWithAll from '../multicomboboxwithall';
 import { priceAdjustment } from '@/interfaces/deck.interface';
 import { v4 } from 'uuid';
@@ -199,15 +199,9 @@ const AdjustmentPriceOptions = ({ value, onValueChange }: { value: PriceRange; m
     return (
         <div>
             <div className='flex items-center gap-2'>
-                <div className='flex items-center gap-1 bg-white pl-1 rounded-md'>
-                    <PhilippinePeso size={14} />
-                    <InputNumber className='focus-visible:ring-0 border-none shadow-none h-7 w-full pl-0' value={value.from} onChange={(e) => onValueChange(e.target.value, "from")} />
-                </div>
-                <span>-</span>
-                <div className='flex items-center gap-1 bg-white pl-1 rounded-md'>
-                    <PhilippinePeso size={14} />
-                    <InputNumber className='focus-visible:ring-0 border-none shadow-none h-7 w-full pl-0' value={value.to} onChange={(e) => onValueChange(e.target.value, "to")} />
-                </div>
+                <InputNumber className='focus-visible:ring-0 border-none shadow-none h-7 w-full' value={value.from} onChange={(e) => onValueChange(e.target.value, "from")} />
+                -
+                <InputNumber className='focus-visible:ring-0 border-none shadow-none h-7 w-full' value={value.to} onChange={(e) => onValueChange(e.target.value, "to")} />
             </div>
         </div>
     )

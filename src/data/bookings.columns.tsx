@@ -44,8 +44,9 @@ export const columns: ColumnDef<SiteAvailability>[] = [
 
             // build display label
             item = `${client} ${item ? `(${item})` : "---"}`;
+            const siteBookings = bookings.map(sb => ({ ...sb, is_prime: row.is_prime }))
 
-            const booking = getLatestBooking(bookings);
+            const booking = getLatestBooking(siteBookings);
 
             if (booking) {
                 item = booking.client
