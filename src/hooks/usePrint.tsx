@@ -464,7 +464,7 @@ export const useGeneratePowerpoint = () => {
                         x: detailsSection,
                         y: Inches(9.36),
                         align: "left",
-                        color: "76899E",
+                        color: "000000",
                         bold: true,
                         fontSize: 9.6,
                     });
@@ -475,7 +475,7 @@ export const useGeneratePowerpoint = () => {
                         x: detailsSection,
                         y: Inches(9.82),
                         align: "left",
-                        color: "1E2C3C",
+                        color: "d22735",
                         bold: true,
                         fontSize: 14.9,
                     });
@@ -497,7 +497,7 @@ export const useGeneratePowerpoint = () => {
                             x: details2ndColumnSection,
                             y: Inches(9.36),
                             align: "left",
-                            color: "76899E",
+                            color: "000000",
                             bold: true,
                             fontSize: 9.6,
                         });
@@ -507,7 +507,7 @@ export const useGeneratePowerpoint = () => {
                             x: details2ndColumnSection,
                             y: Inches(9.82),
                             align: "left",
-                            color: "1E2C3C",
+                            color: "d22735",
                             bold: true,
                             fontSize: 14.9,
                         });
