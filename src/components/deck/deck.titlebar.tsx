@@ -54,6 +54,16 @@ const TitleBar = () => {
     const onSave = (status?: number) => {
         if (!user || !deckID || selectedSites.length === 0) return;
 
+        // console.log(selectedSites.map(site => site.image))
+        // if (!selectedSites.some(site => site.image)) {
+        //     toast({
+        //         variant: "warning",
+        //         description: "Some slides dont have a picture"
+        //     })
+        //     return;
+        // }
+        // return;
+
         const deck: Deck = {
             ID: data?.ID ?? 1,
             user_id: data?.user_id ?? Number(user.ID),

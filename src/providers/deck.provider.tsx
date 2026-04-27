@@ -221,27 +221,36 @@ export function DeckProvider({ children }: ProviderProps) {
   useEffect(() => {
     if (!deckData || !deckID || isLoading || initializedRef.current) return;
 
+    const siteMap = new Map(
+      deckData.sites.map(s => [s.site_code, s])
+    );
+
     const siteCodes = new Set(deckData.sites.map(s => s.site_code));
 
     const loadedSites = sites.filter(site =>
       siteCodes.has(site.site_code)
     );
 
-    setSelectedSites(loadedSites);
+    setSelectedSites(
+      loadedSites.map(site => ({
+        ...site,
+        image: siteMap.get(site.site_code)?.image
+      }))
+    );
     setFilters(deckData.filters ?? {});
-    const normalizedOptions = {
+    const normalizedOptions = Object.values(deckData.options ?? {}).length !== 0 ? {
       ...deckData.options,
       display_options: {
         ...deckData.options?.display_options,
         production_cost: displayOptions.base.production_cost,
         material_inclusions: normalizeMaterialInclusions(
-          deckData.options?.display_options?.material_inclusions ?? [],
+          deckData.options?.display_options?.material_inclusions ?? displayOptions.base.material_inclusions,
         ),
         installation_inclusions: normalizeInstallationInclusions(
-          deckData.options?.display_options?.installation_inclusions ?? [],
+          deckData.options?.display_options?.installation_inclusions ?? displayOptions.base.installation_inclusions,
         ),
       },
-    };
+    } : {};
 
     setOptions(normalizedOptions);
     setTitle(deckData.title ?? "");
