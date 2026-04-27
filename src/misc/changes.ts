@@ -1,4 +1,5 @@
 export const changes = {
+  "2.7": ["Updated Deck design", "Fixed booking availability.", "Fixed client adding issues"],
   "2.6":["Meetings page revamp."],
   "2.5.5": ["Fixed a bug where the input field for populations are displayed as price."],
   "2.5.4": ["Fixed an issue where pre-termination contracts don't override the previous contract."],
