@@ -1,4 +1,5 @@
 export const changes = {
+  "2.7.1": ["Optimized add client form."],
   "2.7": ["Updated Deck design", "Fixed booking availability.", "Fixed client adding issues"],
   "2.6":["Meetings page revamp."],
   "2.5.5": ["Fixed a bug where the input field for populations are displayed as price."],
