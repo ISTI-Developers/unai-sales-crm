@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Client,
   ClientInformation,
+  ClientName,
   ClientUpload,
 } from "@/interfaces/client.interface";
 import { DefaultResponse } from "@/interfaces";
@@ -16,6 +17,22 @@ export const useClients = () => {
     queryKey: ["clients", user?.ID],
     queryFn: async () => {
       const response = await spAPI.get<Client[]>("clients");
+      return response.data;
+    },
+    staleTime: 1000 * 60 * 10,
+    enabled: !!user
+  });
+};
+export const useClientNames = () => {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["clients", user?.ID, "name-only"],
+    queryFn: async () => {
+      const response = await spAPI.get<ClientName[]>("clients", {
+        params: {
+          name_only: true
+        }
+      });
       return response.data;
     },
     staleTime: 1000 * 60 * 10,

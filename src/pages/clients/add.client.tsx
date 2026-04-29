@@ -211,8 +211,8 @@ const AddClient = () => {
       mediums: (client.mediums as List[]).map(medium => medium.id),
     }
 
-    console.log(data)
-    return;
+    // console.log(data)
+    // return;
     insertClient(data, {
       onSuccess: (data) => {
         if (data.acknowledged) {

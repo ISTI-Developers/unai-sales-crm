@@ -1,8 +1,5 @@
-// components/ClientCombobox.tsx
-"use client"
-
 import * as React from "react"
-import { Check, ChevronsUpDown, Plus } from "lucide-react"
+import { Check, ChevronsUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -37,6 +34,15 @@ export function ClientCombobox({ clients, value, onChange }: ClientComboboxProps
     const selectedClient = clients.find((c) => c.name === value)
     const selectedName = selectedClient?.name ?? value ?? ""
 
+    const filteredClients = React.useMemo(() => {
+        if (!inputValue) return clients.slice(0, 20);
+
+        const lower = inputValue.toLowerCase();
+
+        return clients
+            .filter(c => c.name.toLowerCase().includes(lower))
+            .slice(0, 20); // 🔥 hard cap
+    }, [clients, inputValue]);
     return (
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
@@ -51,28 +57,35 @@ export function ClientCombobox({ clients, value, onChange }: ClientComboboxProps
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="min-w-[var(--radix-popover-trigger-width)] p-0">
-                <Command shouldFilter={true}>
+                <Command>
                     <CommandInput
                         placeholder="Search or type client..."
                         value={inputValue}
                         onValueChange={setInputValue}
+                        onKeyDown={(e) => {
+                            console.log(e.key)
+                            if (e.key === "Enter") {
+                                setInputValue(e.currentTarget.value)
+                                onChange(e.currentTarget.value)
+                                setOpen(false)
+                            }
+                        }}
                     />
                     <CommandList>
-                        <CommandEmpty>
+                        <CommandEmpty className="py-1">
                             <Button
                                 variant="ghost"
-                                className="w-full justify-start"
+                                className="w-full justify-start font-light text-xs"
                                 onClick={() => {
                                     onChange(inputValue)
                                     setOpen(false)
                                 }}
                             >
-                                <Plus className="mr-2 h-4 w-4" />
-                                Use “{inputValue}”
+                                Press <kbd className="border p-1 px-2 rounded-md text-xs">Enter</kbd> to use <span className="font-medium p-0">{inputValue}</span>
                             </Button>
                         </CommandEmpty>
                         <CommandGroup>
-                            {clients.map((client) => (
+                            {filteredClients.map((client) => (
                                 <CommandItem
                                     key={client.id}
                                     value={client.name}
