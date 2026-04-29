@@ -12,14 +12,14 @@ export interface ClientTypes {
   insertClient: (data: ClientForm) => Promise<DefaultResponse | false>;
   updateClient: (
     data: ClientForm,
-    ID: string
+    ID: string,
   ) => Promise<DefaultResponse | false>;
   updateClientStatus: (
     status: List,
-    ID: string
+    ID: string,
   ) => Promise<DefaultResponse | false>;
   insertBatchClients: (
-    data: ClientUpload[]
+    data: ClientUpload[],
   ) => Promise<DefaultResponse | false>;
   deleteClient: (ID: number) => Promise<DefaultResponse | undefined>;
 }
@@ -65,6 +65,10 @@ export interface ClientInformation {
   account_executives: Account[];
 }
 
+export interface ClientName {
+  ID: number;
+  name: string;
+}
 export interface Client {
   client_id: number;
   name: string;
