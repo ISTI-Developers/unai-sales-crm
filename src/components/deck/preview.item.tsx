@@ -1,11 +1,11 @@
-import { useThumbnail } from '@/hooks/useSites'
+// import { useThumbnail } from '@/hooks/useSites'
 import { DeckSite } from '@/interfaces/deck.interface';
 import { cn } from '@/lib/utils';
 import { format, isBefore } from 'date-fns';
 import { ReactNode, useMemo } from 'react';
 const PreviewItem = ({ item, className }: { item: DeckSite; className?: string }) => {
 
-    const { data } = useThumbnail(useMemo(() => item.image, [item.image]))
+    // const { data } = useThumbnail(useMemo(() => item.image, [item.image]))
     return (
         <div
             role='button'
@@ -33,8 +33,8 @@ const PreviewItem = ({ item, className }: { item: DeckSite; className?: string }
                 </p>
             </div>
             <div className="grid grid-cols-[2fr_1fr] h-full px-2 gap-2">
-                {data ?
-                    <img src={data} alt="" className="w-full p-1 px-0  aspect-video translate-y-3" />
+                {item.url ?
+                    <img src={item.url} alt="" className="w-full p-1 px-0  aspect-video translate-y-3" />
                     : <div className='w-[95%] h-[55%] mt-[40%] -translate-y-1/2 bg-zinc-100'></div>}
                 <div className="py-4 grid grid-cols-2 h-fit pr-3">
                     <div className="leading-none">

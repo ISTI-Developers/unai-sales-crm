@@ -117,7 +117,7 @@ const DeckCard = ({ deck }: { deck: Deck_1 }) => {
         </AlertDialogContent>
       </AlertDialog>
     </div>
-    <div className="rounded-md overflow-hidden">
+    <div className="rounded-md overflow-hidden aspect-video">
       {isLoading ? <div className="w-full h-[200px] bg-slate-200 animate-pulse" /> :
         <img src={data} alt="" className="w-full max-h-[200px] object-cover" />
       }

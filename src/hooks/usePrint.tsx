@@ -244,7 +244,7 @@ export const useGeneratePowerpoint = () => {
                     fontSize: 8.5,
                 });
 
-                addText(slide, site.board_facing, {
+                addText(slide, site.board_facing?.replace("FACING", "").trimStart(), {
                     w: Inches(13.2),
                     h: labelHeight,
                     x: Inches(21.44),
@@ -491,26 +491,28 @@ export const useGeneratePowerpoint = () => {
                         text += `${material[0].count}x material`
                     }
                     else {
-                        addText(slide, "PRODUCTION COST:", {
-                            w: Inches(4.36),
-                            h: labelHeight,
-                            x: details2ndColumnSection,
-                            y: Inches(9.36),
-                            align: "left",
-                            color: "000000",
-                            bold: true,
-                            fontSize: 9.6,
-                        });
-                        addText(slide, formatAmount(prodCost), {
-                            w: Inches(6.63),
-                            h: labelHeight,
-                            x: details2ndColumnSection,
-                            y: Inches(9.82),
-                            align: "left",
-                            color: "d22735",
-                            bold: true,
-                            fontSize: 14.9,
-                        });
+                        if (selectedOptions.display_options) {
+                            addText(slide, "PRODUCTION COST:", {
+                                w: Inches(4.36),
+                                h: labelHeight,
+                                x: details2ndColumnSection,
+                                y: Inches(9.36),
+                                align: "left",
+                                color: "000000",
+                                bold: true,
+                                fontSize: 9.6,
+                            });
+                            addText(slide, formatAmount(prodCost), {
+                                w: Inches(6.63),
+                                h: labelHeight,
+                                x: details2ndColumnSection,
+                                y: Inches(9.82),
+                                align: "left",
+                                color: "d22735",
+                                bold: true,
+                                fontSize: 14.9,
+                            });
+                        }
                     }
                     if (material && installation && material[0].type === "FREE" && material[0].count !== 0 && installation[0].count !== 0) {
                         text += ` & `
