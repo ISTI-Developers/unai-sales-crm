@@ -51,6 +51,8 @@ const SiteImages = ({ site_code }: { site_code: string; }) => {
 
         setup();
 
+        console.count("image rendered");
+
         return () => {
             isActive = false;
         };
@@ -84,7 +86,6 @@ const ImageItem = ({
 }) => {
     const [show, setShow] = useState(false)
 
-    // console.log(item.url)
     return (
         <div>
             <div className="relative overflow-hidden rounded-md group">

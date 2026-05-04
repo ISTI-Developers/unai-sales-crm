@@ -54,7 +54,10 @@ const TitleBar = () => {
     const onSave = (status?: number) => {
         if (!user || !deckID || selectedSites.length === 0) return;
 
-        if(!selectedSites[0].image) return;
+        if (!selectedSites[0].image) return;
+
+        console.count("rendered")
+        console.log(selectedSites)
 
         const deck: Deck = {
             ID: data?.ID ?? 1,
@@ -123,8 +126,8 @@ const TitleBar = () => {
 
         return () => {
             clearTimeout(timeout);
-            isActive = false;
             setProgress(progressMap.STALE)
+            isActive = false;
         } // ✅ cancels previous timer
     }, [shouldSave, selectedSites, selectedFilters, selectedOptions, title]);
 

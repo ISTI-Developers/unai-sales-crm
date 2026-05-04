@@ -76,7 +76,7 @@ const Main = () => {
     {deckList.length > 0 ?
       < main className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
         {deckList.map(deck => {
-          return <DeckCard key={deck.title} deck={deck} />
+          return <DeckCard key={deck.ID} deck={deck} />
         })}
       </main>
       : <div className="bg-zinc-100 w-full rounded-lg font-semibold p-4 py-16 text-sm text-zinc-400 text-center">
@@ -103,7 +103,7 @@ const DeckCard = ({ deck }: { deck: Deck_1 }) => {
             <Trash2 />
           </Button>
         </AlertDialogTrigger>
-        <AlertDialogContent>
+        <AlertDialogContent aria-describedby={undefined}>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Confirmation</AlertDialogTitle>
           </AlertDialogHeader>

@@ -1,11 +1,8 @@
-// import { useThumbnail } from '@/hooks/useSites'
 import { DeckSite } from '@/interfaces/deck.interface';
 import { cn } from '@/lib/utils';
 import { format, isBefore } from 'date-fns';
 import { ReactNode, useMemo } from 'react';
 const PreviewItem = ({ item, className }: { item: DeckSite; className?: string }) => {
-
-    // const { data } = useThumbnail(useMemo(() => item.image, [item.image]))
     return (
         <div
             role='button'

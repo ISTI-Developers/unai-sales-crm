@@ -25,7 +25,7 @@ export function DeckProvider({ children }: ProviderProps) {
   const [searchParams] = useSearchParams()
   const deckID = searchParams.get("token");
 
-  const initializedRef = useRef(false);
+  const hydratedDeckRef = useRef<string | null>(null);
   const { data: landmarks } = useSitelandmarks();
   const { data: allSites } = useSites();
   const { data: bookings } = useBookings();
@@ -219,11 +219,14 @@ export function DeckProvider({ children }: ProviderProps) {
   };
 
   useEffect(() => {
-    if (!deckData || !deckID || isLoading || initializedRef.current) return;
+    if (!deckData || !deckID || isLoading) return;
+
+    if (hydratedDeckRef.current === deckID) return;
 
     const siteMap = new Map(
       deckData.sites.map(s => [s.site_code, s])
     );
+
 
     const siteCodes = new Set(deckData.sites.map(s => s.site_code));
 
@@ -231,11 +234,16 @@ export function DeckProvider({ children }: ProviderProps) {
       siteCodes.has(site.site_code)
     );
 
-    setSelectedSites(
-      loadedSites.map(site => ({
-        ...site,
-        image: siteMap.get(site.site_code)?.image
-      }))
+    setSelectedSites(prev =>
+      loadedSites.map(site => {
+        const existing = prev.find(s => s.site_code === site.site_code);
+
+        return {
+          ...existing, // keep local fields
+          ...site,     // overwrite with fresh backend data
+          image: siteMap.get(site.site_code)?.image,
+        };
+      })
     );
     setFilters(deckData.filters ?? {});
     const normalizedOptions = Object.values(deckData.options ?? {}).length !== 0 ? {
@@ -254,7 +262,7 @@ export function DeckProvider({ children }: ProviderProps) {
 
     setOptions(normalizedOptions);
     setTitle(deckData.title ?? "");
-    initializedRef.current = true;
+    hydratedDeckRef.current = deckID;
 
   }, [deckData, deckID, isLoading, sites]);
 
