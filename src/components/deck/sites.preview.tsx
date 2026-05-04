@@ -25,7 +25,7 @@ const SitesPreview = () => {
     <ScrollArea>
       <section ref={containerRef} className="bg-zinc-100 rounded-md p-2 flex flex-col items-center overflow-y-auto gap-2">
         {selectedSites.map(item => {
-          return <SiteItem item={item} width={width} />
+          return <SiteItem item={item} width={width} key={item.ID} />
         })}
       </section>
     </ScrollArea>

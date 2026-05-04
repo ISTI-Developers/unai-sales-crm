@@ -75,15 +75,13 @@ const SiteSelection = () => {
           </AnimatePresence>
         </div>
       </div>
-      {canSelectAll &&
-        <div>
-          <div className="text-[0.65rem] pb-1 pl-1 text-zinc-600">{`Showing ${sites.length} results`}</div>
-          <div className="flex gap-1 justify-between">
-            {canSelectAll && <Button onClick={selectAll} variant="outline" className="h-6 p-0 px-2 text-[0.6rem]" size="sm">Select All</Button>}
-            {selectedSites.length > 0 && <Button onClick={() => setSelectedSites([])} variant="destructive" className="h-6 p-0 px-2 text-[0.6rem]" size="sm">Clear Selected</Button>}
-          </div>
+      <div>
+        <div className="text-[0.65rem] pb-1 pl-1 text-zinc-600">{`Showing ${sites.length} results`}</div>
+        <div className="flex gap-1 justify-between">
+          {canSelectAll && <Button onClick={selectAll} variant="outline" className="h-6 p-0 px-2 text-[0.6rem]" size="sm">Select All</Button>}
+          {selectedSites.length > 0 && <Button onClick={() => setSelectedSites([])} variant="destructive" className="h-6 p-0 px-2 text-[0.6rem]" size="sm">Clear Selected</Button>}
         </div>
-      }
+      </div>
       {/* SITE LIST BELOW */}
       <SiteList />
     </>

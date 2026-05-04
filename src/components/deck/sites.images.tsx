@@ -51,6 +51,8 @@ const SiteImages = ({ site_code }: { site_code: string; }) => {
 
         setup();
 
+        console.count("image rendered");
+
         return () => {
             isActive = false;
         };

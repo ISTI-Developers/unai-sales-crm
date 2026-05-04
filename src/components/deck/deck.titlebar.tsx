@@ -54,15 +54,10 @@ const TitleBar = () => {
     const onSave = (status?: number) => {
         if (!user || !deckID || selectedSites.length === 0) return;
 
-        // console.log(selectedSites.map(site => site.image))
-        // if (!selectedSites.some(site => site.image)) {
-        //     toast({
-        //         variant: "warning",
-        //         description: "Some slides dont have a picture"
-        //     })
-        //     return;
-        // }
-        // return;
+        if (!selectedSites[0].image) return;
+
+        console.count("rendered")
+        console.log(selectedSites)
 
         const deck: Deck = {
             ID: data?.ID ?? 1,
@@ -74,7 +69,7 @@ const TitleBar = () => {
                 image: site.image
             })),
             description: "",
-            thumbnail: selectedSites[0].image!,
+            thumbnail: selectedSites[0].image,
             filters: selectedFilters,
             options: selectedOptions,
             status: status ?? 1,
@@ -131,8 +126,8 @@ const TitleBar = () => {
 
         return () => {
             clearTimeout(timeout);
-            isActive = false;
             setProgress(progressMap.STALE)
+            isActive = false;
         } // ✅ cancels previous timer
     }, [shouldSave, selectedSites, selectedFilters, selectedOptions, title]);
 

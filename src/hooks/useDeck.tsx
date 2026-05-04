@@ -73,7 +73,7 @@ export const useDeleteDeck = () => {
             queryClient.refetchQueries({ queryKey: ["decks", { ID: variables }] });
             toast({
                 variant: "success",
-                title: "Deck saved successfully."
+                title: "Deck has been deleted."
             })
         },
         onError: catchError,
