@@ -12,7 +12,11 @@ import { useUserReportViewAccesses } from "@/hooks/useSettings";
 
 const ManageClient = () => {
   const { user } = useAuth();
-  const { access } = useAccess(10);
+  const { access: editAll } = useAccess("clients.editAll");
+  const { access: editCompany } = useAccess("clients.editCompany");
+  const { access: editAccountHandling } = useAccess("clients.editAccountHandling");
+  const { access: editStatus } = useAccess("clients.editStatus");
+  const { access: editContact } = useAccess("clients.editContact");
   const { data: reportAccess } = useUserReportViewAccesses((user?.ID as number) ?? 0);
 
   const clientID = localStorage.getItem("client");
@@ -23,11 +27,12 @@ const ManageClient = () => {
 
     const salesUnit = user.sales_unit;
     if (!salesUnit) {
-      return user.role.role_id in [1, 3, 10, 11];
+      return user.role.role_id in [1, 3, 10, 11]; //admin roles
     }
 
-    return (salesUnit.sales_unit_id === client.sales_unit_id && access.edit);
-  }, [access, user, client, reportAccess]);
+    const canEditAtleastOne = editAll || editCompany || editAccountHandling || editContact || editStatus;
+    return (salesUnit.sales_unit_id === client.sales_unit_id && canEditAtleastOne);
+  }, [user, client, reportAccess, editAll, editCompany, editAccountHandling, editContact, editStatus]);
 
 
 

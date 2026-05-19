@@ -35,8 +35,10 @@ const UpdateClient = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [client, setClient] = useState<ClientForm | null>(null);
-  const { access: editAll } = useAccess("clients.editAll")
-  const { access: editCompany } = useAccess("clients.editCompany")
+  const { access: editAll } = useAccess("clients.editAll");
+  const { access: editAccountHandling } = useAccess("clients.editAccountHandling");
+  const { access: editStatus } = useAccess("clients.editStatus");
+  const { access: editContact } = useAccess("clients.editContact");
 
   const onInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     setClient(prev => {
@@ -256,12 +258,6 @@ const UpdateClient = () => {
     });
   }, [data]);
 
-  const hasEditAccess = useMemo(() => {
-    if (!user) return false;
-
-    return user.role.role_id in [1, 3, 10, 11] || editAll || editCompany;
-  }, [editAll, editCompany, user]);
-
   return client && (
     <Page className="flex flex-col gap-4">
       <Helmet>
@@ -281,24 +277,25 @@ const UpdateClient = () => {
       <main>
         <form className='grid lg:grid-cols-2 gap-4' autoComplete='off' onSubmit={onSubmit}>
           <FormSection title='Client Information'>
-            <InputField id='name' value={client['name']} disabled={false} onChange={onInputChange} />
-            <InputField id='brand' value={client['brand']} disabled={false} onChange={onInputChange} />
-            <SelectField id='industry' value={client['industry'] as string} disabled={false} onChange={onSelectChange} options={getOptions('industry')} />
+            <InputField id='name' value={client['name']} disabled={!editAll} onChange={onInputChange} />
+            <InputField id='brand' value={client['brand']} disabled={!editAll} onChange={onInputChange} />
+            <SelectField id='industry' value={client['industry'] as string} disabled={!editAll} onChange={onSelectChange} options={getOptions('industry')} />
             <SelectField id='company' value={client['company'] as string} disabled={true} onChange={onSelectChange} options={isLoading ? [] : companyOptions} />
-            <SelectField id='sales_unit' value={client['sales_unit'] as string} disabled={!hasEditAccess} onChange={onSelectChange} options={salesOptions} />
-            <AccountExecutiveField id='account_executive' options={accountOptions} value={client.account_executive as List[]} setValue={onMultiSelectChange} disabled={!hasEditAccess} />
-            <SelectField id='status' value={client['status'] as string} disabled={!hasEditAccess} onChange={onSelectChange} options={getOptions('status')} />
+            <SelectField id='sales_unit' value={client['sales_unit'] as string} disabled={!editAll && !editAccountHandling} onChange={onSelectChange} options={salesOptions} />
+            <AccountExecutiveField id='account_executive' options={accountOptions} value={client.account_executive as List[]} setValue={onMultiSelectChange} disabled={!editAll && !editAccountHandling} />
+            <SelectField id='status' value={client['status'] as string} disabled={!editAll && !editStatus} onChange={onSelectChange} options={getOptions('status')} />
             <MediumField
               mediums={client.mediums as List[]}
               updateMedium={updateMedium}
+              disabled={!editAll || !editAccountHandling}
             />
           </FormSection>
           <FormSection title='Contact Information'>
             {Object.keys(client).slice(8, 13).map(field => {
-              return <InputField id={field} value={client[field as keyof typeof client] as string} disabled={false} onChange={onInputChange} />
+              return <InputField id={field} value={client[field as keyof typeof client] as string} disabled={!editAll && !editContact} onChange={onInputChange} />
             })}
-            <SelectField id='type' value={client['type'] as string} disabled={false} onChange={onSelectChange} options={getOptions('type')} />
-            <SelectField id='source' value={client['source'] as string} disabled={false} onChange={onSelectChange} options={getOptions('source')} />
+            <SelectField id='type' value={client['type'] as string} disabled={!editAll && !editContact} onChange={onSelectChange} options={getOptions('type')} />
+            <SelectField id='source' value={client['source'] as string} disabled={!editAll && !editContact} onChange={onSelectChange} options={getOptions('source')} />
           </FormSection>
           <Button
             type="submit"
@@ -353,14 +350,17 @@ const SelectField = ({ id, value, onChange, options, disabled }: { id: string; v
 const MediumField = ({
   mediums,
   updateMedium,
+  disabled,
 }: {
   mediums: List[];
   updateMedium: (id: number) => void;
+  disabled: boolean
 }) => {
   const { data: options } = useMediums();
   return (
     <FormField id="mediums">
       <MultiComboBox
+        disabled={disabled}
         title="mediums"
         value={mediums as List[]}
         list={
