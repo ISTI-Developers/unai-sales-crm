@@ -9,6 +9,7 @@ const ClientHistory = ({ clientIDs }: { clientIDs: number[] }) => {
 
   useEffect(() => {
     const setup = async () => {
+      console.log(clientIDs)
       const response = await getModuleLogs(
         "clients",
         clientIDs,
@@ -21,6 +22,7 @@ const ClientHistory = ({ clientIDs }: { clientIDs: number[] }) => {
     const interval = setInterval(setup, 5000); //fetch every 5 seconds
 
     return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clientIDs]);
   return (
     <>

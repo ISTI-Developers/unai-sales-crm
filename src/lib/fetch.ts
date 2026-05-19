@@ -495,12 +495,12 @@ export const getLatestBooking = (bookings: Booking[]) => {
   let best: Booking | undefined;
   let bestScore = -1;
   let bestDistance = Infinity;
-
+  
   for (const booking of valid) {
     const windowPeriod = booking.is_prime ? 60 : 45;
     const from = new Date(booking.date_from);
     const to = new Date(booking.date_to);
-
+    
     const diff = differenceInCalendarDays(from, now);
 
     let score = 0;
