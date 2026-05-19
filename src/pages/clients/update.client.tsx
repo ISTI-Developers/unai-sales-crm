@@ -287,7 +287,7 @@ const UpdateClient = () => {
             <MediumField
               mediums={client.mediums as List[]}
               updateMedium={updateMedium}
-              disabled={!editAll || !editAccountHandling}
+              disabled={!editAll && !editAccountHandling}
             />
           </FormSection>
           <FormSection title='Contact Information'>
