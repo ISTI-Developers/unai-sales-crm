@@ -42,7 +42,11 @@ import { Link } from "react-router-dom";
 const ActionCell = ({ row }: { row: Row<ClientTable> }) => {
   const { user } = useAuth();
   const client: ClientTable = row.original;
-  const { access: edit } = useAccess("clients.editAll");
+  const { access: editAll } = useAccess("clients.editAll");
+  const { access: editCompany } = useAccess("clients.editCompany");
+  const { access: editAccountHandling } = useAccess("clients.editAccountHandling");
+  const { access: editStatus } = useAccess("clients.editStatus");
+  const { access: editContact } = useAccess("clients.editContact");
   const { access: remove } = useAccess("clients.delete");
   const [show, setShow] = useState(false);
 
@@ -52,23 +56,16 @@ const ActionCell = ({ row }: { row: Row<ClientTable> }) => {
     const salesUnit = user.sales_unit;
     if (!salesUnit) {
       return {
-        edit: user.role.role_id in [1, 3, 10, 11],
-        delete: user.role.role_id in [1, 3, 10, 11]
+        edit: user.role.role_id in [1, 3, 10, 11, 15],
+        delete: user.role.role_id in [1, 3, 10, 11, 15]
       };
     }
-
-    if (user.role.role_id === 15) {
-      return {
-        edit: true,
-        delete: true,
-      }
-    }
-
+    const canEditAtleastOne = editAll || editCompany || editAccountHandling || editContact || editStatus;
     return {
-      edit: salesUnit.sales_unit_id === client.sales_unit_id && edit,
+      edit: salesUnit.sales_unit_id === client.sales_unit_id && canEditAtleastOne,
       delete: salesUnit.sales_unit_id === client.sales_unit_id && remove,
     }
-  }, [edit, remove, user, client]);
+  }, [user, editAll, editCompany, editAccountHandling, editContact, editStatus, client.sales_unit_id, remove]);
 
   return (
     <DropdownMenu>
