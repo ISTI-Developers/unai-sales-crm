@@ -16,7 +16,7 @@ import { Input } from '../ui/input';
 import { MultiComboBox } from '../multicombobox';
 import { DatePicker } from '../ui/datepicker';
 import { Textarea } from '../ui/textarea';
-import { addDays, differenceInDays } from 'date-fns';
+import { addDays, differenceInDays, format, subDays } from 'date-fns';
 import { useCreateBooking } from '@/hooks/useBookings';
 import { toast } from '@/hooks/use-toast';
 import { Notification, sendNotification } from '@/hooks/useNotifications';
@@ -79,6 +79,7 @@ function CreateBooking({ site }: { site: SiteAvailability }) {
         return [...sales, { id: v4(), value: "Other (JV Partner)", label: "Other (JV Partner)" }, { id: v4(), value: "Others (In-house account)", label: "Others (In-house account)" }]
     }, [users, isUsersLoading, user]);
 
+    const minStart = useMemo(() => booking.booking_status === "CHANGE OF CONTRACT PERIOD/DURATION" ? undefined : new Date(site.date_from ?? booking.start), [booking.booking_status, booking.start, site.date_from])
 
     const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -86,18 +87,34 @@ function CreateBooking({ site }: { site: SiteAvailability }) {
         const bookings = site.bookings.map(sb => ({ ...sb, is_prime: site.is_prime }))
         const previousBooking = getLatestBooking(bookings);
         let AEs = booking.account_executive;
+        let monthly_rate = booking.monthly_rate;
+        let booking_status = booking.booking_status;
 
         if (previousBooking) {
             AEs = salesUnits.filter(sales => previousBooking.account_executive.split(",").some(ae => ae.trim() === sales.label));
+            monthly_rate = ["PRE-TERMINATION", "CHANGE OF CONTRACT PERIOD/DURATION", "CONTRACT EXTENSION"].includes(booking.booking_status) ? String(previousBooking.monthly_rate) : booking.monthly_rate;
 
+            const fromOld = format(new Date(previousBooking.date_from), "yyyy-MM-dd");
+            const fromNew = format(new Date(booking.start), "yyyy-MM-dd");
+            const toOld = format(new Date(previousBooking.date_to), "yyyy-MM-dd");
+            const toNew = format(subDays(new Date(booking.end), 1), "yyyy-MM-dd");
+
+            if (toOld !== toNew && fromOld === fromNew) {
+                booking_status = "CONTRACT EXTENSION"
+            }
         }
+        const newBooking = {
+            ...booking,
+            booking_status: booking_status,
+            monthly_rate: monthly_rate,
+            account_executive: ["PRE-TERMINATION", "CHANGE OF CONTRACT PERIOD/DURATION", "CONTRACT EXTENSION"].includes(booking.booking_status) ? AEs : booking.account_executive,
+            site_rental: String(site.site_rental ?? 0),
+            old_client: site.product ? `${site.client}(${site.product})` : site.client,
+        }
+        // console.log(newBooking);
+        // return
         createBooking(
-            {
-                ...booking,
-                account_executive: booking.booking_status === "PRE-TERMINATION" ? AEs : booking.account_executive,
-                site_rental: String(site.site_rental ?? 0),
-                old_client: site.product ? `${site.client}(${site.product})` : site.client,
-            },
+            newBooking,
             {
                 onSuccess: async (data, variables) => {
                     if (data?.acknowledged) {
@@ -114,10 +131,12 @@ function CreateBooking({ site }: { site: SiteAvailability }) {
                             body = `Site ${site.site_code}'s booking has been renewed.`
                         } else if (variables.booking_status === "PRE-TERMINATION") {
                             body = `Site ${site.site_code} has been pre-terminated.`;
+                        } else if (variables.booking_status.includes("CONTRACT")) {
+                            body = `Site ${site.site_code} has adjustments to its contract details.`;
                         }
 
                         if (import.meta.env.MODE === "development") {
-                            body = `IT TESTING: ${body}`;
+                            body = `IT TESTING (IGNORE): ${body}`;
                         }
 
                         const response = await notifyBooking(body, data.id!);
@@ -322,7 +341,7 @@ function CreateBooking({ site }: { site: SiteAvailability }) {
                                     <DatePicker
                                         disabled={send}
                                         date={booking.start}
-                                        min={new Date(site.date_from ?? booking.start)}
+                                        min={minStart}
                                         onDateChange={(value) => {
                                             if (!value) return;
                                             setBooking((prev) => ({

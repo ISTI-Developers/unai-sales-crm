@@ -173,14 +173,12 @@ export const useCreateBooking = (site_code: string) => {
 export const useUpdateBooking = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (booking: Omit<Booking, "date_from" | "date_to"> & { date_from: Date, date_to: Date }) => {
+    mutationFn: async (booking: Omit<Booking, "date_from" | "date_to">) => {
       const data = {
         booking_id: booking.ID,
         action: "update",
         monthly_rate: booking.monthly_rate,
-        booking_status: booking.booking_status,
-        date_from: format(booking.date_from, "yyyy-MM-dd"),
-        date_to: format(booking.date_to, "yyyy-MM-dd"),
+        account_executive: booking.account_executive,
         remarks: booking.remarks,
         modified_at: format(new Date(), "yyyy-MM-dd HH:mm:ss"),
       };

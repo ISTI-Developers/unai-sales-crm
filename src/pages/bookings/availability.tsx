@@ -13,8 +13,7 @@ const SiteAvailability = () => {
     const { data: bookings, isLoading } = useBookings();
     const { data: adjustments } = useOverridenSiteEndDates();
     const { data: rentals } = useSiteRentals();
-    const { access: edit } = useAccess("booking.update");
-    console.log(rentals);
+    const { access: edit } = useAccess("booking.update");          
 
     const availableSites: SiteAvailabilityType[] = useMemo(() => {
         if (!sites || !bookings || !adjustments || isLoading || !rentals) return [];
