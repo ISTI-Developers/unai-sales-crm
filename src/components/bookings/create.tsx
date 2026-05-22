@@ -89,22 +89,24 @@ function CreateBooking({ site }: { site: SiteAvailability }) {
         let AEs = booking.account_executive;
         let monthly_rate = booking.monthly_rate;
         let booking_status = booking.booking_status;
+        let client = booking.client;
 
         if (previousBooking) {
             AEs = salesUnits.filter(sales => previousBooking.account_executive.split(",").some(ae => ae.trim() === sales.label));
             monthly_rate = ["PRE-TERMINATION", "CHANGE OF CONTRACT PERIOD/DURATION", "CONTRACT EXTENSION"].includes(booking.booking_status) ? String(previousBooking.monthly_rate) : booking.monthly_rate;
-
+            client = ["PRE-TERMINATION", "CHANGE OF CONTRACT PERIOD/DURATION", "CONTRACT EXTENSION"].includes(booking.booking_status) ? previousBooking.client : booking.client
             const fromOld = format(new Date(previousBooking.date_from), "yyyy-MM-dd");
             const fromNew = format(new Date(booking.start), "yyyy-MM-dd");
             const toOld = format(new Date(previousBooking.date_to), "yyyy-MM-dd");
             const toNew = format(subDays(new Date(booking.end), 1), "yyyy-MM-dd");
 
-            if (toOld !== toNew && fromOld === fromNew) {
+            if (toOld !== toNew && fromOld === fromNew && booking.booking_status === "CHANGE OF CONTRACT PERIOD/DURATION") {
                 booking_status = "CONTRACT EXTENSION"
             }
         }
         const newBooking = {
             ...booking,
+            client: client,
             booking_status: booking_status,
             monthly_rate: monthly_rate,
             account_executive: ["PRE-TERMINATION", "CHANGE OF CONTRACT PERIOD/DURATION", "CONTRACT EXTENSION"].includes(booking.booking_status) ? AEs : booking.account_executive,

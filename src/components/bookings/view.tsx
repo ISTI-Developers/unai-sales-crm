@@ -25,6 +25,12 @@ function ViewBooking({ site }: { site: SiteAvailability }) {
     const [show, onShow] = useState(true);
     const headers = ["status", "client", "AE", "SRP", "term details", "action"];
     const siteBookings = site.bookings.map(sb => ({ ...sb, is_prime: site.is_prime }))
+    const OVERRIDE_TYPES = new Set([
+        "PRE-TERMINATION",
+        "RELOCATION",
+        "CONTRACT EXTENSION",
+        "CHANGE OF CONTRACT PERIOD/DURATION",
+    ]);
 
     const bookings = useMemo(() => {
         return siteBookings
@@ -45,6 +51,40 @@ function ViewBooking({ site }: { site: SiteAvailability }) {
                 return b.ID - a.ID;
             });
     }, [siteBookings, show]);
+
+    const getBookingKey = (booking: Booking) =>
+        `${booking.site_code}|${booking.client}`;
+
+    const overriddenKeys = new Set<string>();
+
+    for (const booking of bookings) {
+        if (!OVERRIDE_TYPES.has(booking.booking_status)) continue;
+
+        const previousExists = bookings.some(prev =>
+            prev.ID < booking.ID &&
+            prev.site_code === booking.site_code &&
+            prev.client === booking.client
+        );
+
+        if (previousExists) {
+            overriddenKeys.add(getBookingKey(booking));
+        }
+    }
+
+    const mapped = bookings.map(current => {
+        const currentKey = getBookingKey(current);
+
+        const hasNewerOverride = bookings.some(next =>
+            next.ID > current.ID &&
+            OVERRIDE_TYPES.has(next.booking_status) &&
+            getBookingKey(next) === currentKey
+        );
+
+        return {
+            ...current,
+            is_overriden: hasNewerOverride,
+        };
+    });
     return (
         <Dialog open={openBooking} onOpenChange={setOpenBooking} modal={false}>
             <Tooltip>
@@ -70,7 +110,7 @@ function ViewBooking({ site }: { site: SiteAvailability }) {
                 </DialogHeader>
                 <main>
                     {site.bookings.length === 0 ? <>No bookings found for this site.</> :
-                        bookings &&
+                        mapped &&
                         <Table>
                             <TableCaption>End of list</TableCaption>
                             <TableHeader>
@@ -91,9 +131,9 @@ function ViewBooking({ site }: { site: SiteAvailability }) {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {bookings.map((item) => {
+                                {mapped.map((item) => {
                                     return (
-                                        <BookingItem item={item} key={`${item.site_code}-${item.ID}`} show={show}  />
+                                        <BookingItem item={item} key={`${item.site_code}-${item.ID}`} show={show} />
                                     );
                                 })}
                             </TableBody>
@@ -129,6 +169,9 @@ const BookingItem = ({ item, show }: { item: Booking; show: boolean; }) => {
         const isFuture =
             start > now;
 
+        if (item.is_overriden) {
+            return "STOPPED";
+        }
         // invalid statuses first
         if (item.booking_status === "PRE-TERMINATION") {
             return "PRE-TERMINATED";
@@ -206,7 +249,7 @@ const BookingItem = ({ item, show }: { item: Booking; show: boolean; }) => {
             <TableCell className="font-semibold whitespace-nowrap">
                 <div>
                     <p>{status}</p>
-                    {/* <p className='font-normal italic text-[0.65rem]'>{status !== item.booking_status && item.booking_status}</p> */}
+                    <p className='font-normal italic text-[0.5rem]'>{status !== item.booking_status && item.booking_status}</p>
                 </div>
             </TableCell>
             <TableCell className='text-[0.65rem]'>{item.client}</TableCell>
