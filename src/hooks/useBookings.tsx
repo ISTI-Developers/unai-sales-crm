@@ -22,6 +22,7 @@ export interface Booking {
   modified_at: string;
   remarks: string;
   is_prime: number;
+  is_overriden?: boolean;
 }
 export interface PreSiteBooking {
   ID: number;

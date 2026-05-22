@@ -482,7 +482,10 @@ export const getLatestBooking = (bookings: Booking[]) => {
 
     const existing = latestPerStartDate.get(key);
 
-    if (!existing || booking.ID > existing.ID) {
+    if (
+      (!existing || booking.ID > existing.ID) &&
+      booking.booking_status !== "CANCELLED"
+    ) {
       latestPerStartDate.set(key, booking);
     }
   }
@@ -495,19 +498,22 @@ export const getLatestBooking = (bookings: Booking[]) => {
   let best: Booking | undefined;
   let bestScore = -1;
   let bestDistance = Infinity;
-  
+
   for (const booking of valid) {
     const windowPeriod = booking.is_prime ? 60 : 45;
     const from = new Date(booking.date_from);
     const to = new Date(booking.date_to);
-    
+
     const diff = differenceInCalendarDays(from, now);
 
+    // if (bookings.length > 0 && latestPerStartDate.size !== 0) {
+    //   console.log(valid, diff);
+    // }
     let score = 0;
     let distance = Infinity;
 
-    // QUEUEING within 30 days
     if (booking.booking_status === "QUEUEING" && diff >= 0 && diff <= 30) {
+      // QUEUEING within 30 days
       score = 100;
       distance = diff;
     }
@@ -532,7 +538,7 @@ export const getLatestBooking = (bookings: Booking[]) => {
       to >= now
     ) {
       score = 70;
-    } else if (booking.booking_status.includes("CHANGE")) {
+    } else if (booking.booking_status.includes("CONTRACT")) {
       score = 75;
       distance = diff;
     }
