@@ -4,7 +4,7 @@ import { Badge } from '../ui/badge';
 import { cn } from '@/lib/utils';
 function Cell({ row }: CellContext<SiteAvailability, unknown>) {
     const item = row.original;
-    const remaining = row.getValue("remaining_days") as number;
+    const remaining = item.remaining_days ?? 0;
     return (
         <div>
             <div className='flex items-center gap-1 pb-1'>

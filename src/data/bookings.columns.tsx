@@ -10,6 +10,7 @@ import { ColumnDef } from "@tanstack/react-table";
 
 export const columns: ColumnDef<SiteAvailability>[] = [
     {
+        accessorFn: (row) => `${row.address} | ${row.structure_code} | ${row.board_facing}`,
         accessorKey: "structure",
         cell: Cell,
     },
