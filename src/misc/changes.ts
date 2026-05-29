@@ -1,4 +1,5 @@
 export const changes = {
+  "2.7.6": ["Allow searching of address and board facing"],
   "2.7.5": ["Fixed booking issues."],
   "2.7.4": ["Fixed role issues."],
   "2.7.3": ["REVAMPED BOOKING :)"],
