@@ -88,6 +88,7 @@ export interface Client {
   status_name: string;
   mediums: ClientMedium[];
   created_at: string;
+  last_submitted_on: number;
 }
 
 export type Account = {
