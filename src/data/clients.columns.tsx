@@ -156,6 +156,7 @@ export const columns: ColumnDef<ClientTable>[] = [
     },
     cell: ({ row }) => {
       const name: string = row.getValue("name");
+      const last_submitted_on = row.original.last_submitted_on;
 
       return (
         <div className={cn("w-full max-w-[300px] pl-4 flex gap-4 items-center ")} style={{ paddingLeft: `${row.depth * 5}rem` }}>
@@ -164,11 +165,19 @@ export const columns: ColumnDef<ClientTable>[] = [
               {row.getIsExpanded() ? <ListChevronsDownUp /> : <ListChevronsUpDown />}
             </Button>
           )}
-          <div className={cn("text-xs uppercase", "flex items-center gap-1")}>
-            <span>{name}</span>
-            {row.original.children &&
-              <p className="text-[0.65rem] bg-emerald-400 w-4 h-4 flex items-center justify-center rounded text-white font-semibold">{row.original.children.length}</p>
-            }
+          <div className="grid">
+            <div className={cn("text-sm uppercase", "flex items-center gap-1")}>
+              <span className="font-semibold">{name}</span>
+              {row.original.children &&
+                <p className="text-[0.65rem] bg-emerald-400 w-4 h-4 flex items-center justify-center rounded text-white font-semibold">{row.original.children.length}</p>
+              }
+            </div>
+            <p className="text-[0.65rem] leading-tight italic text-neutral-400">
+              {last_submitted_on && last_submitted_on > 0 ?
+                `${last_submitted_on} days since last activity` :
+                `No activities found`
+              }
+            </p>
           </div>
         </div>
       );
