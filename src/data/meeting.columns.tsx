@@ -10,10 +10,12 @@ import { Pen, Plus, Trash2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupTextarea } from "@/components/ui/input-group";
+import { useAccess } from "@/hooks/useClients";
 
 const WeekCell = (cell: CellContext<WeekRow, unknown>) => {
     const value = cell.getValue() as RawMinutes | null;
     const { mutate: deleteActivity } = useDeleteMinute()
+    const { access } = useAccess("meetings.add")
     const [open, setOpen] = useState(false);
     const [edit, setEdit] = useState(false);
 
@@ -36,71 +38,74 @@ const WeekCell = (cell: CellContext<WeekRow, unknown>) => {
     return <div>
         {open ? <ActivityForm week={cell.column.id} edit={edit} setEdit={setEdit} setOpen={setOpen} data={value} /> : <>
             <div className={cn("relative group p-2 flex items-start", value ? "justify-start" : "justify-center")}>
-                <p className={cn("block indent-0 transition-all", !value ? "group-hover:hidden" : "whitespace-break-spaces text-xs")}>
+                <p className={cn("block indent-0 transition-all", !value && access ? "group-hover:hidden" : "whitespace-break-spaces text-xs")}>
                     {value ? value.activity : "---"}
                 </p>
-                {!value ? <Button variant={null} onClick={() => setOpen(true)} className="hidden group-hover:flex w-full text-[0.6rem] p-1 px-2 h-5 gap-1">
-                    <Plus size={12} /> Add Minutes
-                </Button> :
-                    <div className="absolute w-full flex items-center justify-center">
-                        <div className="ml-auto flex gap-2 pr-2 h-full">
-                            <div className="flex gap-2 opacity-0 group-hover:opacity-100 overflow-hidden w-full transition-all">
-                                <Tooltip delayDuration={100}>
-                                    <TooltipTrigger asChild>
-                                        <Button
-                                            variant={null}
-                                            onClick={() => {
-                                                setEdit(true);
-                                                setOpen(true);
-                                            }}
-                                            className="p-1 h-6 w-6 rounded-full border border-amber-400 bg-gray-100 hover:bg-amber-400 hover:text-white text-amber-400 transition-all z-[2]"
-                                        >
-                                            <Pen size={16} />
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent className="z-[3]">Edit</TooltipContent>
-                                </Tooltip>
-                                <Popover>
-                                    <Tooltip delayDuration={100}>
-                                        <TooltipTrigger asChild>
-                                            <PopoverTrigger asChild>
+                {access &&
+                    <>
+                        {!value ? <Button variant={null} onClick={() => setOpen(true)} className="hidden group-hover:flex w-full text-[0.6rem] p-1 px-2 h-5 gap-1">
+                            <Plus size={12} /> Add Minutes
+                        </Button> :
+                            <div className="absolute w-full flex items-center justify-center">
+                                <div className="ml-auto flex gap-2 pr-2 h-full">
+                                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 overflow-hidden w-full transition-all">
+                                        <Tooltip delayDuration={100}>
+                                            <TooltipTrigger asChild>
                                                 <Button
                                                     variant={null}
-                                                    className="p-1 h-6 w-6 rounded-full border border-red-400 bg-gray-100 hover:bg-red-400 hover:text-white text-red-400 transition-all z-[2]"
-                                                >
-                                                    <Trash2 size={18} />
-                                                </Button>
-                                            </PopoverTrigger>
-                                        </TooltipTrigger>
-                                        <TooltipContent className="z-[3]">
-                                            Delete
-                                        </TooltipContent>
-                                    </Tooltip>
-                                    <PopoverContent className="max-w-60 mr-4">
-                                        <div className="text-xs flex flex-col gap-2">
-                                            <p>Are you sure you want to remove this report?</p>
-                                            <div className="flex gap-2 justify-end items-center">
-                                                <Button type="button" variant="ghost" size="sm">
-                                                    Cancel
-                                                </Button>
-                                                <Button
-                                                    type="button"
-                                                    variant="destructive"
-                                                    size="sm"
-                                                    className="w-fit"
                                                     onClick={() => {
-                                                        onDelete(value.ID)
+                                                        setEdit(true);
+                                                        setOpen(true);
                                                     }}
+                                                    className="p-1 h-6 w-6 rounded-full border border-amber-400 bg-gray-100 hover:bg-amber-400 hover:text-white text-amber-400 transition-all z-[2]"
                                                 >
-                                                    Proceed
+                                                    <Pen size={16} />
                                                 </Button>
-                                            </div>
-                                        </div>
-                                    </PopoverContent>
-                                </Popover>
-                            </div>
-                        </div>
-                    </div>}
+                                            </TooltipTrigger>
+                                            <TooltipContent className="z-[3]">Edit</TooltipContent>
+                                        </Tooltip>
+                                        <Popover>
+                                            <Tooltip delayDuration={100}>
+                                                <TooltipTrigger asChild>
+                                                    <PopoverTrigger asChild>
+                                                        <Button
+                                                            variant={null}
+                                                            className="p-1 h-6 w-6 rounded-full border border-red-400 bg-gray-100 hover:bg-red-400 hover:text-white text-red-400 transition-all z-[2]"
+                                                        >
+                                                            <Trash2 size={18} />
+                                                        </Button>
+                                                    </PopoverTrigger>
+                                                </TooltipTrigger>
+                                                <TooltipContent className="z-[3]">
+                                                    Delete
+                                                </TooltipContent>
+                                            </Tooltip>
+                                            <PopoverContent className="max-w-60 mr-4">
+                                                <div className="text-xs flex flex-col gap-2">
+                                                    <p>Are you sure you want to remove this report?</p>
+                                                    <div className="flex gap-2 justify-end items-center">
+                                                        <Button type="button" variant="ghost" size="sm">
+                                                            Cancel
+                                                        </Button>
+                                                        <Button
+                                                            type="button"
+                                                            variant="destructive"
+                                                            size="sm"
+                                                            className="w-fit"
+                                                            onClick={() => {
+                                                                onDelete(value.ID)
+                                                            }}
+                                                        >
+                                                            Proceed
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </PopoverContent>
+                                        </Popover>
+                                    </div>
+                                </div>
+                            </div>}
+                    </>}
             </div>
         </>}
     </div>
