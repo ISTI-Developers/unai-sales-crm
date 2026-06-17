@@ -68,7 +68,7 @@ function OnlineBadge() {
           <p className={status[2]}>{status[3]}</p>
         </div>
       </TooltipTrigger>
-      <TooltipContent side="bottom">
+      {/* <TooltipContent side="bottom">
         <div>
           {data?.map((user) => {
             return (
@@ -76,7 +76,7 @@ function OnlineBadge() {
             );
           })}
         </div>
-      </TooltipContent>
+      </TooltipContent> */}
     </Tooltip>
   );
 }
