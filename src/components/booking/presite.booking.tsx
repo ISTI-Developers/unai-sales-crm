@@ -34,7 +34,7 @@ const PresiteBookings = () => {
   const { data, isLoading, isError, error } = usePreBookings();
   const { data: bookings } = useBookings();
   const { mutate } = useCancelBooking();
-  const { access: edit } = useAccess("booking.viewAll");
+  const { access: edit } = useAccess("booking.update");
   const { access: remove } = useAccess("bookings.delete");
   
   const rows = useMemo(() => {

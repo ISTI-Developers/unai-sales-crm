@@ -12,6 +12,7 @@ import { Label } from "../ui/label";
 import { DatePicker } from "../ui/datepicker";
 import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
+import { useAccess } from "@/hooks/useClients";
 
 function DateCell({ row }: CellContext<SiteAvailability, unknown>) {
     const site = row.original;
@@ -21,7 +22,7 @@ function DateCell({ row }: CellContext<SiteAvailability, unknown>) {
     const { data, isLoading } = useOverridenSiteEndDates();
     const { mutate: overrideDate } = useOverrideContractEndDate();
     const [open, setOpen] = useState(false);
-
+    const { access: update } = useAccess("booking.update");
     const onContinue = () => {
         overrideDate(
             {
@@ -55,7 +56,7 @@ function DateCell({ row }: CellContext<SiteAvailability, unknown>) {
         date: new Date(adjustedDate ?? (originalEndDate ?? new Date())),
         reason: site.adjustment_reason,
     })
-    const canOverride = (site.remaining_days ?? 0) > 0 && originalEndDate && !['CANCELLED', 'PRE-TERMINATION'].includes(site.booking_status ?? "");
+    const canOverride = (site.remaining_days ?? 0) > 0 && originalEndDate && !['CANCELLED', 'PRE-TERMINATION'].includes(site.booking_status ?? "") && update;
 
     return (
         <div className="relative group text-[.6rem] text-start px-2 whitespace-nowrap">

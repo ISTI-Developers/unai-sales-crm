@@ -41,6 +41,7 @@ import { useAuth } from "@/providers/auth.provider";
 import { catchError } from "@/providers/api";
 import { getFridayFromISOWeek } from "@/lib/format";
 import { Label } from "@/components/ui/label";
+import { useAccess } from "@/hooks/useClients";
 
 interface Cell {
   row: Row<ReportTable>;
@@ -208,6 +209,7 @@ const WeekForm = ({ column, row }: Cell) => {
   const [edit, setEdit] = useState(false);
   const client = row.original;
   const reportData = client[column.id] as string | WeekData;
+  const { access: add } = useAccess("reports.add")
 
   const isOpen = useMemo(() => {
     const weeks = generateWeeks();
@@ -289,7 +291,7 @@ const WeekForm = ({ column, row }: Cell) => {
           <p
             className={cn(
               "block indent-0 transition-all",
-              report.length === 0 && isOpen
+              report.length === 0 && isOpen && add 
                 ? "group-hover:hidden"
                 : "whitespace-break-spaces text-xs",
               report.length !== 0 ? "group-hover:pl-12" : ""
@@ -297,122 +299,125 @@ const WeekForm = ({ column, row }: Cell) => {
           >
             {report.length > 0 ? report : "---"}
           </p>
-          {report.length === 0
-            ? isOpen && (
-              <Button
-                variant={null}
-                disabled={!isOpen}
-                onClick={() => {
-                  setOpen(true);
-                }}
-                className="hidden group-hover:flex w-full text-[0.6rem] p-1 px-2 h-5 gap-1"
-              >
-                <Plus size={12} /> Create Report
-              </Button>
-            )
-            : isOpen && (
-              <div className="absolute w-full flex items-center justify-center">
-                <Tooltip delayDuration={100}>
-                  <TooltipTrigger className="opacity-0 group-hover:opacity-80 duration-200 transition-all">
-                    <Avatar className="w-10 h-6">
-                      <AvatarFallback className="border border-slate-300 uppercase">
-                        {initial}
-                      </AvatarFallback>
-                    </Avatar>
-                  </TooltipTrigger>
-                  <TooltipContent className="capitalize">
-                    {name}
-                  </TooltipContent>
-                </Tooltip>
-                <div className="ml-auto flex gap-2 pr-2 h-full">
-                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 overflow-hidden w-full transition-all">
-                    {typeof reportData !== "string" && reportData.file && (
-                      <Tooltip delayDuration={100}>
-                        <TooltipTrigger asChild>
-                          <Button
-                            asChild
-                            variant={null}
-                            disabled={!isOpen}
-                            className="p-1 h-6 w-6 rounded-full border border-gray-400 hover:bg-gray-400 hover:text-white text-gray-400 transition-all z-[2]"
-                          >
-                            <a
-                              href={`${import.meta.env.VITE_SERVER}${reportData.file
-                                }`}
-                              title="Activity Attachment"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-gray-600 bg-gray-100 underline ml-2"
-                            >
-                              <Paperclip size={16} />
-                            </a>
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent className="z-[3]">
-                          View Attachment
-                        </TooltipContent>
-                      </Tooltip>
-                    )}
+          {add && isOpen &&
+            <>
+              {report.length === 0
+                ? (
+                  <Button
+                    variant={null}
+                    disabled={!isOpen}
+                    onClick={() => {
+                      setOpen(true);
+                    }}
+                    className="hidden group-hover:flex w-full text-[0.6rem] p-1 px-2 h-5 gap-1"
+                  >
+                    <Plus size={12} /> Create Report
+                  </Button>
+                )
+                : (
+                  <div className="absolute w-full flex items-center justify-center">
                     <Tooltip delayDuration={100}>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant={null}
-                          disabled={!isOpen}
-                          onClick={() => {
-                            if (!isOpen) return;
-                            setEdit(true);
-                            setOpen(true);
-                          }}
-                          className="p-1 h-6 w-6 rounded-full border border-amber-400 bg-gray-100 hover:bg-amber-400 hover:text-white text-amber-400 transition-all z-[2]"
-                        >
-                          <Pen size={16} />
-                        </Button>
+                      <TooltipTrigger className="opacity-0 group-hover:opacity-80 duration-200 transition-all">
+                        <Avatar className="w-10 h-6">
+                          <AvatarFallback className="border border-slate-300 uppercase">
+                            {initial}
+                          </AvatarFallback>
+                        </Avatar>
                       </TooltipTrigger>
-                      <TooltipContent className="z-[3]">Edit</TooltipContent>
+                      <TooltipContent className="capitalize">
+                        {name}
+                      </TooltipContent>
                     </Tooltip>
-                    <Popover>
-                      <Tooltip delayDuration={100}>
-                        <TooltipTrigger asChild>
-                          <PopoverTrigger asChild>
+                    <div className="ml-auto flex gap-2 pr-2 h-full">
+                      <div className="flex gap-2 opacity-0 group-hover:opacity-100 overflow-hidden w-full transition-all">
+                        {typeof reportData !== "string" && reportData.file && (
+                          <Tooltip delayDuration={100}>
+                            <TooltipTrigger asChild>
+                              <Button
+                                asChild
+                                variant={null}
+                                disabled={!isOpen}
+                                className="p-1 h-6 w-6 rounded-full border border-gray-400 hover:bg-gray-400 hover:text-white text-gray-400 transition-all z-[2]"
+                              >
+                                <a
+                                  href={`${import.meta.env.VITE_SERVER}${reportData.file
+                                    }`}
+                                  title="Activity Attachment"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-gray-600 bg-gray-100 underline ml-2"
+                                >
+                                  <Paperclip size={16} />
+                                </a>
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent className="z-[3]">
+                              View Attachment
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                        <Tooltip delayDuration={100}>
+                          <TooltipTrigger asChild>
                             <Button
                               variant={null}
-                              className="p-1 h-6 w-6 rounded-full border border-red-400 bg-gray-100 hover:bg-red-400 hover:text-white text-red-400 transition-all z-[2]"
-                            >
-                              <Trash2 size={18} />
-                            </Button>
-                          </PopoverTrigger>
-                        </TooltipTrigger>
-                        <TooltipContent className="z-[3]">
-                          Delete
-                        </TooltipContent>
-                      </Tooltip>
-                      <PopoverContent className="max-w-60 mr-4">
-                        <div className="text-xs flex flex-col gap-2">
-                          <p>Are you sure you want to remove this report?</p>
-                          <div className="flex gap-2 justify-end items-center">
-                            <Button type="button" variant="ghost" size="sm">
-                              Cancel
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="destructive"
-                              size="sm"
-                              className="w-fit"
+                              disabled={!isOpen}
                               onClick={() => {
-                                if (typeof reportData === "object") {
-                                  onDelete(reportData.reportID);
-                                }
+                                if (!isOpen) return;
+                                setEdit(true);
+                                setOpen(true);
                               }}
+                              className="p-1 h-6 w-6 rounded-full border border-amber-400 bg-gray-100 hover:bg-amber-400 hover:text-white text-amber-400 transition-all z-[2]"
                             >
-                              Proceed
+                              <Pen size={16} />
                             </Button>
-                          </div>
-                        </div>
-                      </PopoverContent>
-                    </Popover>
+                          </TooltipTrigger>
+                          <TooltipContent className="z-[3]">Edit</TooltipContent>
+                        </Tooltip>
+                        <Popover>
+                          <Tooltip delayDuration={100}>
+                            <TooltipTrigger asChild>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant={null}
+                                  className="p-1 h-6 w-6 rounded-full border border-red-400 bg-gray-100 hover:bg-red-400 hover:text-white text-red-400 transition-all z-[2]"
+                                >
+                                  <Trash2 size={18} />
+                                </Button>
+                              </PopoverTrigger>
+                            </TooltipTrigger>
+                            <TooltipContent className="z-[3]">
+                              Delete
+                            </TooltipContent>
+                          </Tooltip>
+                          <PopoverContent className="max-w-60 mr-4">
+                            <div className="text-xs flex flex-col gap-2">
+                              <p>Are you sure you want to remove this report?</p>
+                              <div className="flex gap-2 justify-end items-center">
+                                <Button type="button" variant="ghost" size="sm">
+                                  Cancel
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="destructive"
+                                  size="sm"
+                                  className="w-fit"
+                                  onClick={() => {
+                                    if (typeof reportData === "object") {
+                                      onDelete(reportData.reportID);
+                                    }
+                                  }}
+                                >
+                                  Proceed
+                                </Button>
+                              </div>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            )}
+                )}
+            </>}
         </div>
       )}
     </div>
