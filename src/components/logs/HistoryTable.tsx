@@ -1,42 +1,56 @@
-import { cn } from "@/lib/utils";
 import { HistoryLog } from "@/providers/log.provider";
+import { format } from "date-fns";
+import { useMemo } from "react";
+import { ScrollArea } from "../ui/scroll-area";
 
 const HistoryTable = ({
   history,
-  className = "",
 }: {
   history: HistoryLog[] | null;
   full?: boolean;
   className?: string;
 }) => {
-  const list = history 
+  const list = useMemo(() => {
+    if (!history) return {};
 
-  return list ? (
-    <>
-      <div
-        className={cn(
-          "grid grid-cols-[1fr_3fr_1fr] gap-2 uppercase font-semibold text-xs",
-          className
-        )}
-      >
-        <p>Time</p>
-        <p>Action</p>
-        <p>Author</p>
-      </div>
-      <div className="flex flex-col gap-3 max-h-[300px] overflow-y-auto">
-        {list.length > 0 ? list.map((history) => {
-          return (
-            <div className="grid grid-cols-[1fr_3fr_1fr] gap-2 text-xs">
-              <p className="text-slate-400">
-                {new Date(history.date).toLocaleString()}
-              </p>
-              <p>{history.action}</p>
-              <p className="capitalize">{history.author}</p>
+
+    const grouped = history.reduce((acc, item) => {
+      const dateKey = format(new Date(item.date), "PP");
+
+      if (!acc[dateKey]) {
+        acc[dateKey] = [];
+      }
+
+      acc[dateKey].push(item);
+
+      return acc;
+    }, {} as Record<string, typeof history>);
+    return grouped
+  }, [history]);
+
+  return history ? (
+    <ScrollArea>
+      <div className="flex flex-col gap-3 max-h-[400px]">
+        {Object.entries(list).map(([date, items]) => {
+          return <div key={date}>
+            <p className="uppercase font-semibold text-sm">{date}</p>
+            <div className="p-2 flex flex-col gap-4">
+              {items.map((history) => {
+                return (
+                  <div key={history.ID} className="flex items-center gap-4">
+                    <p className="text-zinc-400 text-xs whitespace-nowrap">{format(new Date(history.date), "p")}</p>
+                    <div>
+                      <p className="font-semibold text-sm">{history.author}</p>
+                      <p className="text-sm ">{history.action}</p>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          );
-        }) : <div className="w-full text-center text-sm pt-2 text-slate-400">--- No history found ---</div>}
+          </div>
+        })}
       </div>
-    </>
+    </ScrollArea>
   ) : (
     <p className="text-sm pt-2 text-slate-400 text-center">
       ----- No history found ----

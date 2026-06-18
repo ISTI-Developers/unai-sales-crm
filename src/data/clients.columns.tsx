@@ -1,14 +1,10 @@
 import ClientAccounts from "@/components/clients/accounts.clients";
 import DeleteClient from "@/components/clients/delete.client";
+import StatusSelect from "@/components/status-select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
@@ -17,25 +13,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Tooltip, TooltipTrigger } from "@/components/ui/tooltip";
 import { TooltipContentWithArrow } from "@/components/ui/tooltip-arrow";
-import { useToast } from "@/hooks/use-toast";
-import { useClientOptionList } from "@/hooks/useClientOptions";
-import { useAccess, useUpdateClientStatus } from "@/hooks/useClients";
+import { useAccess } from "@/hooks/useClients";
 import { useCompanies } from "@/hooks/useCompanies";
 import { ClientMedium, ClientTable } from "@/interfaces/client.interface";
 import { cn, colors } from "@/lib/utils";
 import { useAuth } from "@/providers/auth.provider";
 import { CellContext, ColumnDef, Row } from "@tanstack/react-table";
-import { ListChevronsDownUp, ListChevronsUpDown, MoreHorizontal, PenBox } from "lucide-react";
+import { ListChevronsDownUp, ListChevronsUpDown, MoreHorizontal } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -320,7 +306,7 @@ export const columns: ColumnDef<ClientTable>[] = [
     accessorKey: "status_name",
     header: "Status",
     cell: ({ row }) => {
-      return <StatusSelect row={row} />;
+      return <StatusSelect data={row.original} />;
     },
   },
   {
@@ -331,182 +317,7 @@ export const columns: ColumnDef<ClientTable>[] = [
   },
 ];
 
-const StatusSelect = ({ row }: { row: Row<ClientTable> }) => {
-  const { mutate: updateClientStatus, isPending } = useUpdateClientStatus();
-  const { client_id, name: client, status_name } = row.original;
-  const { access: edit } = useAccess("clients.editStatus");
 
-  const { toast } = useToast();
-
-  const [isEditable, setEditable] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
-
-  const name = (status_name as string).toLowerCase();
-  const { options } = useClientOptionList("status");
-
-  const statusMap: {
-    [key: string]:
-    | "default"
-    | "secondary"
-    | "destructive"
-    | "outline"
-    | null
-    | undefined;
-  } = {
-    active: "outline",
-    hot: "outline",
-    pool: "destructive",
-    "on/off": "secondary",
-    "for elections": "secondary",
-  };
-
-  const statusClasses: { [key: string]: string } = {
-    active: "bg-green-100 text-green-700 border-green-300",
-    hot: "bg-yellow-100 text-yellow-500 border-yellow-400",
-    "on/off": "bg-sky-100 text-sky-600 border-sky-400",
-    "for elections": "bg-sky-100 text-sky-600 border-sky-400",
-  };
-
-  const onSubmit = async () => {
-    if (!selectedStatus) return;
-
-    const status = options.find(
-      (option) => option.label.toLowerCase() === selectedStatus
-    );
-    if (status) {
-      updateClientStatus(
-        { status: status.id, ID: String(client_id) },
-        {
-          onSuccess: (data) => {
-            if (data.acknowledged) {
-              toast({
-                description: "Status has been updated.",
-                variant: "success",
-              });
-              setEditable(false);
-              setSelectedStatus(null);
-            }
-          },
-          onError: (error) =>
-            toast({
-              description: `${typeof error === "object" && error !== null && "error" in error
-                ? (error as { error?: string }).error
-                : "Please contact the IT developer."
-                }`,
-              variant: "destructive",
-            }),
-        }
-      );
-    }
-  };
-  return (
-    options && (
-      <>
-        <Dialog
-          onOpenChange={(open) => {
-            if (!open) {
-              setEditable(false);
-              setSelectedStatus(null);
-            }
-          }}
-          open={isEditable}
-        >
-          <DialogTrigger asChild>
-            <Button
-              onClick={(e) =>
-                edit ? setEditable(true) : e.preventDefault()
-              }
-              variant="ghost"
-              size={null}
-              tabIndex={-1}
-              className={cn(
-                "relative group select-none cursor-pointer flex gap-2 justify-start w-fit outline-none focus:outline-none focus-visible:ring-0",
-                !edit ? "pointer-events-none" : ""
-              )}
-            >
-              <Badge
-                variant={statusMap[name]}
-                className={cn(statusClasses[name], "uppercase")}
-              >
-                {status_name as string}
-              </Badge>
-              {edit && (
-                <PenBox className="absolute top-1/2 -translate-y-1/2 right-0 opacity-0 group-hover:opacity-100" />
-              )}
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Manage Status</DialogTitle>
-              <DialogDescription>
-                <p>
-                  Update the status of{" "}
-                  <span className="uppercase font-bold">{client as string}</span> by
-                  selecting from the list below.
-                </p>
-              </DialogDescription>
-            </DialogHeader>
-            <form className="flex items-center gap-2">
-              <Label htmlFor="status" className="whitespace-nowrap">
-                New Status
-              </Label>
-              <Select
-                value={selectedStatus ?? name}
-                onValueChange={(value) => {
-                  setSelectedStatus(value);
-                }}
-              >
-                <SelectTrigger className="max-w-[200px]">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  {options.map((option) => {
-                    const label = option.label.toLowerCase();
-                    return (
-                      <SelectItem key={`status_${option.id}`} value={label}>
-                        <Badge
-                          variant={statusMap[label]}
-                          className={cn(statusClasses[label], "uppercase")}
-                        >
-                          {label}
-                        </Badge>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-            </form>
-            <DialogFooter className="pt-6">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => {
-                  setEditable(false);
-                  setSelectedStatus(null);
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                disabled={
-                  selectedStatus === null ||
-                  selectedStatus === name ||
-                  isPending
-                }
-                onClick={onSubmit}
-                className="bg-main-100 hover:bg-main-400 text-white hover:text-white"
-              >
-                Save Changes
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </>
-    )
-  );
-};
 const DropdownLink = ({
   client,
   label,

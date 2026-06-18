@@ -16,7 +16,6 @@ const ClientTabs = ({ client, canEdit }: { client: ClientInformation, canEdit: b
     const { user } = useAuth();
     const [activeTab, setTab] = useState(params?.tab ?? "client");
     const { access: view } = useAccess("clients.viewContactInformation");
-    console.log(client)
 
     const isViewable = useMemo(() => {
         if (!user) return false;
@@ -36,7 +35,7 @@ const ClientTabs = ({ client, canEdit }: { client: ClientInformation, canEdit: b
             value: "client",
             content:
                 <Suspense fallback={<>Loading...</>}>
-                    <ClientTab basic={client} />
+                    <ClientTab client={client} />
                 </Suspense>
         },
         {
@@ -65,7 +64,7 @@ const ClientTabs = ({ client, canEdit }: { client: ClientInformation, canEdit: b
                 <ReportsTab clientID={client.client_id} canEdit={isViewable} />
             </Suspense>
         },
-        {           
+        {
             value: "history",
             content: <Suspense fallback={<>Loading...</>}>
                 <ClientHistory
