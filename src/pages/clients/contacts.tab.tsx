@@ -7,17 +7,17 @@ import { useMemo } from 'react';
 
 function ContactsTab({ client }: { client: ClientInformation }) {
     const { user } = useAuth();
-    const { access: view } = useAccess("clients.viewContactInformation");
     const { access: viewAll } = useAccess("clients.viewAll");
 
     const isViewable = useMemo(() => {
         if (!user) return false;
 
+        console.log(user, client.sales_unit_id)
         if (client.sales_unit_id === user.sales_unit?.sales_unit_id) {
-            return view;
+            return true;
         }
         return viewAll;
-    }, [client.sales_unit_id, user, view, viewAll])
+    }, [client.sales_unit_id, user, viewAll])
 
     if (!isViewable) {
         return <div className="flex shadow bg-white p-4 border rounded-xl gap-4 items-center justify-center">
