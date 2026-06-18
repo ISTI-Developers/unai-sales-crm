@@ -153,7 +153,7 @@ export const columns: ColumnDef<ClientTable>[] = [
           )}
           <div className="grid">
             <div className={cn("text-sm uppercase", "flex items-center gap-1")}>
-              <span className="font-semibold">{name}</span>
+              <Link to={`./${(name).replace(/ /g, "_").replace(/\//g, "-")}`} onClick={() => localStorage.setItem("client", String(row.original.client_id))} className="font-semibold hover:underline">{name}</Link>
               {row.original.children &&
                 <p className="text-[0.65rem] bg-emerald-400 w-4 h-4 flex items-center justify-center rounded text-white font-semibold">{row.original.children.length}</p>
               }

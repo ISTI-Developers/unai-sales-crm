@@ -261,9 +261,9 @@ const ReportsTab = ({ clientID }: ReportsTabProps) => {
                             </Avatar>
                             <div className="mr-auto grid leading-tight">
                                 <span className="font-semibold text-sm">{report.account_name}</span>
-                                <span className="text-sm text-zinc-500">{report.activity}</span>
+                                <span className="text-sm text-zinc-500 pr-4">{report.activity}</span>
                             </div>
-                            <p className="text-xs mb-auto">{format(report.date_modified, "PP")}</p>
+                            <p className="text-xs mb-auto whitespace-nowrap">{format(report.date_modified, "PP")}</p>
                         </div>
                     })}
                 </footer>
