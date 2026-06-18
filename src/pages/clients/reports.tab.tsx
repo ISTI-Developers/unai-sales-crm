@@ -1,9 +1,7 @@
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react"
-import { format, getISOWeek, isMonday } from "date-fns"
+import { format, formatDistanceToNow, getISOWeek, isMonday } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
 import { generateWeeks } from "@/data/reports.columns"
 import { useClientReports, useInsertReport, useUpdateReport } from "@/hooks/useReports"
@@ -12,14 +10,19 @@ import { useSettings } from "@/providers/settings.provider"
 import { useAuth } from "@/providers/auth.provider"
 import { toast } from "@/hooks/use-toast"
 import { catchError } from "@/providers/api"
+import { useAccess } from "@/hooks/useClients"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { InfoIcon } from "lucide-react"
 
 type ReportsTabProps = {
     clientID: number
-    canEdit: boolean
 }
 
-const ReportsTab = ({ clientID, canEdit }: ReportsTabProps) => {
+const ReportsTab = ({ clientID }: ReportsTabProps) => {
     const { user } = useAuth();
+    const { access: canEdit } = useAccess("reports.add")
     const weeks = useMemo(() => generateWeeks(), [])
     const { weekAccess } = useSettings();
     const currentISOWeek = getISOWeek(new Date());
@@ -153,57 +156,58 @@ const ReportsTab = ({ clientID, canEdit }: ReportsTabProps) => {
     if (isLoading) return <div>Loading...</div>
 
     return (
-        <div className="space-y-2">
+        <div className="space-y-4">
             {/* Header */}
-            <header className="flex justify-between items-center">
-                <div>
-                    <p className="font-semibold text-sm">Client Reports</p>
-                    {latestReport && (
-                        <p className="text-xs text-zinc-400 italic">
-                            Last activity created on {format(latestReport.date_submitted, "PPPp")} by{" "}
-                            {capitalize(latestReport.account_name)}
-                        </p>
-                    )}
-                </div>
+            <main className="space-y-4 p-4 bg-zinc-50 rounded-xl">
+                <header className="flex justify-between items-start">
+                    <div>
+                        {latestReport && (
+                            <div className="text-xs text-zinc-400 italic flex items-center gap-2">
+                                {`It's been ${formatDistanceToNow(latestReport.date_submitted)} since the last activity`}
+                                <Tooltip>
+                                    <TooltipTrigger><InfoIcon size={14} /></TooltipTrigger>
+                                    <TooltipContent>
+                                        Last activity created on {format(latestReport.date_submitted, "PPPp")} by{" "}
+                                        {capitalize(latestReport.account_name)}
+                                    </TooltipContent>
+                                </Tooltip>
+                            </div>
+                        )}
+                    </div>
+                    {canEdit && canCreateActivityForLastWeek &&
+                        <Button variant="outline" size="sm">
+                            Create {weeks[currentISOWeek - 2]} Activity
+                        </Button>
+                    }
+                </header>
                 {canEdit &&
-                    <Button variant="outline" size="sm" disabled={!canCreateActivityForLastWeek}>
-                        Create {weeks[currentISOWeek - 2]} Activity
-                    </Button>
-                }
-            </header>
-
-            <hr />
-
-            {canEdit &&
-                <>
-                    < main className="space-y-4">
-                        <form className="space-y-2" onSubmit={onSubmit}>
-                            <Label htmlFor="activity">Current Week Activity ({weeks[currentISOWeek - 1]})</Label>
-                            <Textarea
-                                id="activity"
-                                placeholder="You haven't made an activity for this week. Click edit to create now."
-                                value={report}
-                                disabled={!onEdit}
-                                className="rounded-sm placeholder:text-zinc-400 disabled:opacity-100 disabled:cursor-default resize-none"
-                                onChange={(e) => setReport(e.target.value)}
-                            />
-                            {previewUrl && (
-                                <div className="text-sm text-gray-700">
-                                    Attachment:
-                                    <a
-                                        href={previewUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-blue-600 underline ml-2"
-                                    >
-                                        {selectedFile ? selectedFile.name : "View"}
-                                    </a>
-                                </div>
-                            )}
+                    <form className="space-y-4" onSubmit={onSubmit}>
+                        <Textarea
+                            id="activity"
+                            placeholder="You haven't made an activity for this week. Click edit to create now."
+                            value={report}
+                            disabled={!onEdit}
+                            className="placeholder:text-zinc-400 disabled:opacity-100 disabled:cursor-default resize-none rounded-lg bg-white disabled:bg-opacity-30 disabled:text-zinc-400"
+                            onChange={(e) => setReport(e.target.value)}
+                        />
+                        {previewUrl && (
+                            <div className="text-sm text-gray-700">
+                                Attachment:
+                                <a
+                                    href={previewUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 underline ml-2"
+                                >
+                                    {selectedFile ? selectedFile.name : "View"}
+                                </a>
+                            </div>
+                        )}
+                        <div className="flex justify-between items-end">
                             <Input
                                 id="attachment"
                                 type="file"
-                                className="w-fit mr-auto"
+                                className="w-fit"
                                 accept="image/*,application/pdf"
                                 disabled={!onEdit}
                                 onChange={onFileChange}
@@ -234,40 +238,35 @@ const ReportsTab = ({ clientID, canEdit }: ReportsTabProps) => {
                                         >
                                             Cancel
                                         </Button>
-                                        <Button type="submit" size="sm" className="bg-emerald-400 text-emerald-50 hover:bg-emerald-500">
+                                        <Button type="submit" size="sm" disabled={loading} className="bg-emerald-400 text-emerald-50 hover:bg-emerald-500">
                                             Submit
                                         </Button>
                                     </>
                                 )}
                             </div>
-                        </form>
-                    </main>
-                    <hr />
-                </>
-            }
-
-
+                        </div>
+                    </form>
+                }
+            </main>
+            <ScrollArea>
+                <footer className="max-h-[400px] grid gap-4">
+                    {reports.map(report => {
+                        return <div key={report.ID} className="p-4 border shadow-sm rounded-2xl flex items-center gap-4 justify-between">
+                            <Avatar>
+                                <AvatarFallback className="text-xs">
+                                    {report.account_code}
+                                </AvatarFallback>
+                            </Avatar>
+                            <div className="mr-auto grid leading-tight">
+                                <span className="font-semibold text-sm">{report.account_name}</span>
+                                <span className="text-sm text-zinc-500">{report.activity}</span>
+                            </div>
+                            <p className="text-xs mb-auto">{format(report.date_modified, "PP")}</p>
+                        </div>
+                    })}
+                </footer>
+            </ScrollArea>
             {/* Reports Table */}
-            <footer className="max-h-[350px] overflow-y-auto">
-                <Table>
-                    <TableHeader>
-                        <TableRow className="sticky top-0 bg-white">
-                            <TableHead>ACTIVITY</TableHead>
-                            <TableHead>AE</TableHead>
-                            <TableHead>DATE</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {reports.map((report) => (
-                            <TableRow key={report.ID}>
-                                <TableCell>{report.activity}</TableCell>
-                                <TableCell className="uppercase">{report.account_code}</TableCell>
-                                <TableCell className="whitespace-nowrap">{format(report.date_modified, "PP")}</TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </footer>
         </div >
     )
 }

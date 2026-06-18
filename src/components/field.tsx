@@ -7,21 +7,30 @@ const Field = ({
   label,
   value,
   labelClasses,
+  icon,
+  vertical
 }: {
   id: string;
   label: string;
   value: ReactNode;
   labelClasses?: string;
+  icon?: ReactNode;
+  vertical?: boolean
 }) => {
   return (
-    <div className="grid grid-cols-[30%_70%] gap-4 items-center">
+    <div className={cn("grid grid-cols-[30%_70%] gap-4 items-center", vertical ? 'grid-cols-1 gap-1' : "")}>
       <Label
         htmlFor={id}
-        className={cn("capitalize font-semibold", labelClasses)}
+        className={cn("uppercase font-semibold flex items-center gap-1", labelClasses)}
       >
-        {capitalize(label, "_")}
+        {icon}
+        <span>
+          {capitalize(label, "_")}
+        </span>
       </Label>
-      {value}
+      <div>
+        {value}
+      </div>
     </div>
   );
 };

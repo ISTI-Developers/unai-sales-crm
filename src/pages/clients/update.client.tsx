@@ -18,7 +18,7 @@ import { useAuth } from '@/providers/auth.provider';
 import { ChevronLeft, LoaderCircle } from 'lucide-react';
 import { ChangeEvent, ChangeEventHandler, FormEvent, ReactNode, useEffect, useMemo, useState } from 'react'
 import { Helmet } from 'react-helmet';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
 type Option = { id: number; name: string }
 const UpdateClient = () => {
@@ -265,13 +265,10 @@ const UpdateClient = () => {
       </Helmet>
       <header className="flex items-center justify-between border-b pb-1.5">
         <h1 className="text-blue-500 font-bold uppercase">Edit Client</h1>
-        <Button variant="link" type="button" asChild>
-          <Link
-            to="/clients"
-            onClick={() => localStorage.removeItem("client")}
-          >
-            <ChevronLeft /> Back
-          </Link>
+        <Button variant="link" type="button" onClick={() => {
+          navigate(-1)
+        }}>
+          <ChevronLeft /> Back
         </Button>
       </header>
       <main>
