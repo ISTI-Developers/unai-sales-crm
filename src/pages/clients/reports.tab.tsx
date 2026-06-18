@@ -17,11 +17,12 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { InfoIcon } from "lucide-react"
 
 type ReportsTabProps = {
-    clientID: number
+    clientID: number,
 }
 
 const ReportsTab = ({ clientID }: ReportsTabProps) => {
     const { user } = useAuth();
+    const { access: canView } = useAccess("reports.viewAll")
     const { access: canEdit } = useAccess("reports.add")
     const weeks = useMemo(() => generateWeeks(), [])
     const { weekAccess } = useSettings();
@@ -180,11 +181,11 @@ const ReportsTab = ({ clientID }: ReportsTabProps) => {
                         </Button>
                     }
                 </header>
-                {canEdit &&
+                {canView &&
                     <form className="space-y-4" onSubmit={onSubmit}>
                         <Textarea
                             id="activity"
-                            placeholder="You haven't made an activity for this week. Click edit to create now."
+                            placeholder="No activity made for this week yet."
                             value={report}
                             disabled={!onEdit}
                             className="placeholder:text-zinc-400 disabled:opacity-100 disabled:cursor-default resize-none rounded-lg bg-white disabled:bg-opacity-30 disabled:text-zinc-400"
@@ -203,48 +204,49 @@ const ReportsTab = ({ clientID }: ReportsTabProps) => {
                                 </a>
                             </div>
                         )}
-                        <div className="flex justify-between items-end">
-                            <Input
-                                id="attachment"
-                                type="file"
-                                className="w-fit"
-                                accept="image/*,application/pdf"
-                                disabled={!onEdit}
-                                onChange={onFileChange}
-                            />
-
-                            <div className="flex justify-end gap-2">
-                                {!onEdit ? (
-                                    <Button
-                                        type="button"
-                                        size="sm"
-                                        className="bg-main-100 hover:bg-main-400"
-                                        onClick={() => setEdit(true)}
-                                    >
-                                        Edit
-                                    </Button>
-                                ) : (
-                                    <>
+                        {canEdit && user?.sales_unit &&
+                            <div className="flex justify-between items-end">
+                                <Input
+                                    id="attachment"
+                                    type="file"
+                                    className="w-fit"
+                                    accept="image/*,application/pdf"
+                                    disabled={!onEdit}
+                                    onChange={onFileChange}
+                                />
+                                <div className="flex justify-end gap-2">
+                                    {!onEdit ? (
                                         <Button
-                                            type="reset"
+                                            type="button"
                                             size="sm"
-                                            variant="ghost"
-                                            onClick={() => {
-                                                setEdit(false)
-                                                setReport(currentActivity?.activity ?? "")
-                                                setSelectedFile(null);
-                                                setPreviewUrl(null);
-                                            }}
+                                            className="bg-main-100 hover:bg-main-400"
+                                            onClick={() => setEdit(true)}
                                         >
-                                            Cancel
+                                            Edit
                                         </Button>
-                                        <Button type="submit" size="sm" disabled={loading} className="bg-emerald-400 text-emerald-50 hover:bg-emerald-500">
-                                            Submit
-                                        </Button>
-                                    </>
-                                )}
+                                    ) : (
+                                        <>
+                                            <Button
+                                                type="reset"
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() => {
+                                                    setEdit(false)
+                                                    setReport(currentActivity?.activity ?? "")
+                                                    setSelectedFile(null);
+                                                    setPreviewUrl(null);
+                                                }}
+                                            >
+                                                Cancel
+                                            </Button>
+                                            <Button type="submit" size="sm" disabled={loading} className="bg-emerald-400 text-emerald-50 hover:bg-emerald-500">
+                                                Submit
+                                            </Button>
+                                        </>
+                                    )}
+                                </div>
                             </div>
-                        </div>
+                        }
                     </form>
                 }
             </main>
