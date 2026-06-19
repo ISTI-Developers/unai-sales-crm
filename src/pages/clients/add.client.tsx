@@ -2,6 +2,7 @@ import ClientNameField from '@/components/clients/name.client';
 import { MultiComboBox } from '@/components/multicombobox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { InputGroup, InputGroupAddon, InputGroupText, InputGroupTextarea } from '@/components/ui/input-group';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
@@ -14,7 +15,7 @@ import { ClientForm, ClientOptions } from '@/interfaces/client.interface';
 import { SalesUnitMember } from '@/interfaces/user.interface';
 import Page from '@/misc/Page';
 import { useAuth } from '@/providers/auth.provider';
-import { ChevronLeft, LoaderCircle } from 'lucide-react';
+import { ArrowLeftRight, ChevronLeft, LoaderCircle } from 'lucide-react';
 import { ChangeEvent, ChangeEventHandler, FormEvent, ReactNode, useMemo, useState } from 'react'
 import { Helmet } from 'react-helmet';
 import { Link, useNavigate } from 'react-router-dom';
@@ -47,6 +48,7 @@ const AddClient = () => {
     address: "",
     type: "",
     source: "",
+    initial_transaction: "",
   });
 
   const onInputChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -287,6 +289,20 @@ const AddClient = () => {
             })}
             <SelectField required id='type' value={client['type'] as string} disabled={false} onChange={onSelectChange} options={getOptions('type')} />
             <SelectField required id='source' value={client['source'] as string} disabled={false} onChange={onSelectChange} options={getOptions('source')} />
+            <InputGroup>
+              <InputGroupAddon align="block-start">
+                <ArrowLeftRight />
+                <InputGroupText>Initial Transaction</InputGroupText>
+              </InputGroupAddon>
+              <InputGroupTextarea value={client.initial_transaction ?? ""} onChange={(e) => setClient(prev => {
+                if (!prev) return prev;
+
+                return {
+                  ...prev,
+                  initial_transaction: e.target.value
+                }
+              })} />
+            </InputGroup>
           </FormSection>
           <Button
             type="submit"
