@@ -132,6 +132,7 @@ export interface ClientForm {
   address: string;
   type: number | string;
   source: number | string;
+  initial_transaction?: string;
 }
 export interface ClientUpload {
   client: string;
