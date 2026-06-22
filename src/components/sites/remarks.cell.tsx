@@ -34,7 +34,7 @@ const RemarksCell = ({ row, column }: CellContext<Site, unknown>) => {
     return [1, 21].includes(user.ID as number) || user.role.role_id === 13
   }, [user, access]);
   return (
-    <div className="w-[300px] text-[0.65rem] relative group flex flex-col gap-2">
+    <div className="w-[200px] text-[0.65rem] relative group flex flex-col gap-2">
       {!toggle ? (
         <>
           <p className="text-start">

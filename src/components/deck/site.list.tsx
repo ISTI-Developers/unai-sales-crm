@@ -49,7 +49,7 @@ const SiteList = () => {
                                 <span className="text-[0.4rem] italic">
                                     {site.board_facing}
                                 </span>
-                                <p className="text-[0.4rem] text-black/60">{site.client?.toLowerCase().includes("null") ? "N/A" : site.client ?? "N/A"}</p>
+                                <p className="text-[0.4rem] text-black/60">{site.client?.toLowerCase().includes("null") ? "N/A" : site.client ?? ""}</p>
                                 <p className="text-[0.5rem] font-semibold absolute top-0 right-0">
                                     {formattedAvailability}
                                 </p>

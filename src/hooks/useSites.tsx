@@ -503,7 +503,8 @@ export const useManageSite = () => {
         "Site has been reactivated." :
         variables.action === "deactivate" ?
           "Site has been deactivated" :
-          "Site has been dismantled/deleted."
+          variables.action === "deactivate" ? "Site has been set to under construction" :
+            "Site has been dismantled/deleted."
       toast({
         description: message,
         variant: "success",

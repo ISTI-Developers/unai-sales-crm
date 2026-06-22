@@ -14,6 +14,7 @@ export interface DeckFilters {
   price: PriceRange[];
   availability: string[];
   site_owner: string[];
+  status: number[];
   search: string;
 }
 

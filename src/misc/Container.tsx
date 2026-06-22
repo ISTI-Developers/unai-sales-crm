@@ -2,7 +2,7 @@ import { ReactNode, lazy, Suspense } from "react";
 import Page from "./Page";
 import { cn } from "@/lib/utils";
 import { useLocation } from "react-router-dom";
-import Notifications from "./Notifications";
+// import Notifications from "./Notifications";
 
 const PageTitle = lazy(() => import("@/misc/PageTitle"));
 
@@ -24,7 +24,7 @@ const Container = ({ children, title = "", className }: ContainerProps) => {
         <Suspense fallback={<>Loading...</>}>
           <PageTitle title={title} />
         </Suspense>
-        <Notifications />
+        {/* <Notifications /> */}
       </header>
       <Page
         className={cn(
@@ -38,29 +38,4 @@ const Container = ({ children, title = "", className }: ContainerProps) => {
     </div>
   );
 };
-
-// const UserAvatar = () => {
-//   const { user } = useAuth();
-
-//   const [initials, setInitials] = useState<string>("");
-
-//   useEffect(() => {
-//     if (user) {
-//       if (user.first_name && user.last_name) {
-//         setInitials(
-//           user.first_name.substring(0, 1) + user.last_name.substring(0, 1)
-//         );
-//       }
-//     }
-//   }, [user]);
-
-//   return (
-//     <Avatar>
-//       <AvatarImage src={user?.image} />
-//       <AvatarFallback className="bg-blue-500 uppercase">
-//         {initials}
-//       </AvatarFallback>
-//     </Avatar>
-//   );
-// };
 export default Container;

@@ -1,4 +1,5 @@
 export const changes = {
+  "2.9.1": ['Added under construction status'],
   "2.9": ['Added batch transfer of ownership.'],
   "2.8": ['Updated the look for client information.'],
   "2.7.6": ["Allow searching of address and board facing"],

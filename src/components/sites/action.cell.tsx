@@ -53,8 +53,8 @@ export const ActionCell = ({ row }: CellContext<Site, unknown>) => {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        {site.status === 1 && <ActionDialog site={site} action="deactivate" label="Deactivation" disabled={!remove} />}
-        {site.status === 2 && <ActionDialog site={site} action="reactivate" label="Reactivation" disabled={!remove} />}
+        {[1, 3].includes(site.status) && <ActionDialog site={site} action="deactivate" label="Deactivation" disabled={!remove} />}
+        {[2].includes(site.status) && <ActionDialog site={site} action="reactivate" label="Reactivation" disabled={!remove} />}
         <ActionDialog site={site} action="dismantle" label="Dismantling" disabled={!remove} />
       </DropdownMenuContent>
     </DropdownMenu>

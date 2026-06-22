@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { useOnlineUsers } from "@/hooks/useUsers";
 import { cn } from "@/lib/utils";
-import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import { Tooltip, TooltipTrigger } from "../ui/tooltip";
 // import { PenLine } from "lucide-react";
 // import { Button } from "../ui/button";
 // { onToggleEdit }: { onToggleEdit: (toggle: boolean) => void }

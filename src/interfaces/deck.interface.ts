@@ -42,6 +42,7 @@ export const deckFilterKeys: readonly string[] = [
   "landmark",
   "price",
   "site_owner",
+  // "site_status",
   "search",
 ];
 

@@ -3,7 +3,7 @@ import { ActionCell } from "@/components/sites/action.cell";
 import { Site } from "@/interfaces/sites.interface";
 import { ColumnDef } from "@tanstack/react-table";
 import PriceCell from "@/components/sites/price.cell";
-import { Badge } from "@/components/ui/badge";
+import SiteStatusSelect from "@/components/site-status-select";
 
 export const columns: ColumnDef<Site>[] = [
   {
@@ -39,11 +39,16 @@ export const columns: ColumnDef<Site>[] = [
     },
   },
   {
+    accessorFn: (row) => `${row.address} | ${row.board_facing}`,
     accessorKey: "address",
     header: "Address",
     cell: ({ row }) => {
-      const item: string = row.getValue("address");
-      return <p className="text-[0.65rem] leading-none">{item}</p>;
+      const item: string = row.original.address;
+      const facing = row.original.board_facing;
+      return <p className="text-[0.65rem] leading-tight min-w-[250px] flex flex-col">
+        <span>{item}</span>
+        <span className="text-[0.6rem] italic text-zinc-500">{facing}</span>
+      </p>;
     },
   },
   {
@@ -72,26 +77,22 @@ export const columns: ColumnDef<Site>[] = [
       const statusMap = {
         1: "Active",
         2: "Inactive",
+        3: "Under Construction",
         5: "Dismantled",
       }
 
+      console.log(row.status)
       return statusMap[row.status as keyof typeof statusMap];
     },
     header: "Status",
-    cell: ({ row, column }) => {
-      const status: string = row.getValue(column.id);
-
-      const className = {
-        Active: "bg-emerald-100 border-emerald-200 text-emerald-500",
-        Inactive: "bg-red-200 border-red-100 text-red-400",
-        5: ""
-      }
-
-      return <Badge variant="outline" className={className[status as keyof typeof className]}>
-        {status}
-      </Badge >
+    cell: ({ row }) => {
+      const site = row.original;
+      return <SiteStatusSelect data={site} />
     },
-    filterFn: (row, column, filterValue) => filterValue.includes(row.getValue(column)),
+    filterFn: (row, column, filterValue) => {
+      console.log(row.getValue(column), column, filterValue);
+      return filterValue.includes(row.getValue(column))
+    },
   },
   {
     header: "Actions",
