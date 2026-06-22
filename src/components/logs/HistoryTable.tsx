@@ -15,8 +15,7 @@ const HistoryTable = ({
 
 
     const grouped = history.reduce((acc, item) => {
-      const logDate = addHours(new Date(item.date), import.meta.env.VITE_TIME_ADJUST);
-      item.date = logDate.toISOString();
+      const logDate = addHours(new Date(item.date), Number(import.meta.env.VITE_TIME_ADJUST) + 7);
       const dateKey = format(logDate, "PP");
 
       if (!acc[dateKey]) {
@@ -38,9 +37,10 @@ const HistoryTable = ({
             <p className="uppercase font-semibold text-sm">{date}</p>
             <div className="p-2 flex flex-col gap-4">
               {items.map((history) => {
+                const logDate = addHours(new Date(history.date), Number(import.meta.env.VITE_TIME_ADJUST) + 7);
                 return (
                   <div key={history.ID} className="flex items-center gap-4">
-                    <p className="text-zinc-400 text-xs whitespace-nowrap">{format(new Date(history.date), "p")}</p>
+                    <p className="text-zinc-400 text-xs whitespace-nowrap">{format(logDate, "p")}</p>
                     <div>
                       <p className="font-semibold text-sm">{history.author}</p>
                       <p className="text-sm ">{history.action}</p>
