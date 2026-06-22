@@ -69,6 +69,12 @@ export interface ClientName {
   ID: number;
   name: string;
 }
+export interface ClientNameWithStatus {
+  ID: number;
+  name: string;
+  status: number;
+  status_name: string;
+}
 export interface Client {
   client_id: number;
   name: string;
