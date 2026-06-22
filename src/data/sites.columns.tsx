@@ -43,7 +43,7 @@ export const columns: ColumnDef<Site>[] = [
     header: "Address",
     cell: ({ row }) => {
       const item: string = row.getValue("address");
-      return <p className="text-[0.65rem] leading-none">{item}</p>;
+      return <p className="text-[0.65rem] leading-none min-w-[250px]">{item}</p>;
     },
   },
   {

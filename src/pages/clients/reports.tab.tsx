@@ -1,12 +1,12 @@
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react"
-import { format, formatDistanceToNow, getISOWeek, isMonday } from "date-fns"
+import { format, formatDistanceToNow, getISOWeek } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { generateWeeks } from "@/data/reports.columns"
+// import { generateWeeks } from "@/data/reports.columns"
 import { useClientReports, useInsertReport, useUpdateReport } from "@/hooks/useReports"
 import { capitalize } from "@/lib/utils"
-import { useSettings } from "@/providers/settings.provider"
+// import { useSettings } from "@/providers/settings.provider"
 import { useAuth } from "@/providers/auth.provider"
 import { toast } from "@/hooks/use-toast"
 import { catchError } from "@/providers/api"
@@ -24,8 +24,8 @@ const ReportsTab = ({ clientID }: ReportsTabProps) => {
     const { user } = useAuth();
     const { access: canView } = useAccess("reports.viewAll")
     const { access: canEdit } = useAccess("reports.add")
-    const weeks = useMemo(() => generateWeeks(), [])
-    const { weekAccess } = useSettings();
+    // const weeks = useMemo(() => generateWeeks(), [])
+    // const { weekAccess } = useSettings();
     const currentISOWeek = getISOWeek(new Date());
     const { mutate: insert } = useInsertReport();
     const { mutate: update } = useUpdateReport(clientID);
@@ -40,17 +40,17 @@ const ReportsTab = ({ clientID }: ReportsTabProps) => {
         )
     }, [reports, currentISOWeek])
 
-    const canCreateActivityForLastWeek = useMemo(() => {
-        if (weekAccess.find(week => week.week === weeks[currentISOWeek - 2])) {
-            return true;
-        }
-        const isItMonday = isMonday(new Date());
+    // const canCreateActivityForLastWeek = useMemo(() => {
+    //     if (weekAccess.find(week => week.week === weeks[currentISOWeek - 2])) {
+    //         return true;
+    //     }
+    //     const isItMonday = isMonday(new Date());
 
-        if (isItMonday) {
-            return new Date().getHours() < 23;
-        }
-        return false
-    }, [weekAccess, weeks, currentISOWeek])
+    //     if (isItMonday) {
+    //         return new Date().getHours() < 23;
+    //     }
+    //     return false
+    // }, [weekAccess, weeks, currentISOWeek])
 
     const [report, setReport] = useState("")
     const [onEdit, setEdit] = useState(false)
@@ -175,11 +175,11 @@ const ReportsTab = ({ clientID }: ReportsTabProps) => {
                             </div>
                         )}
                     </div>
-                    {canEdit && canCreateActivityForLastWeek &&
+                    {/* {canEdit && canCreateActivityForLastWeek &&
                         <Button variant="outline" size="sm">
                             Create {weeks[currentISOWeek - 2]} Activity
                         </Button>
-                    }
+                    } */}
                 </header>
                 {canView &&
                     <form className="space-y-4" onSubmit={onSubmit}>

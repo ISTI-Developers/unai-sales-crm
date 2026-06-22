@@ -1,5 +1,5 @@
 import { HistoryLog } from "@/providers/log.provider";
-import { format } from "date-fns";
+import { addHours, format } from "date-fns";
 import { useMemo } from "react";
 import { ScrollArea } from "../ui/scroll-area";
 
@@ -15,7 +15,9 @@ const HistoryTable = ({
 
 
     const grouped = history.reduce((acc, item) => {
-      const dateKey = format(new Date(item.date), "PP");
+      const logDate = addHours(new Date(item.date), import.meta.env.VITE_TIME_ADJUST);
+      item.date = logDate.toISOString();
+      const dateKey = format(logDate, "PP");
 
       if (!acc[dateKey]) {
         acc[dateKey] = [];

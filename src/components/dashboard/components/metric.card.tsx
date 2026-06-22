@@ -21,7 +21,7 @@ interface MetricCardProps {
 const MetricCard = ({ icon: Icon, title, link, count, style, trend }: MetricCardProps) => {
     const TrendIcon = trend ? trend.trend === "up" ? TrendingUpIcon : TrendingDownIcon : Minus;
     return (
-        <Card className="p-4 min-w-[250px] rounded-lg flex flex-col gap-2 ">
+        <Card className="p-4 w-full md:max-w-[48%] lg:max-w-[25%] rounded-lg flex flex-col gap-2 shrink-0 snap-start">
             <CardTitle className="flex items-center justify-between gap-2 pb-2">
                 <div className="rounded-full w-fit p-1.5" style={style}>
                     <Icon size={16} />

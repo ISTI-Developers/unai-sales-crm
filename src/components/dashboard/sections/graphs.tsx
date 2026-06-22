@@ -14,7 +14,7 @@ const Graphs = () => {
         return { status: user.role.role_id !== 13, accounts: user.role.role_id !== 13, sites: user.company?.ID === 5 };
     }, [user])
     return (
-        <section className={cn("grid gap-4", user?.role.role_id === 13 ? "grid-cols-1 w-1/2" : "grid-cols-3")}>
+        <section className={cn("grid gap-4", user?.role.role_id === 13 ? "grid-cols-1 w-1/2" : "md:grid-cols-2 lg:grid-cols-3")}>
             {access.status &&
                 <ClientStatusDistribution />
             }

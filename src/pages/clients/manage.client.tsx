@@ -95,7 +95,7 @@ const ManageClient = () => {
               <p className="font-bold">
                 {client.name}
               </p>
-              <p className="truncate">{client.brand}</p>
+              <p className="truncate max-w-[350px] lg:max-w-[390px] xl:max-w-[450px]" title={client.brand}>{client.brand}</p>
             </div>
             <StatusSelect data={client} className="text-base px-4 cursor-pointer" />
           </header>

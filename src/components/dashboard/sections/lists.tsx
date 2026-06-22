@@ -20,7 +20,7 @@ const Lists = () => {
     }, [user])
 
     return (
-        <section className={cn(user?.role.role_id === 13 ? "grid w-full" : 'grid grid-cols-2 gap-4')}>
+        <section className={cn("grid", user?.role.role_id === 13 ? "w-full" : 'md:grid-cols-2 gap-4')}>
             {access.bookings &&
                 <BookingsCard />
             }
