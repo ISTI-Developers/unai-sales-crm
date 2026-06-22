@@ -9,6 +9,7 @@ import AvailabilityFilter from "./filters.availability"
 import LandmarkFilter from "./filters.landmark"
 import PriceFilter from "./filters.price"
 import SiteOwnerFilter from "./filters.siteOwner"
+import SiteStatus from "./filters.siteStatus"
 
 const FiltersContent = () => {
     const { selectedFilters, setFilters } = useDeck();
@@ -32,7 +33,8 @@ const FiltersContent = () => {
         availability: <AvailabilityFilter />,
         landmark: <LandmarkFilter />,
         price: <PriceFilter />,
-        site_owner: <SiteOwnerFilter />
+        site_owner: <SiteOwnerFilter />,
+        // site_status: <SiteStatus/>
     }
     return (
         <div className="text-sm flex flex-col gap-2">

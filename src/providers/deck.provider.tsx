@@ -46,7 +46,7 @@ export function DeckProvider({ children }: ProviderProps) {
   const sites: DeckSite[] = useMemo(() => {
     if (isLoading) return [];
 
-    const activeSites = allSites.filter(site => site.status === 1);
+    const activeSites = allSites.filter(site => [1, 3].includes(site.status));
 
     const contracts = activeSites.map(site => {
       const siteBookings = bookings.filter(booking => booking.site_code === site.site_code);
@@ -174,6 +174,11 @@ export function DeckProvider({ children }: ProviderProps) {
       const owner = selectedFilters.site_owner;
 
       temp = temp.filter(site => owner.includes(site.site_owner))
+    }
+    if (selectedFilters.status && selectedFilters.status.length > 0) {
+      const status = selectedFilters.status;
+
+      temp = temp.filter(site => status.includes(site.status))
     }
 
     return temp;

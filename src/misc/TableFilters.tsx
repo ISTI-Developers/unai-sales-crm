@@ -273,7 +273,7 @@ function TableFilters<TData>({ table, data, filters }: Filters<TData>) {
 
                   if (condition.column === "status") {
                     flattenedOptions = [
-                      'Active', 'Inactive'
+                      'Active', 'Inactive','Under Construction'
                     ]
                   }
 
