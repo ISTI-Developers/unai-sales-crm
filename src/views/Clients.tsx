@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { columns } from "@/data/clients.columns";
 import { DataTable } from "@/data/data-table";
 import { useAccess, useClients } from "@/hooks/useClients";
@@ -7,7 +9,7 @@ import { ClientTable } from "@/interfaces/client.interface";
 import Container from "@/misc/Container";
 import Page from "@/misc/Page";
 import { AnimatePresence } from "framer-motion";
-import { CirclePlus, FilePlus2 } from "lucide-react";
+import { CirclePlus, FilePlus2, MoreVertical } from "lucide-react";
 import { useEffect, lazy, Suspense, useMemo } from "react";
 import { Helmet } from "react-helmet";
 import { Link, Route, Routes, useLocation } from "react-router-dom";
@@ -16,6 +18,7 @@ const AddClient = lazy(() => import("@/pages/clients/add.client"));
 const BulkAddClient = lazy(() => import("@/pages/clients/bulkAdd.client"));
 const ManageClient = lazy(() => import("@/pages/clients/manage.client"));
 const UpdateClient = lazy(() => import("@/pages/clients/update.client"));
+const TransferClient = lazy(() => import("@/pages/clients/transfer.client"));
 
 const Clients = () => {
   const location = useLocation();
@@ -163,26 +166,41 @@ const Main = () => {
             <DataTable columns={filteredColumns} data={clientsWithChildren} size={100} getSubRows={(row: ClientTable) => row.children}>
               {add && (
                 <header className="flex items-center gap-4">
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="flex items-center gap-1.5 pl-2"
-                  >
-                    <Link to="./add">
-                      <CirclePlus size={16} />
-                      New Client
-                    </Link>
-                  </Button>
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="flex items-center gap-1.5 pl-2"
-                  >
-                    <Link to="./bulk_add">
-                      <FilePlus2 size={16} />
-                      Multiple Clients
-                    </Link>
-                  </Button>
+                  <ButtonGroup>
+                    <Button
+                      asChild
+                      variant="outline"
+                      className="flex items-center gap-1.5 pl-2 h-7 text-xs"
+                    >
+                      <Link to="./add">
+                        <CirclePlus size={16} />
+                        New Client
+                      </Link>
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="p-2 h-7"
+                        >
+                          <MoreVertical />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent side="bottom" align="end">
+                        <DropdownMenuItem asChild>
+                          <Link to="./bulk_add" className="space-x-2 h-7 text-xs">
+                            <FilePlus2 size={16} />
+                            <p>
+                              Batch Clients
+                            </p>
+                          </Link>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </ButtonGroup>
+                  <ButtonGroup>
+                    <TransferClient />
+                  </ButtonGroup>
                 </header>
               )}
             </DataTable>

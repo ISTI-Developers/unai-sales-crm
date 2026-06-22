@@ -97,7 +97,7 @@ export function DataTable<TData, TValue>({
   }, [columnFilters, pathname]);
   return (
     <div className="flex flex-col gap-2 max-h-[calc(100vh-9rem)]">
-      <div className={cn("flex justify-between items-center", className)}>
+      <div className={cn("flex flex-col lg:flex-row justify-between lg:items-center gap-4", className)}>
         <TableOptions
           data={data}
           columnFilters={columnFilters}

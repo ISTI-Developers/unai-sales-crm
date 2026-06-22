@@ -3,6 +3,7 @@ import {
   Client,
   ClientInformation,
   ClientName,
+  ClientNameWithStatus,
   ClientUpload,
 } from "@/interfaces/client.interface";
 import { DefaultResponse } from "@/interfaces";
@@ -37,6 +38,23 @@ export const useClientNames = () => {
     },
     staleTime: 1000 * 60 * 10,
     enabled: !!user
+  });
+};
+
+export const useAEClients = (ae?: number) => {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["clients", user?.ID, `ae: ${ae}`],
+    queryFn: async () => {
+      const response = await spAPI.get<ClientNameWithStatus[]>("clients", {
+        params: {
+          ae: ae
+        }
+      });
+      return response.data;
+    },
+    staleTime: 1000 * 60 * 10,
+    enabled: !!user && !!ae
   });
 };
 
@@ -112,6 +130,36 @@ export const useUpdateClient = <TData = unknown>(ID: string | null) => {
     onSuccess: () => {
       queryClient.refetchQueries({ queryKey: ["clients"] });
       queryClient.refetchQueries({ queryKey: ["clients", ID] });
+    },
+    onError: catchError,
+  });
+};
+
+
+export const useTransferClient = <TData = unknown>() => {
+  const { user } = useAuth();
+
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: TData) => {
+      if (!user) {
+        throw new Error("User not found");
+      }
+      const formdata = new FormData();
+      formdata.append("data", JSON.stringify(data));
+
+      const response = await spAPI.put<DefaultResponse>(`clients`, {
+        data: JSON.stringify(data),
+        action: "transfer",
+        logger: user.ID,
+      });
+
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.refetchQueries({ queryKey: ["clients"] });
+      queryClient.refetchQueries({ queryKey: ["clients", user?.ID] });
     },
     onError: catchError,
   });
