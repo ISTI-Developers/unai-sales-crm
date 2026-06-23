@@ -81,7 +81,6 @@ export const columns: ColumnDef<Site>[] = [
         5: "Dismantled",
       }
 
-      console.log(row.status)
       return statusMap[row.status as keyof typeof statusMap];
     },
     header: "Status",
