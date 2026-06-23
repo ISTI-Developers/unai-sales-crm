@@ -21,7 +21,7 @@ function SiteStatusSelect({ data, className }: { data: Site; className?: string 
 
     const { mutate, isPending } = useManageSite();
     const { site_code, status } = data;
-    const { access: edit } = useAccess("clients.editStatus");
+    const { access: edit } = useAccess("sites.edit");
 
     const { toast } = useToast();
 
