@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 // import { generateWeeks } from "@/data/reports.columns"
 import { useClientReports, useInsertReport, useUpdateReport } from "@/hooks/useReports"
-import { capitalize } from "@/lib/utils"
+import { capitalize, cn } from "@/lib/utils"
 // import { useSettings } from "@/providers/settings.provider"
 import { useAuth } from "@/providers/auth.provider"
 import { toast } from "@/hooks/use-toast"
@@ -18,9 +18,10 @@ import { InfoIcon } from "lucide-react"
 
 type ReportsTabProps = {
     clientID: number,
+    className?: string,
 }
 
-const ReportsTab = ({ clientID }: ReportsTabProps) => {
+const ReportsTab = ({ clientID, className }: ReportsTabProps) => {
     const { user } = useAuth();
     const { access: canView } = useAccess("reports.viewAll")
     const { access: canEdit } = useAccess("reports.add")
@@ -166,7 +167,7 @@ const ReportsTab = ({ clientID }: ReportsTabProps) => {
                             <div className="text-xs text-zinc-400 italic flex items-center gap-2">
                                 {`It's been ${formatDistanceToNow(latestReport.date_submitted)} since the last activity`}
                                 <Tooltip>
-                                    <TooltipTrigger><InfoIcon size={14} /></TooltipTrigger>
+                                    <TooltipTrigger tabIndex={-1}><InfoIcon size={14} /></TooltipTrigger>
                                     <TooltipContent>
                                         Last activity created on {format(latestReport.date_submitted, "PPPp")} by{" "}
                                         {capitalize(latestReport.account_name)}
@@ -251,9 +252,9 @@ const ReportsTab = ({ clientID }: ReportsTabProps) => {
                 }
             </main>
             <ScrollArea>
-                <footer className="max-h-[400px] grid gap-4">
+                <footer className={cn("max-h-[400px] grid gap-4", className)}>
                     {reports.map(report => {
-                        return <div key={report.ID} className="p-4 border shadow-sm rounded-2xl flex items-center gap-4 justify-between">
+                        return <div key={report.ID} className="p-4 border shadow-sm rounded-3xl flex items-start gap-4 justify-between">
                             <Avatar>
                                 <AvatarFallback className="text-xs">
                                     {report.account_code}

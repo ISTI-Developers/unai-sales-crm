@@ -79,6 +79,7 @@ const Main = () => {
 
   const clients: ClientTable[] = useMemo(() => {
     if (!data || isLoading) return [];
+    console.log(data)
     const grouped = data.reduce((acc, item) => {
       if (!acc[item.client_id]) {
         acc[item.client_id] = {
@@ -141,7 +142,7 @@ const Main = () => {
       return 0; // keep existing order for others
     });
 
-    const ORDER = ["HOT", "ACTIVE", "ON/OFF", "FOR ELECTIONS", "POOL"];
+    const ORDER = ["HOT", "ACTIVE", "ON/OFF", "POOL"];
     return sortedByCompany.sort(
       (a, b) => ORDER.indexOf(a.status_name as string) - ORDER.indexOf(b.status_name as string)
     );
@@ -151,7 +152,7 @@ const Main = () => {
     if (companyID !== "5") {
       return columns.filter(col => col.id !== "sales_unit")
     }
-    return columns;
+    return columns.filter(col => col.id !== "company");
   }, [companyID])
   if (isLoading) {
     return <>{fetchStatus}...</>;

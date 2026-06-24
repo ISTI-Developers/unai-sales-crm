@@ -119,7 +119,8 @@ export const haversineDistance = (coords1: Coordinate, coords2: Coordinate) => {
 
   return R * c;
 };
-export const customOrder = ["HOT", "ACTIVE", "ON/OFF", "FOR ELECTIONS", "POOL"];
+
+export const customOrder = ["HOT", "ACTIVE", "ON/OFF", "POOL"];
 
 export const pastelColors = [
   "#fecaca",

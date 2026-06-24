@@ -66,6 +66,7 @@ export function ReportProvider({ children }: ProviderProps) {
       try {
         initialState = JSON.parse(saved);
 
+
         // Force the current week to be visible
         if (currentWeekKey) {
           initialState[currentWeekKey] = true;
@@ -96,10 +97,6 @@ export function ReportProvider({ children }: ProviderProps) {
   }, [visibleWeeks]);
 
   useEffect(() => {
-    // const isoWeeks = Object.entries(visibleWeeks)
-    //   .filter(([, isVisible]) => isVisible)
-    //   .map(([week]) => getISOWeekFromMonthWeek(week, 2025));
-
     const indexes = Object.entries(visibleWeeks)
       .map(([k, v], i) => ({ key: k, value: v, index: i }))
       .filter(({ value }) => value)
@@ -109,7 +106,7 @@ export function ReportProvider({ children }: ProviderProps) {
 
   const reports = useMemo<ReportTable[]>(() => {
     if (isPending || !data) return [];
-    const statusOrder = ["HOT", "ACTIVE", "ON/OFF", "FOR ELECTIONS", "POOL"];
+    const statusOrder = ["HOT", "ACTIVE", "ON/OFF", "POOL"];
 
     const sortedReports = [...data].sort(
       (a, b) => statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status)
@@ -138,6 +135,7 @@ export function ReportProvider({ children }: ProviderProps) {
           {
             client: "",
             client_id: 0,
+            brand: item.brand,
           } as ReportTable
         );
         const name = `${item.first_name} ${item.last_name}`;

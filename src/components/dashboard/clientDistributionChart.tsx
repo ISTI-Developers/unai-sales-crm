@@ -63,15 +63,11 @@ const ClientDistributionChart = () => {
       label: "ON/OFF",
       color: "#7dd3fc",
     },
-    forelections: {
-      label: "FOR ELECTIONS",
-      color: "#c4b5fd",
-    },
   } satisfies ChartConfig;
   return (
     <DashboardCard className="md:col-[4/7] md:row-[2/3] xl:row-[2/4] w-full">
       {isLoading ? (
-        <Skeleton className="w-full h-full"/>
+        <Skeleton className="w-full h-full" />
       ) : (
         <ChartContainer config={chartConfig} className="h-full max-h-[225px] xl:max-h-[300px] w-full">
           <BarChart accessibilityLayer data={chartData}>
@@ -102,12 +98,6 @@ const ClientDistributionChart = () => {
               stackId="a"
               fill="var(--color-onoff)"
               radius={[0, 0, 0, 0]}
-            />
-            <Bar
-              dataKey="forelections"
-              stackId="a"
-              fill="var(--color-forelections)"
-              radius={[4, 4, 0, 0]}
             />
           </BarChart>
         </ChartContainer>

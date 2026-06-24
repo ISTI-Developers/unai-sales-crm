@@ -190,6 +190,31 @@ export const useUpdateClientStatus = () => {
   });
 };
 
+export const useUpdateClientTag = () => {
+  const { user } = useAuth();
+
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ ID, tag }: { ID: number; tag?: string }) => {
+      if (!user) {
+        throw new Error("User not found.");
+      }
+      const response = await spAPI.put<DefaultResponse>("clients", {
+        tag: tag ?? 0,
+        action: "tag",
+        id: ID,
+        logger: user.ID,
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.refetchQueries({ queryKey: ["clients"] });
+    },
+    onError: catchError,
+  });
+};
+
 export const useDeleteClient = () => {
   const queryClient = useQueryClient();
 

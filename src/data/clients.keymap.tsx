@@ -1,3 +1,5 @@
+import { LandmarkIcon, StarIcon } from "lucide-react";
+
 export interface KeyMap {
   id: string; //id of the object key to be manipulated
   label: string; //label for Label component
@@ -44,3 +46,21 @@ export const fieldTypes: {
   type: "select",
   source: "select",
 };
+
+
+export const TagsMapping = {
+  1: {
+    icon: StarIcon,
+    value: "a-list",
+    label: "A-List",
+    description: "Permanently tagged clients to a specific AE.",
+    className: "fill-yellow-400 stroke-yellow-400"
+  },
+  2: {
+    icon: LandmarkIcon,
+    value: "for_elections",
+    label: "For Elections",
+    description: "Clients specifically used for political ads.",
+    className: "fill-slate-400 stroke-slate-400"
+  }
+} as const

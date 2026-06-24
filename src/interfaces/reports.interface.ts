@@ -8,6 +8,7 @@ export interface Report {
   sales_unit: string;
   client_id: number;
   client: string;
+  brand: string;
   activity: string;
   editor_id: number;
   editor: string;
@@ -55,6 +56,7 @@ export interface ReportTable {
   [key: string]: string | number | WeekData;
   client: string;
   client_id: number;
+  brand: string;
 }
 
 export interface ReportsContext {

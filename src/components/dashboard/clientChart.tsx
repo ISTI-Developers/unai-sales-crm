@@ -25,10 +25,7 @@ const ClientChart = () => {
       label: "On/Off",
       color: "#7dd3fc",
     },
-    forElections: {
-      label: "For Elections",
-      color: "#c4b5fd",
-    },
+
     pool: {
       label: "Pool",
       color: "#cbd5e1",

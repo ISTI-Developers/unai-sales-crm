@@ -16,7 +16,6 @@ import { Button } from "@/components/ui/button";
 import { Check, Paperclip, Pen, Plus, Trash2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
   TooltipContent,
@@ -42,6 +41,8 @@ import { catchError } from "@/providers/api";
 import { getFridayFromISOWeek } from "@/lib/format";
 import { Label } from "@/components/ui/label";
 import { useAccess } from "@/hooks/useClients";
+import Status from "@/components/status";
+import ClientReport from "@/components/reports/client.report";
 
 interface Cell {
   row: Row<ReportTable>;
@@ -74,7 +75,7 @@ export const generateWeeks = (year: number = 2026) => {
 const renderColumn = (id: string) => ({
   id,
   accessorKey: id,
-  header: id === "account_executive" ? "AE" : capitalize(id, "_"),
+  header: id === "account_executive" ? "AE" : id === "sales_unit" ? "SU" : capitalize(id, "_"),
   cell: ({ row }: { row: Row<ReportTable> }) => {
     const column: string = row.getValue(id);
     let name = capitalize(column);
@@ -94,6 +95,7 @@ const renderColumn = (id: string) => ({
     );
   },
   filterFn: "not" as FilterFnOption<ReportTable>,
+  size: 30
 });
 
 export const useWeekColumns = () => {
@@ -102,69 +104,25 @@ export const useWeekColumns = () => {
   const weekColumns: ColumnDef<ReportTable>[] = [
     {
       id: "client",
+      accessorFn: (item) => `${item.client} | ${item.brand}`,
       accessorKey: "client",
-      cell: ({ row, column }) => {
-        const client: string = row.getValue(column.id);
+      cell: ({ row }) => {
 
-        const words = client.split(" ");
-        return (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <p className="max-w-[200px] text-[0.65rem] leading-3">
-                {words.length > 5
-                  ? `${words.slice(0, 5).join(" ")} ...`
-                  : client}
-              </p>
-            </TooltipTrigger>
-            {words.length > 5 && (
-              <TooltipContent sideOffset={0} side="right">
-                {client}
-              </TooltipContent>
-            )}
-          </Tooltip>
-        );
+        return <ClientReport data={row.original} />
       },
+      size: 150,
     },
     {
       id: "status",
       accessorKey: "status",
       cell: ({ row }) => {
         const status: string = row.getValue("status");
-        const statusMap: {
-          [key: string]:
-          | "default"
-          | "secondary"
-          | "destructive"
-          | "outline"
-          | null
-          | undefined;
-        } = {
-          active: "outline",
-          hot: "outline",
-          pool: "destructive",
-          "on/off": "secondary",
-          "for elections": "secondary",
-        };
-
-        const statusClasses: { [key: string]: string } = {
-          active: "bg-green-100 text-green-700 border-green-300",
-          hot: "bg-yellow-100 text-yellow-500 border-yellow-400",
-          "on/off": "bg-sky-100 text-sky-600 border-sky-400",
-          "for elections": "bg-sky-100 text-sky-600 border-sky-400",
-        };
         return (
-          <Badge
-            variant={statusMap[status.toLowerCase()]}
-            className={cn(
-              statusClasses[status.toLowerCase()],
-              "uppercase text-[0.5rem] px-1 h-5 rounded-full"
-            )}
-          >
-            {status}
-          </Badge>
+          <Status status={status} className="rounded-full text-[0.6rem] h-5 px-1.5" />
         );
       },
       filterFn: "not" as FilterFnOption<ReportTable>,
+      size: 30
     },
   ];
 
@@ -185,6 +143,8 @@ export const useWeekColumns = () => {
       id: week,
       accessorKey: week,
       cell: WeekForm,
+      size: 500,
+      minSize: 200,
       filterFn: (
         row: Row<ReportTable>,
         columnId: string,
@@ -291,7 +251,7 @@ const WeekForm = ({ column, row }: Cell) => {
           <p
             className={cn(
               "block indent-0 transition-all",
-              report.length === 0 && isOpen && add 
+              report.length === 0 && isOpen && add
                 ? "group-hover:hidden"
                 : "whitespace-break-spaces text-xs",
               report.length !== 0 ? "group-hover:pl-12" : ""

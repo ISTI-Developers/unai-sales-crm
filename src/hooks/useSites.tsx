@@ -180,13 +180,11 @@ export const useImageFiles = (link?: string) => {
   })
 }
 export const useAvailableSites = () => {
-  const companyID = localStorage.getItem("companyID");
 
   return useQuery({
     queryKey: ["sites", "available"],
     queryFn: async () => {
       try {
-        localStorage.setItem("cachedBookings", "false");
         const response = await wp.get<WorkplaceRes<AvailableSites[]>>("available", {
           params: {
             type: "available",
@@ -236,7 +234,7 @@ export const useAvailableSites = () => {
     select: (data) => data?.sort((a, b) => a.site.localeCompare(b.site)),
     throwOnError: true,
     staleTime: 360000,
-    enabled: companyID ? companyID === "5" : false,
+    enabled: false,
   });
 };
 

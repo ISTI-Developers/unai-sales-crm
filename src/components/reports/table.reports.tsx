@@ -117,12 +117,12 @@ export function ReportsTable<TData, TValue>({
                   {headerGroup.headers.map((header, index) => {
                     const columnID = header.column.id;
                     const isSticky = index < 4
-                    const lefts = [0, 100, 155, 235]
+                    const lefts = [0, 150, 210, 255]
                     return (
                       <TableHead
                         key={header.id}
                         className={cn(
-                          "bg-main-400 text-white shadow text-[0.65rem] uppercase font-bold w-fit",
+                          "bg-main-400 text-white shadow text-[0.65rem] uppercase font-bold",
                           columnID !== "client" ? "text-center" : "",
                           isSticky ? "sticky" : ""
                         )}
@@ -176,23 +176,24 @@ export function ReportsTable<TData, TValue>({
                         {row.getVisibleCells().map((cell, index) => {
                           const columnID = cell.column.id;
                           const isSticky = index < 4
-                          const lefts = [0, 100, 155, 235]
+                          const lefts = [0, 150, 210, 255]
+
                           return (
                             <TableCell
                               key={cell.id}
                               className={cn(
                                 columnID === "client"
-                                ? "uppercase px-2 font-semibold max-w-[100px] whitespace-break-spaces"
+                                  ? "uppercase px-2 font-semibold truncate"
                                   : [
                                     "sales_unit",
                                     "account_executive",
                                     "status",
                                   ].includes(columnID)
-                                    ? "text-center max-w-[10vw] w-fit"
-                                    : "text-left min-w-[200px] max-w-[400px] p-0",
+                                    ? "text-center"
+                                    : "text-left p-0 min-w-[300px]",
                                 isSticky ? "sticky z-[2] bg-white" : ""
                               )}
-                              style={{ left: lefts[index] }}
+                              style={{ left: lefts[index], width: cell.column.getSize(), maxWidth: cell.column.getSize() }}
                             >
                               {flexRender(
                                 cell.column.columnDef.cell,
