@@ -9,6 +9,7 @@ const ClientAccounts = (cell: CellContext<ClientTable, unknown>) => {
     const { row } = cell;
     const { data: units, isLoading } = useSalesUnits();
 
+    const salesUnit = row.original.sales_unit;
     const accounts = row.original.account_executives as Account[];
     // const AEs = accounts.map(account => account.account_executive);
 
@@ -60,6 +61,7 @@ const ClientAccounts = (cell: CellContext<ClientTable, unknown>) => {
         {AEs ? AEs.map(ae => {
             return <p>{ae}</p>
         }) : "---"}
+        <p className="text-[0.65rem] text-zinc-400">{salesUnit}</p>
     </div>
 }
 

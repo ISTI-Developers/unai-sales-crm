@@ -1,23 +1,20 @@
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAccess } from "@/hooks/useClients";
-import { useAvailableSites } from "@/hooks/useSites";
-import { AvailableSites } from "@/interfaces/sites.interface";
 import Container from "@/misc/Container";
 import Page from "@/misc/Page";
-import { getQuery } from "@/providers/api";
-import { useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence } from "framer-motion";
 import { Plus } from "lucide-react";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { Helmet } from "react-helmet";
 import { Link, Navigate, Route, Routes, useSearchParams } from "react-router-dom";
 
-const AddNewBooking = lazy(() => import("@/pages/booking/add.booking"));
+const AddNewBooking = lazy(() => import("@/pages/bookings/add.booking"));
 const PresiteBookings = lazy(
     () => import("@/components/booking/presite.booking")
 );
-const SiteBookingsTab = lazy(() => import("@/pages/booking/site.booking"))
+
+const SiteBookingsTab = lazy(() => import("@/pages/bookings/site.booking"))
 const SiteAvailabilityTab = lazy(() => import("@/pages/bookings/availability"))
 const Bookings = () => {
     return (
@@ -50,11 +47,8 @@ const Bookings = () => {
 };
 
 const Main = () => {
-    const queryClient = useQueryClient();
-    const { isError, fetchStatus, error } = useAvailableSites();
     const [params, setParams] = useSearchParams();
     const { access: add } = useAccess("booking.add");
-    const hasCache = localStorage.getItem("cachedBookings");
     const [value, setValue] = useState("all");
 
     const onValueChange = (val: string) => {
@@ -68,19 +62,6 @@ const Main = () => {
             setValue(tab);
         }
     }, [params]);
-
-    useEffect(() => {
-        if (!hasCache) return;
-        const setup = async () => {
-            const cache = await getQuery<AvailableSites[]>("bookings", ["sites", "available"]);
-            if (fetchStatus === "fetching" && cache?.data) {
-                queryClient.setQueryData(["sites", "available"], cache.data);
-            }
-        };
-        setup();
-    }, [hasCache, queryClient, fetchStatus]);
-
-    if (isError) return <>{error}</>;
 
     return (
         <AnimatePresence>

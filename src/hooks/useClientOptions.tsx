@@ -71,7 +71,7 @@ export const useClientOptionList = (header?: string) => {
     let optionsList: ClientOptions[] = [];
     if (header) {
       const filteredByHeader = data.filter(
-        (option) => option.category === header
+        (option) => option.category === header && option.status === 1
       );
 
       optionsList = filteredByHeader;

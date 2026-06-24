@@ -49,12 +49,7 @@ const FileUpload = ({ setData, setLoading }: FileUpload) => {
           header = header.split("*")[0].split(" ").join("_").toLowerCase();
 
           if (header === "status") {
-            const status = row[index].toUpperCase();
-            if (status === "FOR ELECTIONS") {
-              obj[header] = "FOR ELECTIONS";
-            } else {
-              obj[header] = row[index].toUpperCase();
-            }
+            obj[header] = row[index].toUpperCase();
           } else {
             obj[header] = row[index] ?? "";
           }

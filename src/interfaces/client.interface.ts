@@ -46,6 +46,7 @@ export interface ClientInformation {
   company: string;
   sales_unit_id: number;
   sales_unit: string;
+  tags: number | null;
   client_account_id: number;
   contact_id: number;
   contact_person: string;
@@ -85,6 +86,7 @@ export interface Client {
   company: string;
   sales_unit_id: number;
   sales_unit: string;
+  tags: number | null;
   account_id: number;
   account_executive: string;
   account_code: string;

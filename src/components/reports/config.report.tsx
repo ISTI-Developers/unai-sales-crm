@@ -11,7 +11,7 @@ import {
 import ReportFilters from "@/misc/ReportFilters";
 import { ColumnFiltersState, Table } from "@tanstack/react-table";
 import { useReports } from "@/providers/reports.provider";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { capitalize } from "@/lib/utils";
 import { generateWeeks } from "@/data/reports.columns";
 import { getISOWeek } from "date-fns";
@@ -35,6 +35,8 @@ function TableConfigurations<TData>({
   const { pathname } = useLocation();
   const [dropdownVisible, setDropdownVisibility] = useState(false);
   const [openDialog, setOpenDialog] = useState(false)
+
+  const currentWeek = useMemo(() => generateWeeks()[getISOWeek(new Date()) - 1], []);
   return (
     <div className="flex gap-4 items-center flex-wrap flex-grow">
       <Search setValue={setValue} />
@@ -62,6 +64,7 @@ function TableConfigurations<TData>({
             .getAllColumns()
             .filter((column) => column.getCanHide())
             .map((column) => {
+              console.log(column.id, column.getIsVisible())
               return (
                 ![
                   "client",
@@ -93,10 +96,10 @@ function TableConfigurations<TData>({
       <ReportFilters data={data} table={table} filters={filters} />
       <div className="flex items-center gap-1 text-[0.6rem]">
         <p>Current Week:</p>
-        <p className="text-[0.6rem] font-semibold">{generateWeeks()[getISOWeek(new Date()) - 1]}</p>
+        <p className="text-[0.6rem] font-semibold">{currentWeek}</p>
       </div>
       {
-        !pathname.includes("meetings") && <>
+        !pathname.includes("meetings") && import.meta.env.DEV && <>
           <Button className="ml-auto" variant="outline" size="sm" onClick={() => setOpenDialog(true)}>Create Report</Button>
           <AnimatePresence>
             {openDialog && (

@@ -1,6 +1,6 @@
 import { useToast } from '@/hooks/use-toast';
 import { useClientOptionList } from '@/hooks/useClientOptions';
-import { useAccess, useUpdateClientStatus } from '@/hooks/useClients';
+import { useAccess, useUpdateClientStatus, useUpdateClientTag } from '@/hooks/useClients';
 import { ClientInformation, ClientTable } from '@/interfaces/client.interface';
 import { useState } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
@@ -10,10 +10,13 @@ import { Button } from './ui/button';
 import Status from './status';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { RadioGroup, RadioGroupItem } from './ui/radio-group';
+import { TagsMapping } from '@/data/clients.keymap';
 
 function StatusSelect({ data, className }: { data: ClientTable | ClientInformation; className?: string }) {
     const { mutate: updateClientStatus, isPending } = useUpdateClientStatus();
-    const { client_id, name: client, status_name } = data;
+    const { mutate: updateClientTag } = useUpdateClientTag()
+    const { client_id, name: client, status_name, tags } = data;
     const { access: edit } = useAccess("clients.editStatus");
 
     const { toast } = useToast();
@@ -21,15 +24,37 @@ function StatusSelect({ data, className }: { data: ClientTable | ClientInformati
     const [isEditable, setEditable] = useState(false);
     const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
 
+
+    const [selectedTag, setSelectedTag] = useState<string>(tags ? TagsMapping[tags as keyof typeof TagsMapping].value : "")
+
     const name = (status_name as string).toLowerCase();
     const { options } = useClientOptionList("status");
 
     const onSubmit = async () => {
-        if (!selectedStatus) return;
-
         const status = options.find(
             (option) => option.label.toLowerCase() === selectedStatus
         );
+        const tagMapping = tags ? TagsMapping[tags as keyof typeof TagsMapping].value : undefined;
+        const prevTag = Object.entries(TagsMapping).find(
+            ([_, tag]) => tag.value === tagMapping
+        )?.[0]
+        const newTag = Object.entries(TagsMapping).find(
+            ([_, tag]) => tag.value === selectedTag
+        )?.[0]
+        if (prevTag !== newTag) {
+            updateClientTag({ ID: client_id, tag: newTag }, {
+                onSuccess: (data) => {
+                    if (data.acknowledged) {
+                        toast({
+                            description: "Client Tag has been updated.",
+                            variant: "success",
+                        });
+                        setEditable(false);
+                        setSelectedTag("");
+                    }
+                },
+            })
+        }
         if (status) {
             updateClientStatus(
                 { status: status.id, ID: String(client_id) },
@@ -44,14 +69,6 @@ function StatusSelect({ data, className }: { data: ClientTable | ClientInformati
                             setSelectedStatus(null);
                         }
                     },
-                    onError: (error) =>
-                        toast({
-                            description: `${typeof error === "object" && error !== null && "error" in error
-                                ? (error as { error?: string }).error
-                                : "Please contact the IT developer."
-                                }`,
-                            variant: "destructive",
-                        }),
                 }
             );
         }
@@ -64,6 +81,7 @@ function StatusSelect({ data, className }: { data: ClientTable | ClientInformati
                         if (!open) {
                             setEditable(false);
                             setSelectedStatus(null);
+                            setSelectedTag(tags ? TagsMapping[tags as keyof typeof TagsMapping].value : "")
                         }
                     }}
                     open={isEditable}
@@ -89,7 +107,7 @@ function StatusSelect({ data, className }: { data: ClientTable | ClientInformati
                     </DialogTrigger>
                     <DialogContent>
                         <DialogHeader>
-                            <DialogTitle>Manage Status</DialogTitle>
+                            <DialogTitle>Manage Client Tagging</DialogTitle>
                             <DialogDescription>
                                 <p>
                                     Update the status of{" "}
@@ -98,30 +116,63 @@ function StatusSelect({ data, className }: { data: ClientTable | ClientInformati
                                 </p>
                             </DialogDescription>
                         </DialogHeader>
-                        <form className="flex items-center gap-2">
-                            <Label htmlFor="status" className="whitespace-nowrap">
-                                New Status
-                            </Label>
-                            <Select
-                                value={selectedStatus ?? name}
-                                onValueChange={(value) => {
-                                    setSelectedStatus(value);
-                                }}
-                            >
-                                <SelectTrigger className="max-w-[200px]">
-                                    <SelectValue placeholder="Select status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {options.map((option) => {
-                                        const label = option.label.toLowerCase();
-                                        return (
-                                            <SelectItem key={`status_${option.id}`} value={label}>
-                                                <Status status={label} />
-                                            </SelectItem>
-                                        );
-                                    })}
-                                </SelectContent>
-                            </Select>
+                        <form className="space-y-2">
+                            <div>
+                                <Label htmlFor="status" className="whitespace-nowrap">
+                                    New Status
+                                </Label>
+                                <Select
+                                    value={selectedStatus ?? name}
+                                    onValueChange={(value) => {
+                                        setSelectedStatus(value);
+                                    }}
+                                >
+                                    <SelectTrigger className="max-w-[200px]">
+                                        <SelectValue placeholder="Select status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {options.map((option) => {
+                                            const label = option.label.toLowerCase();
+                                            return (
+                                                <SelectItem key={`status_${option.id}`} value={label}>
+                                                    <Status status={label} />
+                                                </SelectItem>
+                                            );
+                                        })}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className='space-y-2'>
+                                <header className='flex items-center justify-between'>
+                                    <p className="whitespace-nowrap font-semibold">
+                                        Tag Client
+                                    </p>
+                                    {selectedTag && <Button type='button' size="sm" variant="destructive" className='h-6' onClick={() => setSelectedTag("")}>Remove Tag</Button>}
+                                </header>
+                                <RadioGroup
+                                    value={selectedTag ?? ""}
+                                    onValueChange={setSelectedTag}
+                                    className="grid grid-cols-2 gap-4"
+                                >
+                                    {Object.values(TagsMapping).map(tag => (
+                                        <Label
+                                            key={tag.value}
+                                            htmlFor={tag.value}
+                                            className={cn("border p-4 px-6 flex gap-2 items-start justify-between rounded-lg cursor-pointer",
+                                                selectedTag === tag.value && "border-emerald-300 bg-emerald-100")}
+                                        >
+                                            <div className="flex flex-col h-full justify-between">
+                                                <tag.icon size={25} className={tag.className} />
+                                                <div>
+                                                    <p className='pt-2'>{tag.label}</p>
+                                                    <p className="text-xs font-normal text-zinc-500">{tag.description}</p>
+                                                </div>
+                                            </div>
+                                            <RadioGroupItem value={tag.value} id={tag.value} />
+                                        </Label>
+                                    ))}
+                                </RadioGroup>
+                            </div>
                         </form>
                         <DialogFooter className="pt-6">
                             <Button
@@ -138,9 +189,9 @@ function StatusSelect({ data, className }: { data: ClientTable | ClientInformati
                                 type="button"
                                 variant="ghost"
                                 disabled={
-                                    selectedStatus === null ||
-                                    selectedStatus === name ||
-                                    isPending
+                                    ((selectedStatus === null ||
+                                        selectedStatus === name)
+                                        && (selectedTag === (tags ? TagsMapping[tags as keyof typeof TagsMapping].value : ""))) || isPending
                                 }
                                 onClick={onSubmit}
                                 className="bg-main-100 hover:bg-main-400 text-white hover:text-white"
@@ -149,7 +200,7 @@ function StatusSelect({ data, className }: { data: ClientTable | ClientInformati
                             </Button>
                         </DialogFooter>
                     </DialogContent>
-                </Dialog>
+                </Dialog >
             </>
         )
     );

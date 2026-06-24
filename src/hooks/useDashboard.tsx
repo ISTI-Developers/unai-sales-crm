@@ -130,8 +130,6 @@ export const useClientStatusSummary = (status?: number) => {
             key:
               item.status === "ON/OFF"
                 ? "onOff"
-                : item.status === "FOR ELECTIONS"
-                ? "forElections"
                 : item.status.toLowerCase(),
             icon:
               item.status === "HOT"
@@ -140,8 +138,6 @@ export const useClientStatusSummary = (status?: number) => {
                 ? CircleCheck
                 : item.status === "ON/OFF"
                 ? GitCompare
-                : item.status === "FOR ELECTIONS"
-                ? Landmark
                 : CircleSlash2,
             width: ["ACTIVE", "HOT", "ON/OFF"].includes(item.status)
               ? "lg:w-[calc(100%/3-2rem/3)]"
@@ -153,8 +149,6 @@ export const useClientStatusSummary = (status?: number) => {
                 ? `bg-gradient-to-tr from-green-700 to-green-300 text-green-200`
                 : item.status === "ON/OFF"
                 ? `bg-gradient-to-tr from-blue-700 to-sky-300 text-sky-100`
-                : item.status === "FOR ELECTIONS"
-                ? `bg-gradient-to-tr from-violet-700 to-violet-300 text-violet-100`
                 : `bg-gradient-to-tr from-slate-700 to-slate-300 text-slate-100`,
           };
         })
