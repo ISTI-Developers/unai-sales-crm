@@ -57,6 +57,7 @@ export interface ReportTable {
   client: string;
   client_id: number;
   brand: string;
+  status: string;
 }
 
 export interface ReportsContext {
