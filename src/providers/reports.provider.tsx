@@ -112,6 +112,7 @@ export function ReportProvider({ children }: ProviderProps) {
       (a, b) => statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status)
     );
 
+
     const groupedClients = sortedReports.reduce<Record<string, ReportTable>>(
       (acc, item) => {
         const clientName = item.client;
@@ -141,8 +142,8 @@ export function ReportProvider({ children }: ProviderProps) {
         const name = `${item.first_name} ${item.last_name}`;
         const userCode = `${item.first_name[0]}${item.middle_name ? item.middle_name[0] : ""
           }${item.last_name[0]}`;
-        if (!acc[clientName]) {
-          acc[clientName] = {
+        if (!acc[item.client_id]) {
+          acc[item.client_id] = {
             ...reportColumns,
             client: clientName,
             client_id: item.client_id,
@@ -156,7 +157,7 @@ export function ReportProvider({ children }: ProviderProps) {
         }
         if (hasDateSubmission) {
           const weekKey = weeks[currentWeek! - 1];
-          if (weekKey && acc[clientName][weekKey] !== undefined) {
+          if (weekKey && acc[item.client_id][weekKey] !== undefined) {
             const weekData = {
               activity: item.activity,
               reportID: item.ID,
@@ -166,7 +167,7 @@ export function ReportProvider({ children }: ProviderProps) {
               fileID: item.file_id,
               file: item.file,
             };
-            acc[clientName][weekKey] = weekData;
+            acc[item.client_id][weekKey] = weekData;
           }
         }
 
@@ -176,6 +177,9 @@ export function ReportProvider({ children }: ProviderProps) {
     );
 
     const groupedValues = Object.values(groupedClients);
+    groupedValues.sort(
+      (a, b) => statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status)
+    );
 
     return groupedValues;
   }, [data, isPending, weeks]);

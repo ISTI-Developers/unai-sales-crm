@@ -64,7 +64,6 @@ function TableConfigurations<TData>({
             .getAllColumns()
             .filter((column) => column.getCanHide())
             .map((column) => {
-              console.log(column.id, column.getIsVisible())
               return (
                 ![
                   "client",
