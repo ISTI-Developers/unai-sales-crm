@@ -4,8 +4,8 @@ import { User, UserTable } from "@/interfaces/user.interface";
 import { generatePassword } from "@/lib/utils";
 import { catchError, spAPI } from "@/providers/api";
 import { useAuth } from "@/providers/auth.provider";
-import { useLog } from "@/providers/log.provider";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { HistoryLog, useLog } from "@/providers/log.provider";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 
 interface Credentials {
@@ -197,3 +197,16 @@ export const useValidateCode = () => {
     onError: catchError,
   });
 };
+
+export const useSystemLogs = () => {
+  const user = localStorage.getItem("currentUser")
+  return useQuery({
+    queryKey: ["system", "logs"],
+    queryFn: async () => {
+      const response = await spAPI.get<HistoryLog[]>("logs");
+      return response.data;
+    },
+    staleTime: 60000,
+    enabled: !!user
+  })
+}
