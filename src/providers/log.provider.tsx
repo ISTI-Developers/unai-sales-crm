@@ -1,6 +1,7 @@
-import { DefaultResponse, ErrorResponse, ProviderProps } from "@/interfaces";
-import { createContext, useContext, useEffect, useState } from "react";
+import { DefaultResponse, ProviderProps } from "@/interfaces";
+import { createContext, useContext, } from "react";
 import { catchError, spAPI } from "./api";
+import { useSystemLogs } from "@/hooks/useAuth";
 
 interface LogData {
   action: string;
@@ -27,7 +28,7 @@ export interface SystemLog {
 
 interface LogProvider {
   logs: HistoryLog[] | [];
-  insertLog: (data: LogData) => Promise<DefaultResponse | null>;
+  insertLog: (data: LogData) => Promise<DefaultResponse | undefined>;
   getLogTemplate: (ID: number) => Promise<LogTemplate | undefined>;
   getModuleLogs: (
     module: string,
@@ -40,7 +41,7 @@ interface LogProvider {
     module: string,
     recordID?: number | string,
     ...params: string[]
-  ) => Promise<DefaultResponse>;
+  ) => Promise<DefaultResponse<undefined> | undefined>;
 }
 const LogsProviderContext = createContext<LogProvider | null>(null);
 
@@ -55,7 +56,7 @@ export const useLog = (): LogProvider => {
 export function LogProvider({ children }: ProviderProps) {
   const currentUser = localStorage.getItem("currentUser");
 
-  const [logs, setLogs] = useState<HistoryLog[] | []>([]);
+  const { data } = useSystemLogs()
 
   const getLogTemplate = async (
     ID: number
@@ -89,7 +90,7 @@ export function LogProvider({ children }: ProviderProps) {
   };
   const insertLog = async (
     data: LogData
-  ): Promise<DefaultResponse | string | ErrorResponse | null | undefined> => {
+  ): Promise<DefaultResponse | undefined> => {
     try {
       const formdata = new FormData();
       formdata.append("data", JSON.stringify(data));
@@ -98,8 +99,6 @@ export function LogProvider({ children }: ProviderProps) {
       if (response) {
         return response.data;
       }
-
-      return null;
     } catch (error) {
       catchError(error);
     }
@@ -160,25 +159,8 @@ export function LogProvider({ children }: ProviderProps) {
     }
   };
 
-  useEffect(() => {
-    const setup = async () => {
-      if (!currentUser) return;
-
-      try {
-        const response = await spAPI.get<HistoryLog[]>("logs");
-        if (response) {
-          setLogs(response.data);
-        }
-      } catch (error) {
-        return catchError(error);
-      }
-    };
-
-    setup();
-  }, [currentUser]);
-
   const value = {
-    logs,
+    logs: data ?? [],
     insertLog,
     getLogTemplate,
     getModuleLogs,
