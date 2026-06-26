@@ -28,7 +28,7 @@ function ClientReport({ data }: { data: ReportTable }) {
                         <p className='font-light text-sm'>{brand}</p>
                     </SheetTitle>
                     <Button variant="link" size="sm" className='px-0 !mt-0' asChild>
-                        <Link to={`./${(client).replace(/ /g, "_").replace(/\//g, "-")}`} title={client} onClick={() => localStorage.setItem("client", String(data.client_id))} className="hover:underline">
+                        <Link to={`/clients/${(client).replace(/ /g, "_").replace(/\//g, "-")}`} title={client} onClick={() => localStorage.setItem("client", String(data.client_id))} className="hover:underline">
                             <SquareArrowOutUpRight />
                             View Client
                         </Link>
