@@ -274,9 +274,9 @@ const UpdateClient = () => {
       <main>
         <form className='grid lg:grid-cols-2 gap-4' autoComplete='off' onSubmit={onSubmit}>
           <FormSection title='Client Information'>
-            <InputField id='name' value={client['name']} disabled={!editAll} onChange={onInputChange} />
-            <InputField id='brand' value={client['brand']} disabled={!editAll} onChange={onInputChange} />
-            <SelectField id='industry' value={client['industry'] as string} disabled={!editAll} onChange={onSelectChange} options={getOptions('industry')} />
+            <InputField id='name' value={client['name']} disabled={!editAll && !editContact} onChange={onInputChange} />
+            <InputField id='brand' value={client['brand']} disabled={!editAll && !editContact} onChange={onInputChange} />
+            <SelectField id='industry' value={client['industry'] as string} disabled={!editAll && !editContact} onChange={onSelectChange} options={getOptions('industry')} />
             <SelectField id='company' value={client['company'] as string} disabled={true} onChange={onSelectChange} options={isLoading ? [] : companyOptions} />
             <SelectField id='sales_unit' value={client['sales_unit'] as string} disabled={!editAll && !editAccountHandling} onChange={onSelectChange} options={salesOptions} />
             <AccountExecutiveField id='account_executive' options={accountOptions} value={client.account_executive as List[]} setValue={onMultiSelectChange} disabled={!editAll && !editAccountHandling} />
