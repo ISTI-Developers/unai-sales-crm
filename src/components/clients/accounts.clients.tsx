@@ -1,7 +1,6 @@
 import { useSalesUnits } from "@/hooks/useCompanies";
 import { Account, ClientTable } from "@/interfaces/client.interface"
 import { SalesUnitMember } from "@/interfaces/user.interface";
-import { capitalize } from "@/lib/utils";
 import { CellContext } from "@tanstack/react-table"
 import { useMemo } from "react";
 
@@ -9,7 +8,6 @@ const ClientAccounts = (cell: CellContext<ClientTable, unknown>) => {
     const { row } = cell;
     const { data: units, isLoading } = useSalesUnits();
 
-    const salesUnit = row.original.sales_unit;
     const accounts = row.original.account_executives as Account[];
     // const AEs = accounts.map(account => account.account_executive);
 
@@ -48,21 +46,29 @@ const ClientAccounts = (cell: CellContext<ClientTable, unknown>) => {
 
         //generate the text
         const clientAccounts = validatedUnits.map(unit => {
-            if (unit.isComplete) {
-                return unit.sales_unit_name
-            }
-            return accounts.filter(account => unit.inside.some(id => id === account.account_id)).map(account => capitalize(account.account_executive));
+            return accounts.filter(account => unit.inside.some(id => id === account.account_id)).map(item => {
+                return {
+                    ...item,
+                    isComplete: unit.isComplete
+                }
+            });
         })
 
-        // console.log(clientAccounts);
         return clientAccounts.flat();
     }, [units, isLoading, accounts]);
     return <div className="flex flex-col text-xs leading-tight">
-        {AEs ? AEs.map(ae => {
-            return <p>{ae}</p>
-        }) : "---"}
-        <p className="text-[0.65rem] text-zinc-400">{salesUnit}</p>
-    </div>
+        {AEs ? <>
+            {AEs.map(ae => {
+                return <p key={ae.alias} className="capitalize text-[0.65rem]">{ae.account_executive}</p>
+            })}
+            <p className="text-[0.65rem] text-zinc-400">
+                {AEs[0].isComplete ? AEs[0].sales_unit : AEs.map(item => item.sales_unit).join(", ")}
+            </p>
+        </>
+            : "---"
+        }
+
+    </div >
 }
 
 export default ClientAccounts

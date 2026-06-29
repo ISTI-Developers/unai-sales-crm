@@ -85,7 +85,7 @@ const renderColumn = (id: string) => ({
     }
     return id === "account_executive" ? (
       <Tooltip delayDuration={100}>
-        <TooltipTrigger className="uppercase text-[0.65rem] font-semibold">
+        <TooltipTrigger className="uppercase text-[0.65rem] font-semibold z-[101]">
           {name}
         </TooltipTrigger>
         <TooltipContent>{capitalize(column)}</TooltipContent>
