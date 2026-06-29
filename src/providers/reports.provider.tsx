@@ -181,6 +181,7 @@ export function ReportProvider({ children }: ProviderProps) {
       (a, b) => statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status)
     );
 
+    console.log(groupedValues)
     return groupedValues;
   }, [data, isPending, weeks]);
 
