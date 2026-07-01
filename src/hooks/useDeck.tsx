@@ -79,3 +79,27 @@ export const useDeleteDeck = () => {
         onError: catchError,
     });
 }
+export const useDeleteMultipleDecks = () => {
+    const { user } = useAuth();
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (ID: number[]) => {
+            const response = await spAPI.delete("deck", {
+                params: {
+                    id: JSON.stringify(ID)
+                }
+            })
+            if (response.data) {
+                return response.data;
+            }
+        },
+        onSuccess: () => {
+            queryClient.refetchQueries({ queryKey: ["decks", user?.ID] })
+            toast({
+                variant: "success",
+                title: "Decks has been deleted."
+            })
+        },
+        onError: catchError,
+    });
+}

@@ -146,6 +146,7 @@ export const columns: ColumnDef<ClientTable>[] = [
       const last_submitted_on = row.original.last_submitted_on;
       const tags = row.original.tags;
       const tag = tags ? TagsMapping[tags as keyof typeof TagsMapping] : null;
+
       return (
         <div className={cn("w-full max-w-[425px] flex gap-4 items-center truncate")} style={{ paddingLeft: `${row.depth * 5}rem` }}>
 
@@ -166,7 +167,7 @@ export const columns: ColumnDef<ClientTable>[] = [
               }
             </div>
             <p className="text-[0.65rem] leading-tight italic text-neutral-400">
-              {last_submitted_on && last_submitted_on > 0 ?
+              {last_submitted_on !== null ?
                 `${last_submitted_on} days since last activity` :
                 `No activities found`
               }

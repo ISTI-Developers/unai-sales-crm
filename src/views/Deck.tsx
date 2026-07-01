@@ -8,15 +8,19 @@ import { DeckProvider } from "@/providers/deck.provider";
 // import { AnimatePresence, motion } from "framer-motion";
 import { Deck as Deck_1 } from "@/misc/deckTemplate";
 import { format } from "date-fns";
-import { CirclePlus, Trash2 } from "lucide-react";
-import { lazy, useMemo, useState } from "react";
+import { CirclePlus, LayoutGrid, LayoutList, LucideProps, Trash2 } from "lucide-react";
+import { Dispatch, ForwardRefExoticComponent, lazy, RefAttributes, SetStateAction, useMemo, useState } from "react";
 import { Helmet } from "react-helmet";
-import { Link, Route, Routes } from "react-router-dom";
-import { useDecks, useDeleteDeck } from "@/hooks/useDeck";
+import { Link, Route, Routes, useNavigate } from "react-router-dom";
+import { useDecks, useDeleteDeck, useDeleteMultipleDecks } from "@/hooks/useDeck";
 import { useAuth } from "@/providers/auth.provider";
 import { v4 } from "uuid";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import { ButtonGroup } from "@/components/ui/button-group";
+import { cn } from "@/lib/utils";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const EditDeck = lazy(() => import("@/pages/deck/deck.edit"))
 
@@ -45,10 +49,31 @@ const Deck = () => {
   );
 };
 
+interface View {
+  value: string;
+  icon: ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>;
+  label: string;
+  className: string;
+}
+const views: View[] = [{
+  value: "grid",
+  icon: LayoutGrid,
+  label: "Grid View",
+  className: "grid grid-cols-[repeat(auto-fill,minmax(350px,1fr))] gap-4"
+},
+{
+  value: "list",
+  icon: LayoutList,
+  label: "List View",
+  className: "flex flex-col gap-4"
+}];
 const Main = () => {
   const { user } = useAuth();
   const { data: decks } = useDecks(user ? Number(user.ID) : null);
   const [search, setSearch] = useState("");
+  const [view, setView] = useState("grid");
+  const [selectedDecks, setDecks] = useState<Deck_1[]>([]);
+  const { mutate } = useDeleteMultipleDecks();
 
   const deckList = useMemo(() => {
     if (!decks) return [];
@@ -56,9 +81,52 @@ const Main = () => {
 
     return decks.filter(deck => deck.title.includes(search));
   }, [decks, search])
+
+  const currentView = useMemo(() => {
+    return views.find(item => item.value === view)!
+  }, [view])
   return <>
-    <header className="flex justify-between gap-2">
+    <header className="flex flex-wrap justify-between gap-2">
       <Search setValue={setSearch} />
+      <div className="flex items-center gap-2">
+        <ButtonGroup>
+          {views.map((item) => (
+            <Button
+              variant="outline"
+              size="sm"
+              data-toggle={view === item.value}
+              onClick={() => setView(item.value)}
+              className="h-7 data-[toggle=true]:bg-emerald-100 data-[toggle=true]:text-emerald-600 data-[toggle=true]:hover:bg-emerald-200 data-[toggle=true]:hover:text-emerald-700 data-[toggle=true]:pointer-events-none">
+              <item.icon />
+            </Button>
+          ))}
+        </ButtonGroup>
+        {selectedDecks.length > 0 &&
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button className="h-7" variant="destructive">Delete Selected</Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent aria-describedby={undefined}>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Confirmation</AlertDialogTitle>
+              </AlertDialogHeader>
+              <main>
+                <p>Are you sure you want to delete these {selectedDecks.length} deck/s?</p>
+              </main>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction className="bg-red-300 hover:bg-red-500" onClick={() => {
+                  mutate(selectedDecks.map(deck => deck.ID), {
+                    onSuccess: () => {
+                      setDecks([])
+                    }
+                  })
+                }}>Proceed</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        }
+      </div>
       <Tooltip>
         <TooltipTrigger asChild>
           <Button asChild className="ml-auto h-7 px-2" variant="outline" size="sm">
@@ -73,33 +141,55 @@ const Main = () => {
         </TooltipContent>
       </Tooltip>
     </header >
-    {deckList.length > 0 ?
-      < main className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-        {deckList.map(deck => {
-          return <DeckCard key={deck.ID} deck={deck} />
-        })}
-      </main>
-      : <div className="bg-zinc-100 w-full rounded-lg font-semibold p-4 py-16 text-sm text-zinc-400 text-center">
-        <p>Create your first Sales Deck now!</p>
-      </div>}
+    {
+      deckList.length > 0 ?
+        <ScrollArea>
+          <main className={cn("max-h-[calc(100vh_-_8rem)]", currentView.className)}>
+            {deckList.map(deck => {
+              return <DeckCard key={deck.ID} deck={deck} currentView={currentView} selectedDecks={selectedDecks} setDecks={setDecks} />
+            })}
+          </main>
+        </ScrollArea>
+        : <div className="bg-zinc-100 w-full rounded-lg font-semibold p-4 py-16 text-sm text-zinc-400 text-center">
+          {!search.length ? <p>Create your first Sales Deck now!</p> : <p>Deck not found.</p>}
+        </div>
+    }
   </>
 }
 
 
-const DeckCard = ({ deck }: { deck: Deck_1 }) => {
+const DeckCard = ({ deck, currentView, setDecks, selectedDecks }: { deck: Deck_1; currentView: View; selectedDecks: Deck_1[]; setDecks: Dispatch<SetStateAction<Deck_1[]>> }) => {
   const { data, isLoading } = useThumbnail(deck.thumbnail);
   const { mutate } = useDeleteDeck();
+  const navigate = useNavigate();
 
-  return <div className="relative flex flex-col gap-2 border p-2 shadow rounded-lg max-w-sm group overflow-hidden">
-    {deck.status === 3 &&
-      <Badge className="absolute bg-yellow-200 text-yellow-600 right-4 top-4 uppercase">Draft</Badge>}
-    <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center gap-2 bg-black/5 opacity-0 group-hover:opacity-100 group-hover:pointer-events-auto">
-      <Button asChild className="rounded-full border-t shadow-sm shadow-white/50 text-white backdrop-blur-[2px] text-sm" variant="ghost">
-        <Link to={`/deck/edit?token=${deck.token}`} >VIEW</Link>
-      </Button>
+  return <div role="link" onClick={() => {
+    navigate(`/deck/edit?token=${deck.token}`);
+  }} className={cn("relative grid gap-4 border p-2 shadow rounded-lg group cursor-pointer", currentView.value === "grid" ? "grid-rows-[1fr_50px] min-w-full overflow-hidden" : "grid-cols-[auto_1fr]")} >
+    <div className={cn("absolute top-4 left-4 z-[11] opacity-0 group-hover:opacity-100 transition-all", selectedDecks.some(s => s.token === deck.token) ? "opacity-100" : "")}>
+      <Checkbox
+        className="bg-white border-2 size-6 data-[state=checked]:bg-emerald-300 data-[state=checked]:text-emerald-700 data-[state=checked]:border-emerald-900"
+        checked={selectedDecks.some(s => s.token === deck.token)}
+        onClick={(e) => e.stopPropagation()}
+        onCheckedChange={(checked) => {
+          setDecks(prev => {
+            if (checked) {
+              return [...prev, deck];
+            }
+
+            return prev.filter(s => s.token !== deck.token);
+          });
+        }}
+      />
+    </div>
+    {
+      deck.status === 3 &&
+      <Badge className={cn("absolute bg-yellow-200 text-yellow-600 hover:bg-yellow-200 top-4 right-4 uppercase")}>Draft</Badge>
+    }
+    <div className={cn("absolute flex items-center justify-center gap-2 opacity-100 w-fit bottom-3 right-3")}>
       <AlertDialog>
         <AlertDialogTrigger asChild>
-          <Button variant="ghost" size="icon" className="rounded-full border-t shadow-sm shadow-red-50 text-red-50 bg-red-100/20 backdrop-blur-[2px] text-sm">
+          <Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()} className={cn("rounded-md text-sm border border-red-200 bg-red-200 hover:bg-red-100 text-red-700")}>
             <Trash2 />
           </Button>
         </AlertDialogTrigger>
@@ -117,15 +207,17 @@ const DeckCard = ({ deck }: { deck: Deck_1 }) => {
         </AlertDialogContent>
       </AlertDialog>
     </div>
-    <div className="rounded-md overflow-hidden aspect-video">
-      {isLoading ? <div className="w-full h-[200px] bg-slate-200 animate-pulse" /> :
-        <img src={data} alt="" className="w-full max-h-[200px] object-cover" />
+    <div className={cn("rounded-md overflow-hidden aspect-video transition-all", currentView.value === "grid" ? "" : "max-h-[100px]")}>
+      {isLoading ? <div className="w-full bg-slate-200 animate-pulse" /> :
+        <img src={data} alt="" className="w-full h-full object-cover" />
       }
     </div>
-    <div className="grid gap-0.5 items-center">
-      <p className="font-semibold">{deck.title}</p>
-      <p className="text-[0.6rem]">{`Last edited on ${format(new Date(deck.modified_at), "PPP")}`}</p>
+    <div className="flex flex-col items-start leading-0">
+      <Link to={`/deck/edit?token=${deck.token}`} className="font-semibold hover:underline">
+        {deck.title}
+      </Link>
+      <p className="text-[0.6rem]" onClick={(e) => e.stopPropagation()}>{`Last edited on ${format(new Date(deck.modified_at), "PPP")}`}</p>
     </div>
-  </div>
+  </div >
 }
 export default Deck;
