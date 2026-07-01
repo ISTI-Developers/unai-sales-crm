@@ -13,7 +13,6 @@ const BasicSection = ({ data }: { data: SiteDetailswithMapping | null }) => {
   const filteredFields = useMemo(() => {
     if (!user) return [];
     const fields = [
-      "type",
       "site_owner",
       "size",
       "traffic_count",
