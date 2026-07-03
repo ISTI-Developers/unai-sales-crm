@@ -15,7 +15,7 @@ const FooterSidebar = () => {
         return {
             name: `${user.first_name} ${user.last_name}`,
             email: user.email_address,
-            avatar: user.image ?? '/user.png',
+            avatar: user.image ? `${import.meta.env.VITE_SERVER}images/${user.image}` : '/user.png',
         }
     }, [user])
 
