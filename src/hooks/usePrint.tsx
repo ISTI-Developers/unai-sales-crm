@@ -98,8 +98,8 @@ export const useGeneratePowerpoint = () => {
                 const availability = site.availability
                     ? isBefore(new Date(site.availability), new Date()) ? "OPEN" : format(new Date(site.availability), "MMM d, yyyy")
                     : "OPEN";
-                const rofr = availability === "OPEN" ? "N/A" : format(subDays(new Date(site.availability!), site.is_prime ? 61 : 31), "MMM d, yyy");
-
+                let rofr = availability === "OPEN" ? "N/A" : format(subDays(new Date(site.availability!), site.is_prime ? 61 : 31), "MMM d, yyy");
+                rofr = isBefore(rofr, new Date()) ? "N/A" : rofr;
                 baseRate = applyOptions(site, price, baseRate);
 
                 const productionCost = selectedOptions.display_options?.production_cost ?? displayOptions.base.production_cost;
