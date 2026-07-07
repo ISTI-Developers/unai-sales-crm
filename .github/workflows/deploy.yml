@@ -53,5 +53,6 @@ jobs:
             --exclude 'scripts/' \
             --exclude '.htaccess' \
             --exclude 'notify.sh' \
+            --exclude 'update.sh' \
             ./dist/ \
             $DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH
