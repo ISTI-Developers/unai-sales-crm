@@ -31,6 +31,21 @@ export const useSites = () => {
     staleTime: 60000,
   });
 };
+export const useSiteByID = (ID?: number) => {
+  return useQuery({
+    queryKey: ["sites", ID],
+    queryFn: async () => {
+      const sitesRes = await spAPI.get<Site>("sites", {
+        params: {
+          ID: ID
+        }
+      });
+      return sitesRes.data;
+    },
+    staleTime: 60000,
+    enabled: !!ID,
+  });
+};
 
 export const useSiteImpressions = (site: Site) => {
   return useQuery({

@@ -1,7 +1,11 @@
+import { Request, SiteRow } from "@/interfaces/requests.interface";
 import { clsx, type ClassValue } from "clsx";
 import {
+  addDays,
+  differenceInDays,
   differenceInHours,
   differenceInMinutes,
+  differenceInMonths,
   format,
   isToday,
 } from "date-fns";
@@ -120,6 +124,123 @@ export const haversineDistance = (coords1: Coordinate, coords2: Coordinate) => {
   return R * c;
 };
 
+export const getSiteInstallationCost = (size: string, region: string) => {
+  if (!size) return 0;
+  const matches = size.match(/\d+(?:\.\d+)?/g);
+  let maxCost = 25000;
+
+  if (matches) {
+    const [height, width] = matches;
+    const H = Number(height);
+    const W = Number(width);
+    let minH = 40;
+    let minW = 60;
+    switch (region) {
+      case "NORTH LUZON":
+        minH = 50;
+        maxCost = 30000;
+        break;
+      case "NATIONAL CAPITAL REGION":
+        minH = 95;
+        minW = 70;
+        maxCost = 50000;
+        break;
+      case "VISAYAS":
+      case "MINDANAO":
+        minH = 70;
+        minW = 50;
+        break;
+      default:
+      case "SOUTH LUZON":
+        break;
+    }
+
+    if (H > minH || W > minW) {
+      return maxCost;
+    }
+    return 20000;
+  }
+
+  return 0;
+};
+export const getSiteMaterial = (
+  size: string,
+  site_code: string,
+  region: string,
+) => {
+  if (!size) return 0;
+  const matches = size.match(/\d+(?:\.\d+)?/g);
+
+  if (matches) {
+    const [height, width] = matches;
+    const H = Number(height);
+    const W = Number(width);
+
+    let materialCost = 23;
+
+    if (site_code.includes("NLX") || site_code.includes("SLX")) {
+      materialCost = 25;
+    }
+
+    switch (region) {
+      case "VISAYAS":
+      case "MINDANAO":
+      case "NORTH LUZON":
+      case "SOUTH LUZON":
+        materialCost = 25;
+        break;
+      default:
+        materialCost = 23;
+        break;
+    }
+
+    return H * W * materialCost;
+  }
+
+  return 0;
+};
+
+export const getTotalMonthly = (amount: number, to: Date, from: Date) => {
+  return amount * differenceInMonths(addDays(to, 2), from);
+};
+export const getAddOnTotal = (item: SiteRow) => {
+  if (!item.site) return 0;
+  if (!item.site.ID) return 0;
+  const { installation, material } = item.add_ons;
+
+  const installationAmt =
+    getSiteInstallationCost(item.site.size, item.site.region) * installation;
+  const materialAmt =
+    getSiteMaterial(item.site.size, item.site.site_code, item.site.region) *
+    material;
+  let tempTotal = installationAmt + materialAmt;
+
+  if (!item.add_ons.site) return tempTotal;
+
+  const { site } = item.add_ons;
+
+  const { spots_count, spots_price, from, to } = site;
+
+  const days = differenceInDays(to, from) - 1;
+
+  const spotAmount = days * spots_price * spots_count;
+
+  tempTotal += spotAmount;
+
+  return tempTotal;
+};
+export function getCurrentApprovers(request: Request) {
+  const sorted = [...request.approvers].sort((a, b) => a.level - b.level);
+
+  const rejected = sorted.find((a) => a.status === 2);
+  if (rejected) return [rejected];
+
+  const currentLevel = sorted.find((a) => a.status === 3)?.level;
+
+  if (currentLevel == null) return [];
+
+  return sorted.filter((a) => a.level === currentLevel && a.status === 3);
+}
 export const customOrder = ["HOT", "ACTIVE", "ON/OFF", "POOL"];
 
 export const pastelColors = [

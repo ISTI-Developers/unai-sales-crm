@@ -14,11 +14,15 @@ export function DatePicker({
   onDateChange,
   disabled,
   min,
+  className,
+  withIcon = true
 }: {
   date: Date;
   onDateChange: (value: Date | undefined) => void;
   disabled?: boolean;
   min?: Date;
+  className?: string;
+  withIcon?: boolean;
 }) {
 
   return (
@@ -29,15 +33,19 @@ export function DatePicker({
           disabled={disabled}
           className={cn(
             "w-full justify-start text-left font-normal",
-            !date && "text-muted-foreground"
+            !date && "text-muted-foreground",
+            className
           )}
         >
-          <CalendarIcon className="mr-2 h-4 w-4" />
+          {withIcon &&
+            <CalendarIcon className="mr-2 h-4 w-4" />
+          }
           {date ? format(date, "PPP") : <span>Pick a date</span>}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0">
         <Calendar
+          className="rounded-lg"
           mode="single"
           disabled={
             {

@@ -1,4 +1,12 @@
-import { addDays, addWeeks, format, getISOWeek, parse } from "date-fns";
+import {
+  addDays,
+  addWeeks,
+  format,
+  getISOWeek,
+  isSameMonth,
+  isSameYear,
+  parse,
+} from "date-fns";
 export function formatAmount(
   amount: string | number,
   options?: Intl.NumberFormatOptions,
@@ -44,6 +52,21 @@ export function formatTermDetails(
 
   return `${datePart} @ ${formatAmount(rate)}`;
 }
+
+export const formatDateRange = (from: Date, to: Date) => {
+  if (isSameYear(from, to)) {
+    if (isSameMonth(from, to)) {
+      // Jul 2 - 15, 2026
+      return `${format(from, "MMM d")} - ${format(to, "d, yyyy")}`;
+    }
+
+    // Jul 2 - Aug 3, 2026
+    return `${format(from, "MMM d")} - ${format(to, "MMM d, yyyy")}`;
+  }
+
+  // Jul 2, 2026 - Aug 3, 2027
+  return `${format(from, "MMM d, yyyy")} - ${format(to, "MMM d, yyyy")}`;
+};
 export const loadImageAsBase64 = async (filePath: string) => {
   const response = await fetch(filePath);
   const blob = await response.blob();
