@@ -87,6 +87,7 @@ export const permissionMap = new Map([
   ["help.view", "View help"],
 ]);
 
+
 export const companyPermissionsMap = new Map([
   ["show.all", "Show all clients"],
   ["show.pool", "Show POOL clients only"],
