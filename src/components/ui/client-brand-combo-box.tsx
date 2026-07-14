@@ -12,8 +12,9 @@ import Fuse from 'fuse.js';
 interface ClientBrandComboboxProps {
     value?: Client;
     onValueChange: (value?: Client) => void;
+    className?: string;
 }
-function ClientBrandCombobox({ value, onValueChange }: ClientBrandComboboxProps) {
+function ClientBrandCombobox({ value, onValueChange, className }: ClientBrandComboboxProps) {
     // const { user } = useAuth();
     const { data: clients, isLoading } = useClients();
     const [open, setOpen] = useState(false)
@@ -52,7 +53,7 @@ function ClientBrandCombobox({ value, onValueChange }: ClientBrandComboboxProps)
                     variant="outline"
                     role="combobox"
                     aria-expanded={open}
-                    className="w-full justify-between h-15"
+                    className={cn("w-full justify-between h-15", className)}
                 >
                     <div className='flex flex-col items-start'>
                         {value ?

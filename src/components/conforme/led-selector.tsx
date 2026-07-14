@@ -7,7 +7,7 @@ import { Input } from '../ui/input';
 import InputNumber from '../ui/number-input';
 import { DatePicker } from '../ui/datepicker';
 import { Separator } from '../ui/separator';
-import { differenceInDays } from 'date-fns';
+import { addDays, differenceInCalendarDays } from 'date-fns';
 import { getAddOnTotal } from '@/lib/utils';
 import { Cart, SiteRow } from '@/interfaces/requests.interface';
 
@@ -48,7 +48,7 @@ function LEDSelector({ item, index, setCart }: LEDSelectorProps) {
                 spots_count: 0,
                 spots_price: site.spots_price,
                 from: new Date(),
-                to: new Date(),
+                to: addDays(new Date(), 1),
             }
         }
         setCart((prev) => ({
@@ -148,8 +148,8 @@ function LEDSelector({ item, index, setCart }: LEDSelectorProps) {
                             onSiteDetailChange(index, "to", value)
                         }} />
                     </div>
-                    {differenceInDays(item.add_ons.site.to, item.add_ons.site.from) !== 0 &&
-                        <p className='pb-2'>{differenceInDays(item.add_ons.site.to, item.add_ons.site.from) - 1} days</p>
+                    {differenceInCalendarDays(item.add_ons.site.to, item.add_ons.site.from) !== 0 &&
+                        <p className='pb-2'>{differenceInCalendarDays(item.add_ons.site.to, item.add_ons.site.from)} day/s</p>
                     }
                 </div>
             </>}

@@ -2,10 +2,10 @@ import { Request, SiteRow } from "@/interfaces/requests.interface";
 import { clsx, type ClassValue } from "clsx";
 import {
   addDays,
-  differenceInDays,
+  differenceInCalendarDays,
+  differenceInCalendarMonths,
   differenceInHours,
   differenceInMinutes,
-  differenceInMonths,
   format,
   isToday,
 } from "date-fns";
@@ -201,7 +201,7 @@ export const getSiteMaterial = (
 };
 
 export const getTotalMonthly = (amount: number, to: Date, from: Date) => {
-  return amount * differenceInMonths(addDays(to, 2), from);
+  return amount * differenceInCalendarMonths(addDays(to, 0), from);
 };
 export const getAddOnTotal = (item: SiteRow) => {
   if (!item.site) return 0;
@@ -221,7 +221,7 @@ export const getAddOnTotal = (item: SiteRow) => {
 
   const { spots_count, spots_price, from, to } = site;
 
-  const days = differenceInDays(to, from) - 1;
+  const days = differenceInCalendarDays(to, from);
 
   const spotAmount = days * spots_price * spots_count;
 

@@ -14,7 +14,7 @@ import { Site } from '@/interfaces/sites.interface';
 import { formatAmount, formatDateRange } from '@/lib/format';
 import { getAddOnTotal, getTotalMonthly } from '@/lib/utils';
 import { useAuth } from '@/providers/auth.provider';
-import { addDays, differenceInDays, format } from 'date-fns';
+import { addDays, differenceInCalendarDays, format } from 'date-fns';
 import { ChevronLeft, Hourglass, InfoIcon, PlusIcon } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom'
@@ -276,30 +276,35 @@ export const TotalRates = ({ cart }: { cart: Cart }) => {
   }, 0)
 
   const totalNetAmount = totalPackageRate - totalAddOns;
-  return <div className='border rounded-lg p-4 flex flex-col gap-2'>
+  const margin = totalNetAmount - totalSRP;
+  return <div className='border rounded-lg p-4 flex flex-col gap-2 text-sm'>
     <div className='flex items-center justify-between'>
       <Label>Total SRP</Label>
-      <p className='font-bold text-zinc-400'>{formatAmount(totalSRP)}</p>
+      <p className='font-semibold'>{formatAmount(totalSRP)}</p>
     </div>
     <div className='flex items-center justify-between'>
-      <Label>Total Monthly Package Rate</Label>
-      <p className='font-bold'>{formatAmount(totalPackageRate)}</p>
+      <Label>Total Monthly Rate</Label>
+      <p className='font-semibold'>{formatAmount(totalPackageRate)}</p>
     </div>
     <div className='flex items-center justify-between'>
-      <Label>Total Add Ons</Label>
-      <p className='font-bold text-red-300'>-{formatAmount(totalAddOns)}</p>
+      <Label>Total Add Ons Value</Label>
+      <p className='font-semibold text-red-400/80'>-{formatAmount(totalAddOns)}</p>
     </div>
     <hr />
     <div className='flex items-center justify-between'>
-      <Label>Total Net Amount</Label>
-      <p className='font-bold'>{formatAmount(totalNetAmount)}</p>
+      <Label>Grand Total</Label>
+      <p className='font-semibold'>{formatAmount(totalNetAmount)}</p>
+    </div>
+    <div className='flex items-center justify-between'>
+      <Label>Margin</Label>
+      <p className='font-semibold'>{formatAmount(margin)}</p>
     </div>
   </div>
 }
 
 
 export const LEDContainer = ({ site }: { site: LEDBoardConfigured }) => {
-  const days = differenceInDays(site.to, site.from) - 1
+  const days = differenceInCalendarDays(site.to, site.from)
   const spotRate = site.spots_price * site.spots_count * days;
   return <>
     <div>

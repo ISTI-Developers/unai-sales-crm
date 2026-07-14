@@ -41,10 +41,10 @@ const InputNumber = React.forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLI
     }, [value]);
 
     return (
-        <InputGroup className={cn('bg-white', groupClassName)}>
+        <InputGroup className={cn('bg-white px-1.5', groupClassName)}>
             {isMoney &&
-                <InputGroupAddon>
-                    <PhilippinePesoIcon />
+                <InputGroupAddon className='px-0'>
+                    <PhilippinePesoIcon className='size-4' />
                 </InputGroupAddon>
             }
             <InputGroupInput
@@ -53,6 +53,7 @@ const InputNumber = React.forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLI
                 value={display}
                 onChange={handleChange}
                 inputMode="decimal"
+                className='pl-1'
                 // placeholder=""
                 ref={ref}
             />

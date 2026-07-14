@@ -4,7 +4,7 @@ import { getCurrentApprovers } from "@/lib/utils";
 import ApproverCell from "@/pages/conforme/approver";
 import RequestorCell from "@/pages/conforme/requestor";
 import { ColumnDef } from "@tanstack/react-table";
-import { format, isSameDay } from "date-fns";
+import { addHours, format, isSameDay } from "date-fns";
 import { Building, Calendar, Loader, User2Icon } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -125,7 +125,7 @@ export const columns: ColumnDef<RequestTable>[] = [
         header: "Submitted On",
         cell: ({ row }) => {
             const date = row.getValue<Date>("submitted_on");
-            return <p className="text-xs">{format(date, "yyyy-MM-dd H:mm:ss")}</p>
+            return <p className="text-xs">{format(addHours(date,Number(import.meta.env.VITE_TIME_ADJUST) + 7), "yyyy-MM-dd HH:mm:ss")}</p>
         },
         filterFn: (row, columnId, filterValue) => {
             const cellValue = row.getValue<Date>(columnId)

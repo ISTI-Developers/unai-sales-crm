@@ -8,7 +8,7 @@ import { useUser } from "@/hooks/useUsers";
 import { approvalStep, Approver, CartDetails, CartSite, Request } from "@/interfaces/requests.interface";
 import { formatAmount, formatTermDetails } from "@/lib/format";
 import { cn, getSiteInstallationCost, getSiteMaterial } from "@/lib/utils";
-import { format, formatDistanceToNow } from "date-fns";
+import { addHours, format, formatDistanceToNow } from "date-fns";
 import { Check, RefreshCw, View, X } from "lucide-react";
 import { Link, useParams } from "react-router-dom"
 import { LEDContainer } from "./create";
@@ -112,7 +112,7 @@ function ViewConforme() {
                         </div>
                         <p className="capitalize">{`${user?.first_name} ${user?.last_name}`}</p>
                         <span>|</span>
-                        <p>{format(data.created_at, "PPPp")}</p>
+                        <p>{format(addHours(data.created_at,Number(import.meta.env.VITE_TIME_ADJUST) + 7), "PPPp")}</p>
                     </div>
                 </div>
                 <div className="flex gap-2">
@@ -343,11 +343,11 @@ const ApproverItem = ({ approver, isCurrentLevel, isRejected }: { approver: Appr
         <Textarea disabled className="resize-none disabled:shadow-none border-zinc-400 disabled:opacity-100" value={approver.remarks} />
         <div className="flex flex-col text-xs gap-0.5">
             {(isCurrentLevel && approver.status === 3 && !isRejected) &&
-                <Badge className="w-fit font-normal px-1.5" variant="secondary">{`Waited for ${formatDistanceToNow(approver.modified_at)}`}</Badge>
+                <Badge className="w-fit font-normal px-1.5" variant="secondary">{`Waited for ${formatDistanceToNow(addHours(approver.modified_at,Number(import.meta.env.VITE_TIME_ADJUST) + 7))}`}</Badge>
             }
             {approver.status !== 3 ? <>
-                <p>{format(approver.modified_at, "PP")}</p>
-                <p>{format(approver.modified_at, "p")}</p>
+                <p>{format(addHours(approver.modified_at,Number(import.meta.env.VITE_TIME_ADJUST) + 7), "PP")}</p>
+                <p>{format(addHours(approver.modified_at,Number(import.meta.env.VITE_TIME_ADJUST) + 7), "p")}</p>
             </> : (!isCurrentLevel || isRejected) && <p>---</p>}
         </div>
     </div>
