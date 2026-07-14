@@ -15,11 +15,13 @@ export function DateRangePicker({
     onDateChange,
     disabled,
     min,
+    className
 }: {
     date?: DateRange;
     onDateChange: (value: DateRange | undefined) => void;
     disabled?: boolean;
     min?: Date;
+    className?: string;
 }) {
     const [month, setMonth] = useState<Date>()
     return (
@@ -30,7 +32,8 @@ export function DateRangePicker({
                     disabled={disabled}
                     className={cn(
                         "justify-start text-left font-normal h-7 px-2",
-                        !date && "text-muted-foreground"
+                        !date && "text-muted-foreground",
+                        className
                     )}
                 >
                     <CalendarIcon className="mr-2 h-4 w-4" />

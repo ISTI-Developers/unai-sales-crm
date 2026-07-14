@@ -78,10 +78,15 @@ export const permissionMap = new Map([
   ["modules.view", "View modules"],
   ["modules.edit", "Edit modules"],
   ["modules.delete", "Delete modules"],
+  ["conforme.view", "View conforme"],
+  ["conforme.add", "Add conforme"],
+  ["conforme.edit", "Edit conforme"],
+  ["conforme.delete", "Delete conforme"],
   ["logs.view", "View logs"],
   ["settings.view", "View settings"],
   ["help.view", "View help"],
 ]);
+
 
 export const companyPermissionsMap = new Map([
   ["show.all", "Show all clients"],

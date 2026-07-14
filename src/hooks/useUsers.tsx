@@ -19,7 +19,7 @@ export const useUsers = (select?: ((data: User[]) => User[]) | undefined) => {
     select: select,
   });
 };
-export const useUser = (ID: string | null) => {
+export const useUser = (ID?: string | number | null) => {
   return useQuery({
     queryKey: ["users", ID],
     queryFn: async () => {

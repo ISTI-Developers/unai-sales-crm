@@ -21,8 +21,9 @@ import { useCreateBooking } from '@/hooks/useBookings';
 import { toast } from '@/hooks/use-toast';
 import { Notification, sendNotification } from '@/hooks/useNotifications';
 import { getLatestBooking } from '@/lib/fetch';
-// import SelectSearch from '../ui/select-search';
-// import { useClients } from '@/hooks/useClients';
+import ClientBrandCombobox from '../ui/client-brand-combo-box';
+import { Client } from '@/interfaces/client.interface';
+import { useClients } from '@/hooks/useClients';
 
 const formConfig = {
     "PRE-TERMINATION": ['end', 'remarks'],
@@ -34,6 +35,8 @@ function CreateBooking({ site }: { site: SiteAvailability }) {
     const [openBooking, setOpenBooking] = useState(false);
     const { data: users, isLoading: isUsersLoading } = useUsers();
     const { mutate: createBooking } = useCreateBooking(site.site_code)
+    const { data: clients } = useClients();
+    const [selectedClient, setClient] = useState<Client>()
     const [send, onSend] = useState(false);
     const [booking, setBooking] = useState({
         srp: site.price,
@@ -83,18 +86,19 @@ function CreateBooking({ site }: { site: SiteAvailability }) {
 
     const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        if (!selectedClient) return;
         onSend(true)
         const bookings = site.bookings.map(sb => ({ ...sb, is_prime: site.is_prime }))
         const previousBooking = getLatestBooking(bookings);
         let AEs = booking.account_executive;
         let monthly_rate = booking.monthly_rate;
         let booking_status = booking.booking_status;
-        let client = booking.client;
+        let client = `${selectedClient.name} (${selectedClient.brand})`;
 
         if (previousBooking) {
             AEs = salesUnits.filter(sales => previousBooking.account_executive.split(",").some(ae => ae.trim() === sales.label));
             monthly_rate = ["PRE-TERMINATION", "CHANGE OF CONTRACT PERIOD/DURATION", "CONTRACT EXTENSION"].includes(booking.booking_status) ? String(previousBooking.monthly_rate) : booking.monthly_rate;
-            client = ["PRE-TERMINATION", "CHANGE OF CONTRACT PERIOD/DURATION", "CONTRACT EXTENSION"].includes(booking.booking_status) ? previousBooking.client : booking.client
+            client = ["PRE-TERMINATION", "CHANGE OF CONTRACT PERIOD/DURATION", "CONTRACT EXTENSION"].includes(booking.booking_status) ? previousBooking.client : client;
             const fromOld = format(new Date(previousBooking.date_from), "yyyy-MM-dd");
             const fromNew = format(new Date(booking.start), "yyyy-MM-dd");
             const toOld = format(new Date(previousBooking.date_to), "yyyy-MM-dd");
@@ -215,18 +219,23 @@ function CreateBooking({ site }: { site: SiteAvailability }) {
 
     useEffect(() => {
         if (!openBooking) {
+            const client = site.client ? site.client.trim() : "";
+            const brand = site.product ? site.product.trim() : "";
             setBooking({
                 srp: site.price,
                 booking_status: (site?.remaining_days ?? 0) > 60 ? "RENEWAL" : "NEW",
-                client: (site?.remaining_days ?? 0) > 60 ? `${site.client} ${site.product ? `(${site.product})` : ``}` : "",
+                client: (site?.remaining_days ?? 0) > 60 ? `${client} ${site.product ? `(${brand})` : ``}` : "",
                 account_executive: [] as List[],
                 start: site.end_date ? addDays(new Date(site.end_date), 1) : new Date(),
                 end: site.end_date ? addDays(new Date(site.end_date), 1) : new Date(),
                 monthly_rate: "0",
                 remarks: "",
-            })
+            });
+            if (!clients) return;
+
+            setClient(clients.find(c => c.name.toUpperCase() === client.toUpperCase()));
         }
-    }, [openBooking, site.client, site.date_from, site.end_date, site.price, site.product, site?.remaining_days])
+    }, [openBooking, site, clients])
     return (
         <Dialog open={openBooking} onOpenChange={setOpenBooking} modal={false}>
             <Tooltip>
@@ -245,13 +254,14 @@ function CreateBooking({ site }: { site: SiteAvailability }) {
                 onInteractOutside={(e) => e.preventDefault()}>
                 <DialogHeader>
                     <DialogTitle>{`Book ${site.site_code}`}</DialogTitle>
-                    <DialogDescription>Create or update the booking for this site.</DialogDescription>
+                    <DialogDescription>Create booking for this site.</DialogDescription>
                 </DialogHeader>
                 <form className='space-y-1' onSubmit={onSubmit}>
                     {showField('srp') &&
                         <div>
                             <Label htmlFor='srp' className='text-xs'>SRP</Label>
                             <InputNumber id="srp"
+                                groupClassName='h-8'
                                 value={booking.srp}
                                 required
                                 onChange={onChange}
@@ -260,14 +270,21 @@ function CreateBooking({ site }: { site: SiteAvailability }) {
                         </div>}
                     <div>
                         <Label htmlFor='status' className='text-xs'>Booking Status</Label>
-                        <Select value={booking.booking_status} disabled={send} onValueChange={(value) =>
+                        <Select value={booking.booking_status} disabled={send} onValueChange={(value) => {
                             setBooking((prev) => ({
                                 ...prev,
                                 booking_status: value,
                                 client: value === "RENEWAL" ? `${site.client}` : prev.client,
                             }))
+                            if (!clients) return;
+
+                            if (value === "RENEWAL") {
+                                const client = clients.find(c => c.name.toLowerCase() === site.client?.toLowerCase());
+                                setClient(client);
+                            }
+                        }
                         }>
-                            <SelectTrigger >
+                            <SelectTrigger className='h-8 text-[13px]'>
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -291,16 +308,30 @@ function CreateBooking({ site }: { site: SiteAvailability }) {
                         </Select>
                     </div>
                     {showField("client") &&
-                        <div>
-                            <Label htmlFor="client" className='text-xs'>Client</Label>
-                            <Input
-                                id="client"
-                                value={booking.client}
-                                required
-                                onChange={onChange}
-                                disabled={send}
-                            />
-                        </div>
+                        <>
+                            <div>
+                                <Label htmlFor="client" className='text-xs'>Client</Label>
+                                <ClientBrandCombobox value={selectedClient} onValueChange={setClient} className='h-8' />
+                            </div>
+                            <div>
+                                <Label htmlFor="brand" className='text-xs'>Brand</Label>
+                                <Input
+                                    id="brand"
+                                    value={selectedClient?.brand ?? ""}
+                                    required
+                                    onChange={(e) => setClient(prev => {
+                                        if (!prev) return;
+
+                                        return {
+                                            ...prev,
+                                            brand: e.target.value
+                                        }
+                                    })}
+                                    disabled={send}
+                                    className='h-8'
+                                />
+                            </div>
+                        </>
                     }
                     {showField('ae') &&
                         <div>

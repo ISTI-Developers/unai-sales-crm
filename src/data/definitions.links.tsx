@@ -17,6 +17,7 @@ import {
   // TrainFront,
   Plane,
   Bus,
+  Signature,
   // Signature,
   // PackageCheck,
 } from "lucide-react";
@@ -30,6 +31,7 @@ const Deck = lazy(() => import("@/views/Deck"));
 const Bookings = lazy(() => import("@/views/Bookings"));
 const Reports = lazy(() => import("@/views/Reports"));
 const Meetings = lazy(() => import("@/views/Meetings"));
+const Conforme = lazy(() => import("@/views/Conforme"));
 // const LRT = lazy(() => import("@/views/LRT"));
 // const Availability = lazy(() => import("@/views/Availability"));
 // const Contracts = lazy(() => import("@/views/UTASIContracts"));
@@ -60,6 +62,8 @@ export const linkDefinitions: LinkDefinitions[] = [
   // { title: "bookings", handler: "/bookings", icon: Tags, group: 'general', element: Bookings, },
   { title: "reports", handler: "/reports", icon: FileChartColumnIncreasing, group: 'clients', element: Reports, },
   { title: "meetings", handler: "/meetings", icon: NotepadText, group: 'clients', element: Meetings, },
+  { title: "Conforme", handler: "/conforme", icon: Signature, group: 'approvals', element: Conforme, },
+
   // { title: "LRT", handler: "/lrt", icon: TrainFront, group: 'asset', element: LRT, },
   { title: "MCIA", handler: "/mcia", icon: Plane, group: 'asset', element: Meetings, },
   { title: "PITX", handler: "/pitx", icon: Bus, group: 'asset', element: Meetings, },
