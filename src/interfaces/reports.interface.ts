@@ -37,6 +37,8 @@ export interface ReportSummary {
 export interface WeeklyReportSummary {
   report_id: number;
   ae: string;
+  code: string;
+  image: string;
   sales_unit: string;
   client: string;
   report: string;

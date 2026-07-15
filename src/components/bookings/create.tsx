@@ -114,7 +114,7 @@ function CreateBooking({ site }: { site: SiteAvailability }) {
             monthly_rate: monthly_rate,
             account_executive: ["PRE-TERMINATION", "CHANGE OF CONTRACT PERIOD/DURATION", "CONTRACT EXTENSION"].includes(booking.booking_status) ? AEs : booking.account_executive,
             site_rental: String(site.site_rental ?? 0),
-            old_client: site.product ? `${site.client}(${site.product})` : site.client,
+            old_client: site.product ? `${site.client} (${site.product})` : site.client,
         }
         // console.log(booking);
         // return

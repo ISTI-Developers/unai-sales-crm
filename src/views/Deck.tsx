@@ -201,8 +201,11 @@ const DeckCard = ({ deck, currentView, setDecks, selectedDecks }: { deck: Deck_1
             <p>Are you sure you want to delete this saved deck?</p>
           </main>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction className="bg-red-300 hover:bg-red-500" onClick={() => mutate(deck.ID)}>Yes</AlertDialogAction>
+            <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancel</AlertDialogCancel>
+            <AlertDialogAction className="bg-red-300 hover:bg-red-500" onClick={(e) => {
+              e.stopPropagation();
+              mutate(deck.ID)
+            }}>Yes</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
