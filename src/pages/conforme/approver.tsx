@@ -1,4 +1,4 @@
-import { Avatar, AvatarFallback, AvatarGroup } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarGroup, AvatarImage } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Request } from "@/interfaces/requests.interface"
 import { getCurrentApprovers } from "@/lib/utils";
@@ -10,7 +10,7 @@ function ApproverCell({ request }: { request: Request }) {
         [request]
     );
 
-    if(currentApprovers.length === 0){
+    if (currentApprovers.length === 0) {
         return <>---</>
     }
     return (
@@ -20,7 +20,8 @@ function ApproverCell({ request }: { request: Request }) {
                     const fallback = `${approver.first_name[0]}${approver.last_name[0]}`;
                     return <Tooltip key={approver.ID}>
                         <TooltipTrigger asChild>
-                            <Avatar className="size-8 font-semibold">
+                            <Avatar className="size-8 font-semibold border">
+                                <AvatarImage src={`${import.meta.env.VITE_SERVER}images/${approver.image}`}/>
                                 <AvatarFallback className="text-xs">
                                     {fallback}
                                 </AvatarFallback>

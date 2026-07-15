@@ -9,9 +9,9 @@ import { useAuth } from "@/providers/auth.provider";
 import { formatAmount } from "@/lib/format";
 import InputNumber from "../ui/number-input";
 
-const PriceCell = ({ row, column }: CellContext<Site, unknown>) => {
+const PriceCell = ({ row }: CellContext<Site, unknown>) => {
     const { mutate } = useUpdatePrice();
-    const priceValue: string = row.getValue(column.id);
+    const priceValue: string = row.original.price;
     const [price, setPrice] = useState<string>(priceValue ?? "");
     const [toggle, onToggle] = useState(false);
     const { user } = useAuth();

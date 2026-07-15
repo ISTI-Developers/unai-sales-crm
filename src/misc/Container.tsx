@@ -2,6 +2,7 @@ import { ReactNode, lazy, Suspense } from "react";
 import Page from "./Page";
 import { cn } from "@/lib/utils";
 import { useLocation } from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
 // import Notifications from "./Notifications";
 
 const PageTitle = lazy(() => import("@/misc/PageTitle"));
@@ -26,15 +27,17 @@ const Container = ({ children, title = "", className }: ContainerProps) => {
         </Suspense>
         {/* <Notifications /> */}
       </header>
-      <Page
-        className={cn(
-          "bg-white shadow-md lg:rounded-lg p-4 flex flex-col w-full h-full lg:min-h-0 gap-4 overflow-y-auto",
-          pathname.split("/").length > 2 ? "max-h-[calc(100dvh_-_5.75rem)]" : "max-h-[calc(100dvh_-_3.25rem)]",
-          className
-        )}
-      >
-        {children}
-      </Page>
+      <AnimatePresence>
+        <Page
+          className={cn(
+            "bg-white shadow-md lg:rounded-lg p-4 flex flex-col h-full lg:min-h-0 gap-4 overflow-y-auto w-full",
+            pathname.split("/").length > 2 ? "max-h-[calc(100dvh_-_5.75rem)]" : "max-h-[calc(100dvh_-_3.25rem)]",
+            className
+          )}
+        >
+          {children}
+        </Page>
+      </AnimatePresence>
     </div>
   );
 };

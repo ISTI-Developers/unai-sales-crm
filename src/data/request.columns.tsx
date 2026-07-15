@@ -100,7 +100,6 @@ export const columns: ColumnDef<RequestTable>[] = [
         filterFn: (row, columnId, filterValue) => {
             const cellValue = row.getValue<string>(columnId);
 
-            console.log(cellValue, filterValue)
             switch (filterValue.condition) {
                 case "is":
                     return cellValue.includes(filterValue.value);

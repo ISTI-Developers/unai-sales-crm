@@ -46,7 +46,10 @@ function ViewConforme() {
     const isCurrentApprover = useMemo(() => {
         if (!data || !currentUser || isLoading) return false;
 
+        if(!data.approvers.length) return false;
+
         const approvers = data.approvers;
+        
 
         const currentLevel = approvers.reduce((min, item) => Math.min(min, item.level), approvers[0].level);
 

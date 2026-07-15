@@ -107,9 +107,13 @@ const useReportSummary = () => {
       label: "SU 5",
       color: "#1e1b4b",
     },
-    SU_6: {
+    "SU_6-V": {
       label: "SU 6",
       color: "#581c87",
+    },
+    "SU_6-M": {
+      label: "SU 6",
+      color: "#671fa7",
     },
     SU_7: {
       label: "SU 7",

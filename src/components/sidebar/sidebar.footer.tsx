@@ -28,7 +28,7 @@ const FooterSidebar = () => {
                     <DropdownMenuTrigger asChild>
                         <SidebarMenuButton
                             size="lg"
-                            className="flex items-center hover:bg-main-400 data-[active=true]:bg-main-400"
+                            className="flex items-center hover:bg-main-400 data-[active=true]:bg-main-400 overflow-hidden"
                         >
                             <div className={cn("bg-transparent text-sidebar-primary-foreground flex aspect-square transition-all items-center justify-center rounded-lg", state === "collapsed" ? "size-8" : "size-8")}>
                                 <img src={userData.avatar} alt="" className='rounded-lg' />
@@ -47,7 +47,7 @@ const FooterSidebar = () => {
                     >
                         <DropdownMenuLabel className="p-0 font-normal bg-main-400/20 rounded-lg">
                             <div className="flex items-center gap-2 p-1.5 text-left text-sm">
-                                <div className={cn("bg-transparent text-sidebar-primary-foreground flex aspect-square transition-all items-center justify-center rounded-md", state === "collapsed" ? "size-8" : "size-8")}>
+                                <div className={cn("bg-transparent text-sidebar-primary-foreground flex aspect-square transition-all items-center justify-center rounded-md overflow-hidden", state === "collapsed" ? "size-8" : "size-8")}>
                                     <img src={userData.avatar} alt="" className='rounded-md' />
                                 </div>
                                 <div className="grid flex-1 text-left text-sm leading-tight">
