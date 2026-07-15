@@ -17,10 +17,10 @@ const Container = ({ children, title = "", className }: ContainerProps) => {
   return (
     <div
       className={cn(
-        "flex flex-col lg:gap-4 text-black"
+        "flex flex-col md:gap-2 text-black"
       )}
     >
-      <header className="bg-red-500 w-full lg:rounded-b-lg flex items-center justify-between p-2 text-white sticky top-0 lg:relative z-[2]">
+      <header className="bg-red-500 w-full md:rounded-b-lg flex items-center justify-between p-2 text-white sticky top-0 lg:relative z-[2]">
 
         <Suspense fallback={<>Loading...</>}>
           <PageTitle title={title} />
@@ -30,7 +30,7 @@ const Container = ({ children, title = "", className }: ContainerProps) => {
       <AnimatePresence>
         <Page
           className={cn(
-            "bg-white shadow-md lg:rounded-lg p-4 flex flex-col h-full lg:min-h-0 gap-4 overflow-y-auto w-full",
+            "bg-white shadow-md md:rounded-lg p-4 flex flex-col h-full lg:min-h-0 gap-4 overflow-y-auto w-full",
             pathname.split("/").length > 2 ? "max-h-[calc(100dvh_-_5.75rem)]" : "max-h-[calc(100dvh_-_3.25rem)]",
             className
           )}

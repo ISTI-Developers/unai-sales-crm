@@ -86,14 +86,13 @@ function CreateBooking({ site }: { site: SiteAvailability }) {
 
     const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        if (!selectedClient) return;
         onSend(true)
         const bookings = site.bookings.map(sb => ({ ...sb, is_prime: site.is_prime }))
         const previousBooking = getLatestBooking(bookings);
         let AEs = booking.account_executive;
         let monthly_rate = booking.monthly_rate;
         let booking_status = booking.booking_status;
-        let client = `${selectedClient.name} (${selectedClient.brand})`;
+        let client = selectedClient ? `${selectedClient.name} (${selectedClient.brand})` : site.product ? `${site.client}(${site.product})` : site.client ?? "";
 
         if (previousBooking) {
             AEs = salesUnits.filter(sales => previousBooking.account_executive.split(",").some(ae => ae.trim() === sales.label));
@@ -117,7 +116,7 @@ function CreateBooking({ site }: { site: SiteAvailability }) {
             site_rental: String(site.site_rental ?? 0),
             old_client: site.product ? `${site.client}(${site.product})` : site.client,
         }
-        // console.log(newBooking);
+        // console.log(booking);
         // return
         createBooking(
             newBooking,

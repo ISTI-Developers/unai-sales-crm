@@ -4,7 +4,7 @@ import { Site } from "@/interfaces/sites.interface";
 import PriceCell from "@/components/sites/price.cell";
 import SiteStatusSelect from "@/components/site-status-select";
 import { ColumnDef } from "@tanstack/react-table";
-import { Building, Loader, MapPin, PhilippinePeso, UserRoundIcon } from "lucide-react";
+import { Building, Loader, MapPin, PhilippinePeso, Quote, Ruler, UserRoundIcon } from "lucide-react";
 
 export const columns: ColumnDef<Site>[] = [
   {
@@ -92,6 +92,9 @@ export const columns: ColumnDef<Site>[] = [
       return <p className="text-[0.65rem] whitespace-nowrap">{item}</p>;
     },
     enableColumnFilter: false,
+    meta: {
+      icon: Ruler
+    }
   },
   {
     id: "SRP",
@@ -130,6 +133,9 @@ export const columns: ColumnDef<Site>[] = [
     header: "Remarks",
     cell: RemarksCell,
     enableColumnFilter: false,
+    meta:{
+      icon: Quote
+    }
   },
   {
     id: "status",
