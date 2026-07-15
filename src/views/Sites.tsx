@@ -1,14 +1,12 @@
 import Maps from "@/components/sites/maps";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DataTable } from "@/data/data-table";
+import ResponsiveTable from "@/data/responsive-table";
 import { columns } from "@/data/sites.columns";
 import { useSites } from "@/hooks/useSites";
 import Container from "@/misc/Container";
-import Page from "@/misc/Page";
 import { useAuth } from "@/providers/auth.provider";
 import { TabsContent } from "@radix-ui/react-tabs";
-import { AnimatePresence } from "framer-motion";
 import { CirclePlus } from "lucide-react";
 import { lazy, useMemo } from "react";
 import { Helmet } from "react-helmet";
@@ -49,35 +47,33 @@ const Main = () => {
     return columns;
   }, [user])
   return (
-    <AnimatePresence>
-      <Page className="w-full">
-        <Tabs defaultValue="list">
-          <TabsList className="w-full justify-start px-1">
-            <TabsTrigger value="list" className="text-xs uppercase data-[state=active]:bg-zinc-200">Sites</TabsTrigger>
-            <TabsTrigger value="maps" className="text-xs uppercase data-[state=active]:bg-zinc-200">Map View</TabsTrigger>
-          </TabsList>
-          <TabsContent value="list" className="pt-2">
-            {isLoading
-              ? fetchStatus
-              : data && (
-                <>
-                  <DataTable columns={filteredColumns} data={data} size={500}>
-                    <Button asChild variant="outline" className="px-3" size="sm">
-                      <Link to="/sites/add">
-                        <CirclePlus />
-                        <p>New Site</p>
-                      </Link>
-                    </Button>
-                  </DataTable>
-                </>
-              )}
-          </TabsContent>
-          <TabsContent value="maps">
-            <Maps />
-          </TabsContent>
-        </Tabs>
-      </Page>
-    </AnimatePresence>
+    <div className="min-w-0 ">
+      <Tabs defaultValue="list">
+        <TabsList className="w-full justify-start px-1">
+          <TabsTrigger value="list" className="text-xs uppercase data-[state=active]:bg-zinc-200">Sites</TabsTrigger>
+          <TabsTrigger value="maps" className="text-xs uppercase data-[state=active]:bg-zinc-200">Map View</TabsTrigger>
+        </TabsList>
+        <TabsContent value="list" className="pt-2">
+          {isLoading
+            ? fetchStatus
+            : data && (
+              <>
+                <ResponsiveTable columns={filteredColumns} data={data} size={500}>
+                  <Button asChild variant="outline" className="px-3" size="sm">
+                    <Link to="/sites/add">
+                      <CirclePlus />
+                      <p>New Site</p>
+                    </Link>
+                  </Button>
+                </ResponsiveTable>
+              </>
+            )}
+        </TabsContent>
+        <TabsContent value="maps">
+          <Maps />
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 

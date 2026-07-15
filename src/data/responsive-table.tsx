@@ -3,15 +3,15 @@ import Search from '@/components/search';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import { ColumnDef, ColumnFiltersState, flexRender, getCoreRowModel, getExpandedRowModel, getFacetedRowModel, getFacetedUniqueValues, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, PaginationState, SortingState, useReactTable } from '@tanstack/react-table'
-import { ForwardRefExoticComponent, ReactNode, RefAttributes, useState } from 'react'
+import { ReactNode, useState } from 'react'
 import ResponsiveTableFilters from './responsive-table-filters';
-import { LucideProps } from 'lucide-react';
 import ResponsiveTableFilterDisplay from './responsive-table-filter-display';
 
 interface ResponsiveTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
     data: TData[];
     children?: ReactNode,
+    size?: number
 }
 
 export type FilterOption = "is" | "is not" | "contains" | "between";
@@ -21,24 +21,15 @@ export type Filter = {
     value: unknown;
 
 }
-declare module "@tanstack/react-table" {
-    interface ColumnMeta<TData, TValue> {
-        isCentered?: boolean;
-        filterType?: "dropdown" | "date_range" | "price_range";
-        allowedOptions?: FilterOption[];
-        icon?: ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>;
-        isArray?: boolean
-    }
-}
 
-function ResponsiveTable<TData, TValue>({ data, columns, children }: ResponsiveTableProps<TData, TValue>) {
+function ResponsiveTable<TData, TValue>({ data, columns, children, size = 10 }: ResponsiveTableProps<TData, TValue>) {
     const [sorting, setSorting] = useState<SortingState>([]);
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
     const [globalFilter, setGlobalFilter] = useState("");
     const [isEditingFilter, setEditingFilter] = useState<Filter>()
     const [paginationState, setPaginationState] = useState<PaginationState>({
         pageIndex: 0,
-        pageSize: 10,
+        pageSize: size,
     });
     const table = useReactTable({
         data,
@@ -74,12 +65,12 @@ function ResponsiveTable<TData, TValue>({ data, columns, children }: ResponsiveT
                 </div>
                 {children}
             </header>
-            <main className='h-auto overflow-y-auto rounded-md border'>
+            <main className='h-auto overflow-auto rounded-md border'>
                 <Table>
                     <TableHeader>
                         {table.getHeaderGroups().map(headerGroup => (
                             <TableRow key={headerGroup.id}>
-                                {headerGroup.headers.map((header) => {
+                                {headerGroup.headers.filter(header => !header.column.columnDef.meta?.hidden).map((header) => {
                                     const columnDef = header.column.columnDef;
                                     const meta = columnDef.meta;
                                     const Icon = meta?.icon;
@@ -87,17 +78,22 @@ function ResponsiveTable<TData, TValue>({ data, columns, children }: ResponsiveT
                                         <TableHead
                                             key={header.id}
                                             className={cn(
-                                                "sticky top-0 bg-white-400 text-main-400 text-[0.6rem] h-7 whitespace-nowrap uppercase font-bold z-[9]",
+                                                "sticky top-0 bg-white text-main-400 text-[0.6rem] h-7 whitespace-nowrap uppercase font-bold z-[9]",
                                             )}
                                         >
                                             <div className='flex items-center gap-1'>
-                                                {Icon && <Icon size={14} />}
-                                                {header.isPlaceholder
-                                                    ? null
-                                                    : flexRender(
-                                                        columnDef.header,
-                                                        header.getContext()
-                                                    )}
+                                                {columnDef.header &&
+                                                    <>
+                                                        {Icon && <Icon size={14} />}
+                                                        {header.isPlaceholder
+                                                            ? null
+                                                            : flexRender(
+                                                                columnDef.header,
+                                                                header.getContext()
+                                                            )}
+                                                    </>
+                                                }
+
                                             </div>
                                         </TableHead>
                                     );
@@ -108,12 +104,12 @@ function ResponsiveTable<TData, TValue>({ data, columns, children }: ResponsiveT
                     <TableBody>
                         {table.getRowModel().rows?.length ? (table.getRowModel().rows.map(row => {
                             return <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
-                                {row.getVisibleCells().map((cell) => {
+                                {row.getVisibleCells().filter(cell => !cell.column.columnDef.meta?.hidden).map((cell) => {
                                     const columnDef = cell.column.columnDef;
                                     return <TableCell
                                         key={cell.id}
                                         className={cn(columnDef.meta?.isCentered ? "flex items-center justify-center" : "")}>
-                                        {flexRender(
+                                        {columnDef.cell && flexRender(
                                             columnDef.cell,
                                             cell.getContext()
                                         )}

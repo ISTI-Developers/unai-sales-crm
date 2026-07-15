@@ -1,9 +1,10 @@
 import RemarksCell from "@/components/sites/remarks.cell";
 import { ActionCell } from "@/components/sites/action.cell";
 import { Site } from "@/interfaces/sites.interface";
-import { ColumnDef } from "@tanstack/react-table";
 import PriceCell from "@/components/sites/price.cell";
 import SiteStatusSelect from "@/components/site-status-select";
+import { ColumnDef } from "@tanstack/react-table";
+import { Building, Loader, MapPin, PhilippinePeso, Quote, Ruler, UserRoundIcon } from "lucide-react";
 
 export const columns: ColumnDef<Site>[] = [
   {
@@ -21,12 +22,36 @@ export const columns: ColumnDef<Site>[] = [
         </div>
       );
     },
+    enableColumnFilter: false,
+    meta: {
+      icon: Building
+    }
   },
   {
     accessorFn: (row) => row.site_owner,
     accessorKey: "site_owner",
-    header: () => null,
-    cell: () => null,
+    header: undefined,
+    cell: undefined,
+    meta: {
+      hidden: true,
+      filterType: "dropdown",
+      allowedOptions: ["is", "is not", "contains"],
+      icon: UserRoundIcon
+    },
+    filterFn: (row, columnId, filterValue) => {
+      const cellValue = row.getValue<string>(columnId);
+
+      switch (filterValue.condition) {
+        case "is":
+          return cellValue === filterValue.value;
+        case "is not":
+          return cellValue !== filterValue.value;
+        case "contains":
+          return filterValue.value.includes(cellValue);
+        default:
+          return true;
+      }
+    },
   },
   {
     accessorKey: "site_code",
@@ -37,6 +62,10 @@ export const columns: ColumnDef<Site>[] = [
         <p className="text-[0.65rem] whitespace-nowrap font-semibold">{item}</p>
       );
     },
+    enableColumnFilter: false,
+    meta: {
+      icon: Building,
+    }
   },
   {
     accessorFn: (row) => `${row.address} | ${row.board_facing}`,
@@ -45,11 +74,15 @@ export const columns: ColumnDef<Site>[] = [
     cell: ({ row }) => {
       const item: string = row.original.address;
       const facing = row.original.board_facing;
-      return <p className="text-[0.65rem] leading-tight min-w-[250px] flex flex-col">
+      return <p className="text-[0.6rem] leading-tight min-w-[150px] flex flex-col">
         <span>{item}</span>
         <span className="text-[0.6rem] italic text-zinc-500">{facing}</span>
       </p>;
     },
+    enableColumnFilter: false,
+    meta: {
+      icon: MapPin,
+    }
   },
   {
     accessorKey: "size",
@@ -58,17 +91,51 @@ export const columns: ColumnDef<Site>[] = [
       const item: string = row.getValue("size");
       return <p className="text-[0.65rem] whitespace-nowrap">{item}</p>;
     },
+    enableColumnFilter: false,
+    meta: {
+      icon: Ruler
+    }
   },
   {
-    id: "price",
-    accessorKey: "price",
+    id: "SRP",
+    accessorKey: "srp",
     header: "SRP",
-    cell: PriceCell
+    cell: PriceCell,
+    filterFn: (row, _, filterValue) => {
+      const cellValue = Number(row.original.price || 0);
+      const value = filterValue.value;
+
+      switch (filterValue.condition) {
+        case "is":
+          return cellValue === Number(value);
+        case "between":
+          return cellValue >= Number(value.from) && cellValue <= Number(value.to);
+        default:
+          return true;
+      }
+      // switch (filterValue.condition) {
+      //   case "is":
+      //     return isSameDay(cellValue, filterDate)
+      //   case "between":
+      //     return cellValue >= filterDate.from && cellValue <= filterDate.to;
+      //   default:
+      //     return true;
+      // }
+    },
+    meta: {
+      filterType: "price_range",
+      allowedOptions: ["is", "between"],
+      icon: PhilippinePeso
+    }
   },
   {
     accessorKey: "remarks",
     header: "Remarks",
     cell: RemarksCell,
+    enableColumnFilter: false,
+    meta:{
+      icon: Quote
+    }
   },
   {
     id: "status",
@@ -88,10 +155,25 @@ export const columns: ColumnDef<Site>[] = [
       const site = row.original;
       return <SiteStatusSelect data={site} />
     },
-    filterFn: (row, column, filterValue) => {
-      console.log(row.getValue(column), column, filterValue);
-      return filterValue.includes(row.getValue(column))
+    filterFn: (row, columnId, filterValue) => {
+      const cellValue = row.getValue<Date>(columnId);
+
+      switch (filterValue.condition) {
+        case "is":
+          return cellValue === filterValue.value;
+        case "is not":
+          return cellValue !== filterValue.value;
+        case "contains":
+          return filterValue.value.includes(cellValue);
+        default:
+          return true;
+      }
     },
+    meta: {
+      filterType: "dropdown",
+      allowedOptions: ["is", "is not", "contains"],
+      icon: Loader
+    }
   },
   {
     header: "Actions",

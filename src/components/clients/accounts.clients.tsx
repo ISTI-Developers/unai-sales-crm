@@ -13,7 +13,6 @@ const ClientAccounts = (cell: CellContext<ClientTable, unknown>) => {
 
     const AEs = useMemo(() => {
         if (!units || isLoading) return undefined;
-
         // get sales units from the accounts.
         const accountUnits = accounts.map(account => account.sales_unit_id);
 

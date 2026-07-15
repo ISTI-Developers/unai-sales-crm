@@ -10,7 +10,6 @@ import {
   CircleSlash2,
   Flame,
   GitCompare,
-  Landmark,
 } from "lucide-react";
 import { customOrder } from "@/lib/utils";
 import { useAuth } from "@/providers/auth.provider";

@@ -91,9 +91,10 @@ export const columns: ColumnDef<SiteBooking>[] = [
         cell: ({ row }) => {
             const { access } = useAccess("booking.viewBookings");
             const booking: SiteBooking = row.original;
+            const [term, rate] = booking.term_duration.split("@")
 
             return <p className="text-[0.6rem] flex flex-col leading-snug">
-                <span>{`${booking.term_duration} ${!access ? `` : `@ ${booking.monthly_rate}`}`}</span>
+                <span>{`${term} ${!access ? `` : `@ ${rate}`}`}</span>
                 {access && <span className="text-[0.5rem]">{`(from SRP of ${booking.srp})`}</span>}
             </p>;
         },
