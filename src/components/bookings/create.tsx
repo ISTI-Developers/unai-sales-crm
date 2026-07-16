@@ -189,7 +189,7 @@ function CreateBooking({ site }: { site: SiteAvailability }) {
         if (booking.booking_status === "CHANGE OF CONTRACT PERIOD/DURATION") {
             return booking.remarks.trim().length > 0 && differenceInDays(booking.end, booking.start) > 1
         }
-        return booking.client.length > 0 && booking.account_executive.length > 0 && differenceInDays(booking.end, booking.start) > 1;
+        return booking.account_executive.length > 0 && differenceInDays(booking.end, booking.start) > 1;
     }, [booking])
 
     useEffect(() => {
