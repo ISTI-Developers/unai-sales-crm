@@ -24,12 +24,12 @@ const WeeklyReportsCard = () => {
               if (isToday(dateSubmitted)) {
                 timestamp = format(dateSubmitted, "p");
               }
-              const color =
+              const color = report.sales_unit ?
                 reportsSummaryConfig[
                   report.sales_unit
                     .split(" ")
                     .join("_") as keyof typeof reportsSummaryConfig
-                ]?.color;
+                ]?.color : "#d22735";
               return (
                 <div
                   key={report.report_id}
