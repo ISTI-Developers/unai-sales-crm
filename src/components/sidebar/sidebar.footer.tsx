@@ -3,11 +3,11 @@ import { useAuth } from '@/providers/auth.provider'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { BadgeCheck, Cog, LogOut } from 'lucide-react';
 import { useMemo } from 'react';
-import { cn } from '@/lib/utils';
+import { Avatar, AvatarImage } from '../ui/avatar';
 
 const FooterSidebar = () => {
     const { user, logoutUser } = useAuth();
-    const { state, isMobile } = useSidebar();
+    const { isMobile } = useSidebar();
 
     const userData = useMemo(() => {
         if (!user) return null;
@@ -30,9 +30,12 @@ const FooterSidebar = () => {
                             size="lg"
                             className="flex items-center hover:bg-main-400 data-[active=true]:bg-main-400 overflow-hidden"
                         >
-                            <div className={cn("bg-transparent text-sidebar-primary-foreground flex aspect-square transition-all items-center justify-center rounded-lg", state === "collapsed" ? "size-8" : "size-8")}>
+                            <Avatar>
+                                <AvatarImage src={userData.avatar} className='object-cover object-top' />
+                            </Avatar>
+                            {/* <div className={cn("bg-transparent text-sidebar-primary-foreground flex aspect-square transition-all items-center justify-center rounded-lg overflow-hidden size-8")}>
                                 <img src={userData.avatar} alt="" className='rounded-lg' />
-                            </div>
+                            </div> */}
                             <div className="grid flex-1 text-left text-sm leading-tight">
                                 <span className="truncate font-medium capitalize">{userData.name}</span>
                                 <span className="truncate text-xs">{userData.email}</span>
@@ -45,11 +48,11 @@ const FooterSidebar = () => {
                         align="end"
                         sideOffset={4}
                     >
-                        <DropdownMenuLabel className="p-0 font-normal bg-main-400/20 rounded-lg">
+                        <DropdownMenuLabel className="p-0 font-normal rounded-lg">
                             <div className="flex items-center gap-2 p-1.5 text-left text-sm">
-                                <div className={cn("bg-transparent text-sidebar-primary-foreground flex aspect-square transition-all items-center justify-center rounded-md overflow-hidden", state === "collapsed" ? "size-8" : "size-8")}>
-                                    <img src={userData.avatar} alt="" className='rounded-md' />
-                                </div>
+                                <Avatar>
+                                    <AvatarImage src={userData.avatar} className='object-cover object-top' />
+                                </Avatar>
                                 <div className="grid flex-1 text-left text-sm leading-tight">
                                     <span className="truncate font-medium capitalize">{userData.name}</span>
                                     <span className="truncate text-xs">{userData.email}</span>
