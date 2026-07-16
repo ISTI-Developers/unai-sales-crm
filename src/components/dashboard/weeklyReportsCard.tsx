@@ -18,8 +18,8 @@ const WeeklyReportsCard = () => {
         ) : (
           <>
             {thisWeeksReports.length > 0 ? thisWeeksReports.map((report) => {
-              const dateSubmitted = addHours(new Date(report.date), 0);
-              console.log(dateSubmitted)
+              const dateSubmitted = addHours(new Date(report.date), Number(import.meta.env.VITE_TIME_ADJUST) + 7);
+              // console.log(dateSubmitted)
               let timestamp = format(dateSubmitted, "MM/dd");
               if (isToday(dateSubmitted)) {
                 timestamp = format(dateSubmitted, "p");
