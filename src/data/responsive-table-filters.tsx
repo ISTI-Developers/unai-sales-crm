@@ -10,9 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { PriceRange } from '@/misc/deckTemplate';
 import { Column, Table } from '@tanstack/react-table';
 import { ChevronLeft, FilterIcon } from 'lucide-react';
-import { Dispatch, SetStateAction, useEffect, useMemo, useState } from 'react';
+import { Dispatch, SetStateAction, useEffect, useMemo, useRef, useState } from 'react';
 import { DateRange } from 'react-day-picker';
-import { Filter } from './responsive-table';
+import type { Filter } from '@/interfaces/tanstack-table';
 
 interface ResponsiveTableFiltersProps<TData> {
     table: Table<TData>;
@@ -54,7 +54,7 @@ function ResponsiveTableFilters<TData>({ table, editingFilter, setEditingFilter 
                             <CommandList>
                                 <CommandEmpty>Filter not found.</CommandEmpty>
                                 {table.getAllColumns().filter(col => col.getCanFilter()).map(column => {
-                                    const label = column.id.replace("_", " ");
+                                    const label = column.id.replace(/_/g, " ");
                                     const Icon = column.columnDef.meta?.icon;
                                     const isDisabled = table.getState().columnFilters.some(filter => filter.id === column.id);
                                     return <CommandItem className='capitalize flex gap-2' disabled={isDisabled} onSelect={() => setOption(column.id)}>
@@ -79,7 +79,7 @@ interface FilterItemProps<TData> {
 }
 function FilterItem<TData>({ column, editingFilter, setOption, onOpenChange }: FilterItemProps<TData>) {
     const meta = column.columnDef.meta;
-    const label = column.id.replace("_", " ");
+    const label = column.id.replace(/_/g, " ");
     const [condition, setCondition] = useState("")
     const [value, setValue] = useState<unknown>("")
 
@@ -95,8 +95,7 @@ function FilterItem<TData>({ column, editingFilter, setOption, onOpenChange }: F
 
             return [...values].sort();
         }
-
-        return Array.from(column.getFacetedUniqueValues().keys());
+        return Array.from(column.getFacetedUniqueValues().keys()).filter(Boolean);
     }, [column, meta?.isArray]);
 
     const onSaveFilter = () => {
@@ -108,19 +107,16 @@ function FilterItem<TData>({ column, editingFilter, setOption, onOpenChange }: F
         setOption("")
         setCondition("")
     }
+    const isInitializing = useRef(false);
 
     useEffect(() => {
-        if (!meta?.allowedOptions) return;
-
-        setCondition(
-            editingFilter?.condition ?? meta.allowedOptions[0]
-        );
-        setValue(editingFilter?.value ?? "");
-    }, [editingFilter, meta?.allowedOptions, column]);
-
-    useEffect(() => {
-        if (editingFilter) {
-            setValue(editingFilter.value);
+        // if (editingFilter) {
+        //     setValue(editingFilter.value);
+        //     return;
+        // }
+        if (isInitializing.current) {
+            console.log("done")
+            isInitializing.current = false;
             return;
         }
         if (!meta?.filterType || !condition) return;
@@ -132,7 +128,7 @@ function FilterItem<TData>({ column, editingFilter, setOption, onOpenChange }: F
                 setValue("")
             }
         } else if (condition === "contains") {
-            if (meta.filterType === "date_range") {
+            if (meta.filterType === "date_range" || meta.filterType === "number_range") {
                 setCondition("is")
                 setValue(new Date())
             } else {
@@ -149,7 +145,23 @@ function FilterItem<TData>({ column, editingFilter, setOption, onOpenChange }: F
                 })
             }
         }
-    }, [meta, condition, editingFilter])
+    }, [meta, condition]);
+
+    useEffect(() => {
+        if (!meta?.allowedOptions) return;
+
+        isInitializing.current = true;
+
+        if (editingFilter) {
+            setCondition(editingFilter.condition);
+            setValue(editingFilter.value);
+        } else {
+            setCondition(meta.allowedOptions[0]);
+            setValue("");
+        }
+    }, [editingFilter, column, meta?.allowedOptions]);
+
+    console.log(value);
 
     return <div>
         <header className='flex items-center gap-2 p-2'>
@@ -158,9 +170,14 @@ function FilterItem<TData>({ column, editingFilter, setOption, onOpenChange }: F
             </Button>
             <div className='flex items-center gap-1'>
                 {meta?.icon && <meta.icon size={14} />}
-                <p className='capitalize text-sm font-semibold'>{label}</p>
+                <p className='capitalize text-xs font-semibold'>{label}</p>
             </div>
-            <Select value={condition} onValueChange={setCondition}>
+            <Select value={condition} onValueChange={(value) => {
+                if (value === "contains") {
+                    setValue([]);
+                }
+                setCondition(value)
+            }}>
                 <SelectTrigger className='w-fit text-xs p-2 h-7 shadow-none'>
                     <SelectValue placeholder="condition" />
                 </SelectTrigger>
@@ -176,8 +193,8 @@ function FilterItem<TData>({ column, editingFilter, setOption, onOpenChange }: F
                 <>
                     {meta?.filterType === "date_range" ?
                         <DatePicker date={value as Date} onDateChange={(date) => setValue(date)} className='h-8' />
-                        : meta?.filterType === "price_range" ?
-                            <InputNumber value={value as string | number | readonly string[] | undefined} onChange={(e) => setValue(e.target.value)} />
+                        : (meta?.filterType === "price_range" || meta?.filterType === "number_range") ?
+                            <InputNumber isMoney={meta.filterType === "price_range"} value={value as string | number | readonly string[] | undefined} onChange={(e) => setValue(e.target.value)} />
                             :
                             <Select value={value as string} onValueChange={(val) => {
                                 setValue(val)
@@ -222,17 +239,17 @@ function FilterItem<TData>({ column, editingFilter, setOption, onOpenChange }: F
                         <div className='space-y-1'>
                             <div>
                                 <Label>Min</Label>
-                                <InputNumber value={(value as PriceRange).from} onChange={(e) => setValue((prev: PriceRange) => {
-                                    const value = Number(e.target.value);
+                                <InputNumber isMoney={meta?.filterType === "price_range"} value={(value as PriceRange).from} onChange={(e) => setValue((prev: PriceRange) => {
+                                    const eVal = Number(e.target.value);
                                     return {
                                         ...prev,
-                                        from: isNaN(value) ? 0 : value
+                                        from: isNaN(eVal) ? 0 : eVal,
                                     }
                                 })} />
                             </div>
                             <div>
                                 <Label>Max</Label>
-                                <InputNumber value={(value as PriceRange).to} onChange={(e) => setValue((prev: PriceRange) => {
+                                <InputNumber isMoney={meta?.filterType === "price_range"} value={(value as PriceRange).to} onChange={(e) => setValue((prev: PriceRange) => {
                                     const value = Number(e.target.value);
                                     return {
                                         ...prev,

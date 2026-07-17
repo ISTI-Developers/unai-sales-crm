@@ -1,11 +1,13 @@
+import ClientNameField from '@/components/clients/name.client';
 import FormLabel from '@/components/formlabel';
 import { MultiComboBox } from '@/components/multicombobox';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useAllClientOptions } from '@/hooks/useClientOptions';
-import { useAccess, useClient, useUpdateClient } from '@/hooks/useClients';
+import { useAccess, useClient, useClientNames, useUpdateClient } from '@/hooks/useClients';
 import { useCompanies, useCompanySalesUnits } from '@/hooks/useCompanies';
 import { useMediums } from '@/hooks/useMediums';
 import { List } from '@/interfaces';
@@ -25,7 +27,7 @@ const UpdateClient = () => {
   const { id } = useParams();
   const { user } = useAuth();
   const ID = localStorage.getItem("client");
-
+  const { data: clients } = useClientNames();
   const { data } = useClient(ID);
   const { data: companies, isLoading } = useCompanies();
   const { data: mediums } = useMediums();
@@ -188,7 +190,7 @@ const UpdateClient = () => {
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!client) return;
+    if (!client || !clients) return;
 
     const data = {
       ...client,
@@ -201,6 +203,12 @@ const UpdateClient = () => {
       source: clientOptions.source.find(item => item.name === client.source)?.misc_id,
       mediums: (client.mediums as List[]).map(medium => medium.id),
     }
+    if (client.parent_name) {
+      data.parent_name = String(clients?.find(c => c.name === client.parent_name)?.ID ?? "");
+    }
+
+    // console.log(data);
+    // return;
 
     updateClient(data, {
       onSuccess: (data) => {
@@ -233,6 +241,8 @@ const UpdateClient = () => {
       brand: data.brand ?? "",
       company: data.company,
       sales_unit: data.sales_unit,
+      is_parent: data.is_parent ? Boolean(data.is_parent) : false,
+      parent_name: data.parent_name,
       account_executive: data.account_executives.map(item => {
         return {
           id: String(item.account_id),
@@ -275,6 +285,22 @@ const UpdateClient = () => {
         <form className='grid lg:grid-cols-2 gap-4' autoComplete='off' onSubmit={onSubmit}>
           <FormSection title='Client Information'>
             <InputField id='name' value={client['name']} disabled={!editAll && !editContact} onChange={onInputChange} />
+            <hr />
+            <FormField id='is_parent'>
+              <Checkbox checked={client.is_parent} onCheckedChange={(checked) => setClient(prev => {
+                if (!prev) return prev;
+                return {
+                  ...prev,
+                  is_parent: !!checked
+                }
+              })} />
+            </FormField>
+            {!client.is_parent &&
+              <FormField id='parent_name'>
+                <ClientNameField name={client.parent_name ?? ""} setName={(name) => onSelectChange(name, "parent_name")} isParentClients />
+              </FormField>
+            }
+            <hr />
             <InputField id='brand' value={client['brand']} disabled={!editAll && !editContact} onChange={onInputChange} />
             <SelectField id='industry' value={client['industry'] as string} disabled={!editAll && !editContact} onChange={onSelectChange} options={getOptions('industry')} />
             <SelectField id='company' value={client['company'] as string} disabled={true} onChange={onSelectChange} options={isLoading ? [] : companyOptions} />
@@ -288,7 +314,7 @@ const UpdateClient = () => {
             />
           </FormSection>
           <FormSection title='Contact Information'>
-            {Object.keys(client).slice(8, 13).map(field => {
+            {Object.keys(client).slice(10, 15).map(field => {
               return <InputField id={field} value={client[field as keyof typeof client] as string} disabled={!editAll && !editContact} onChange={onInputChange} />
             })}
             <SelectField id='type' value={client['type'] as string} disabled={!editAll && !editContact} onChange={onSelectChange} options={getOptions('type')} />

@@ -40,6 +40,9 @@ export interface Medium {
 export interface ClientInformation {
   client_id: number;
   name: string;
+  is_parent: boolean;
+  parent_id?: number;
+  parent_name?: string;
   industry: number;
   brand: string;
   company_id: number;
@@ -69,6 +72,10 @@ export interface ClientInformation {
 export interface ClientName {
   ID: number;
   name: string;
+  is_parent: boolean;
+  tags?: number;
+  parent_id?: string;
+  parent_name?: string;
 }
 export interface ClientNameWithStatus {
   ID: number;
@@ -79,6 +86,9 @@ export interface ClientNameWithStatus {
 export interface Client {
   client_id: number;
   name: string;
+  is_parent: boolean;
+  parent_id?: number;
+  parent_name?: string;
   industry: number | null;
   industry_name: string | null;
   brand: string | null;
@@ -90,6 +100,7 @@ export interface Client {
   account_id: number;
   account_executive: string;
   account_code: string;
+  account_image: string;
   account_su_id: number;
   account_su: string;
   status: number;
@@ -102,6 +113,7 @@ export interface Client {
 export type Account = {
   account_id: number;
   account_executive: string;
+  account_image: string;
   alias: string;
   sales_unit_id: number;
   sales_unit: string;
@@ -111,7 +123,7 @@ export type ClientTable = Omit<Client, "account_id" | "account_executive"> & {
   children?: ClientTable[];
 };
 export interface ClientWithContact extends Client {
-  [x: string]: string | number | null | ClientMedium[];
+  [x: string]: string | number | null | undefined | boolean | ClientMedium[];
   contact_id: number;
   contact_person: string | null;
   designation: string | null;
@@ -141,6 +153,8 @@ export interface ClientForm {
   type: number | string;
   source: number | string;
   initial_transaction?: string;
+  is_parent: boolean;
+  parent_name?: string;
 }
 export interface ClientUpload {
   client: string;

@@ -241,6 +241,26 @@ export function getCurrentApprovers(request: Request) {
 
   return sorted.filter((a) => a.level === currentLevel && a.status === 3);
 }
+
+export function darkenColor(hex: string, depth: number, factor = 0.15): string {
+  hex = hex.replace(/^#/, "");
+
+  if (hex.length === 3) {
+    hex = hex
+      .split("")
+      .map((c) => c + c)
+      .join("");
+  }
+
+  const scale = Math.max(0, 1 - depth * factor);
+
+  const r = Math.round(parseInt(hex.slice(0, 2), 16) * scale);
+  const g = Math.round(parseInt(hex.slice(2, 4), 16) * scale);
+  const b = Math.round(parseInt(hex.slice(4, 6), 16) * scale);
+
+  return "#" + [r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("");
+}
+
 export const customOrder = ["HOT", "ACTIVE", "ON/OFF", "POOL"];
 
 export const pastelColors = [

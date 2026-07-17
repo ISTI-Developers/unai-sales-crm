@@ -1,3 +1,4 @@
+import { Filter } from '@/interfaces/tanstack-table';
 import { formatAmount } from '@/lib/format';
 import { PriceRange } from '@/misc/deckTemplate';
 import { ColumnFiltersState, Table } from '@tanstack/react-table';
@@ -5,7 +6,6 @@ import { format } from 'date-fns';
 import { EqualNot, XIcon } from 'lucide-react';
 import { Dispatch, SetStateAction } from 'react'
 import { DateRange } from 'react-day-picker';
-import { Filter } from './responsive-table';
 
 interface ResponsiveTableFilterDisplayProps<TData> {
     columnFilters: ColumnFiltersState;
@@ -46,13 +46,25 @@ function ResponsiveTableFilterDisplay<TData>({ columnFilters, setColumnFilters, 
                                 <div className='flex gap-1'>
                                     <p>{formatAmount((config.value as PriceRange).from)}</p>
                                     <span>-</span>
-                                    <p>{formatAmount((config.value as PriceRange).to)}</p>
+                                    {(config.value as PriceRange).to === 0 ? <p>max</p> :
+                                        <p>{formatAmount((config.value as PriceRange).to)}</p>
+                                    }
                                 </div> :
-                                <div className='capitalize'>
-                                    {(config.value as string[]).join(", ")}
-                                </div>
-                        :
-                        column?.meta?.filterType === "date_range" ?
+                                column?.meta?.filterType === "number_range" ?
+                                    <div className='flex gap-1'>
+                                        <p>{(config.value as PriceRange).from}</p>
+                                        <span>-</span>
+                                        {(config.value as PriceRange).to === 0 ? <p>max</p> :
+                                            <p>{(config.value as PriceRange).to}</p>
+                                        }
+                                        {column.meta.filterLabel &&
+                                            <p>{column.meta.filterLabel}</p>}
+                                    </div>
+                                    :
+                                    <div className='capitalize'>
+                                        {(config.value as string[]).join(", ")}
+                                    </div>
+                        : column?.meta?.filterType === "date_range" ?
                             <p>{format(config.value as Date, "yyyy-MM-dd")}</p>
                             :
                             column?.meta?.filterType === "price_range" ?
