@@ -17,11 +17,11 @@ import { Tooltip, TooltipTrigger } from "@/components/ui/tooltip";
 import { TooltipContentWithArrow } from "@/components/ui/tooltip-arrow";
 import { useAccess } from "@/hooks/useClients";
 import { useCompanies } from "@/hooks/useCompanies";
-import { ClientMedium, ClientTable } from "@/interfaces/client.interface";
+import { ClientTable } from "@/interfaces/client.interface";
 import { cn, colors } from "@/lib/utils";
 import { useAuth } from "@/providers/auth.provider";
 import { CellContext, ColumnDef, Row } from "@tanstack/react-table";
-import { ListChevronsDownUp, ListChevronsUpDown, MoreHorizontal } from "lucide-react";
+import { AwardIcon, BriefcaseBusinessIcon, Building2Icon, CalendarDaysIcon, ComponentIcon, FactoryIcon, ListChevronsDownUp, ListChevronsUpDown, LoaderIcon, MoreHorizontal, ShoppingBasketIcon, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { TagsMapping } from "./clients.keymap";
@@ -126,33 +126,31 @@ const CompanyCell = ({ row }: CellContext<ClientTable, unknown>) => {
 export const columns: ColumnDef<ClientTable>[] = [
   {
     accessorKey: "row",
-    header: () => {
-      return <p className="pl-4">#</p>;
-    },
+    header: "#",
     cell: ({ table, row }) => {
-      const rows = table.getRowModel().rows;
+      const rows = table.getExpandedRowModel().rows;
       const rowIndex = rows.findIndex((r) => r.id === row.id);
       return <p className="text-center">{rowIndex + 1}</p>;
     },
+    enableColumnFilter: false,
+    enableGlobalFilter: false,
   },
   {
     id: "name",
     accessorKey: "name",
-    header: () => {
-      return <p className="pl-4">Name</p>;
-    },
+    header: "Name",
     cell: ({ row }) => {
       const name: string = row.getValue("name");
       const last_submitted_on = row.original.last_submitted_on;
       const tags = row.original.tags;
       const tag = tags ? TagsMapping[tags as keyof typeof TagsMapping] : null;
 
+      const padding = row.original.parent_id ? `${row.depth * 2.25}rem` : `${row.depth * 2.25}rem`
       return (
-        <div className={cn("w-full max-w-[425px] flex gap-4 items-center truncate")} style={{ paddingLeft: `${row.depth * 5}rem` }}>
-
+        <div className={cn("w-full max-w-[325px] flex gap-4 items-center truncate")} style={{ paddingLeft: padding }}>
 
           {row.getCanExpand() && (
-            <Button variant="ghost" size="icon" className="size-6" onClick={row.getToggleExpandedHandler()}>
+            <Button variant="ghost" size="icon" className="size-5" onClick={row.getToggleExpandedHandler()}>
               {row.getIsExpanded() ? <ListChevronsDownUp /> : <ListChevronsUpDown />}
             </Button>
           )}
@@ -162,9 +160,9 @@ export const columns: ColumnDef<ClientTable>[] = [
                 <tag.icon size={14} className={cn(tag.className, "shrink-0")} />
               </div>}
               <Link to={`./${(name).replace(/ /g, "_").replace(/\//g, "-")}`} title={name} onClick={() => localStorage.setItem("client", String(row.original.client_id))} className="font-semibold leading-none hover:underline truncate">{name}</Link>
-              {row.original.children &&
-                <p className="text-[0.65rem] bg-emerald-400 w-4 h-4 flex items-center justify-center rounded text-white font-semibold">{row.original.children.length}</p>
-              }
+              {(row.original.children &&
+                row.original.children.length > 0) &&
+                <p className="text-[0.65rem] bg-emerald-400 w-4 h-4 flex items-center justify-center rounded text-white font-semibold">{row.original.children.length}</p>}
             </div>
             <p className="text-[0.65rem] leading-tight italic text-neutral-400">
               {last_submitted_on !== null ?
@@ -176,9 +174,178 @@ export const columns: ColumnDef<ClientTable>[] = [
         </div>
       );
     },
+    meta: {
+      icon: BriefcaseBusinessIcon
+    },
+    enableColumnFilter: false,
+    enableGlobalFilter: true,
   },
   {
-    id: "industry_name",
+    id: "brand",
+    accessorKey: "brand",
+    header: "Brand",
+    cell: ({ row }) => {
+      const brand: string = row.getValue("brand");
+
+      return <p title={brand} className="w-full text-xs max-w-[150px] truncate">
+        {brand || "---"}
+      </p>
+    },
+    meta: {
+      icon: ShoppingBasketIcon
+    },
+    enableColumnFilter: false
+  },
+  {
+    id: "company",
+    accessorKey: "company",
+    header: "Company",
+    cell: CompanyCell,
+    enableGlobalFilter: false,
+    filterFn: (row, columnId, filterValue) => {
+      const cellValue = row.getValue<Date>(columnId);
+
+      switch (filterValue.condition) {
+        case "is":
+          return cellValue === filterValue.value;
+        case "is not":
+          return cellValue !== filterValue.value;
+        case "contains":
+          return filterValue.value.includes(cellValue);
+        default:
+          return true;
+      }
+    },
+    meta: {
+      filterType: "dropdown",
+      allowedOptions: ["is", "is not", "contains"],
+      icon: Building2Icon
+    }
+  },
+  {
+    id: "tags",
+    accessorFn: (row) => row.tags ? TagsMapping[row.tags as keyof typeof TagsMapping].label : null,
+    accessorKey: "tags",
+    header: undefined,
+    cell: undefined,
+    enableGlobalFilter: false,
+    filterFn: (row, columnId, filterValue) => {
+      const cellValue = row.getValue<Date>(columnId);
+
+      switch (filterValue.condition) {
+        case "is":
+          return cellValue === filterValue.value;
+        case "is not":
+          return cellValue !== filterValue.value;
+        case "contains":
+          return filterValue.value.includes(cellValue);
+        default:
+          return true;
+      }
+    },
+    meta: {
+      filterType: "dropdown",
+      icon: AwardIcon,
+      allowedOptions: ["is", "is not", "contains"],
+    }
+  },
+  {
+    id: "Last Active",
+    accessorFn: (row) => row.last_submitted_on,
+    accessorKey: "tags",
+    header: undefined,
+    cell: undefined,
+    enableGlobalFilter: false,
+    filterFn: (row, _, filterValue) => {
+      const cellValue = Number(row.original.last_submitted_on || 0);
+      const value = filterValue.value;
+
+      switch (filterValue.condition) {
+        case "is":
+          return cellValue === Number(value);
+        case "between": {
+          const from = Number(value.from);
+          const to = Number(value.to);
+
+          if (from !== 0 && to === 0) {
+            // from -> Infinity
+            return cellValue >= from;
+          }
+
+          if (from === 0 && to !== 0) {
+            // 0 -> to
+            return cellValue <= to;
+          }
+
+          return cellValue >= from && cellValue <= to;
+        }
+        default:
+          return true;
+      }
+    },
+    meta: {
+      filterType: "number_range",
+      allowedOptions: ["is", "between"],
+      filterLabel: "days",
+      icon: CalendarDaysIcon
+    }
+  },
+  {
+    id: "sales_unit",
+    accessorKey: "sales_unit",
+    header: undefined,
+    cell: undefined,
+    enableGlobalFilter: false,
+    filterFn: (row, columnId, filterValue) => {
+      const cellValue = row.getValue<Date>(columnId);
+
+      switch (filterValue.condition) {
+        case "is":
+          return cellValue === filterValue.value;
+        case "is not":
+          return cellValue !== filterValue.value;
+        case "contains":
+          return filterValue.value.includes(cellValue);
+        default:
+          return true;
+      }
+    },
+    meta: {
+      filterType: "dropdown",
+      allowedOptions: ["is", "is not", "contains"],
+      icon: ComponentIcon
+    }
+  },
+  {
+    id: "account_executive",
+    accessorFn: (row) => row.account_executives.map(ae => ae.account_executive),
+    accessorKey: "account_executive",
+    header: "AE",
+    cell: ClientAccounts,
+    enableGlobalFilter: false,
+    filterFn: (row, columnId, filterValue) => {
+      const cellValue = row.getValue<string>(columnId);
+
+      switch (filterValue.condition) {
+        case "is":
+          return cellValue.includes(filterValue.value);
+        case "is not":
+          return !cellValue.includes(filterValue.value);
+        case "contains":
+          return filterValue.value.some((val: string) => cellValue.includes(val));
+        default:
+          return true;
+      }
+    },
+    meta: {
+      filterType: "dropdown",
+      allowedOptions: ["is", "is not", "contains"],
+      icon: Users,
+      isArray: true
+    }
+  },
+  {
+    id: "industry",
     accessorKey: "industry_name",
     header: "Industry",
     cell: ({ row }) => {
@@ -203,121 +370,62 @@ export const columns: ColumnDef<ClientTable>[] = [
         </div>
       );
     },
+    enableGlobalFilter: false,
     filterFn: (row, columnId, filterValue) => {
-      const item: string = row.getValue(columnId);
-      return filterValue.includes(item);
-    },
-  },
-  {
-    id: "brand",
-    accessorKey: "brand",
-    header: "Brand",
-    cell: ({ row }) => {
-      const brand: string = row.getValue("brand");
+      const cellValue = row.getValue<Date>(columnId);
 
-      return brand ? (
-        <p className="w-full whitespace-nowrap lg:whitespace-break-spaces text-xs lg:max-w-[150px]">
-          {brand.slice(0, 20)}
-        </p>
-      ) : (
-        "---"
-      );
+      switch (filterValue.condition) {
+        case "is":
+          return cellValue === filterValue.value;
+        case "is not":
+          return cellValue !== filterValue.value;
+        case "contains":
+          return filterValue.value.includes(cellValue);
+        default:
+          return true;
+      }
     },
+    meta: {
+      filterType: "dropdown",
+      allowedOptions: ["is", "is not", "contains"],
+      icon: FactoryIcon,
+    }
   },
   {
-    id: "company",
-    accessorKey: "company",
-    header: "Company",
-    cell: CompanyCell,
-    filterFn: (row, columnId, filterValue) => {
-      const item: string = row.getValue(columnId);
-      return filterValue.includes(item);
-    },
-  },
-  {
-    id: "sales_unit",
-    accessorKey: "sales_unit",
-    header: undefined,
-    cell: undefined,
-    filterFn: (row, columnId, filterValue) => {
-      const item: string = row.getValue(columnId);
-      return filterValue.includes(item);
-    },
-  },
-  {
-    id: "account_executive",
-    accessorKey: "account_executive",
-    header: "Account Executive",
-    cell: ClientAccounts,
-    filterFn: (row, _, filterValue) => {
-      const account_executives = row.original.account_executives;
-      return account_executives.some(account => filterValue.some((value: string) => value === account.account_executive));
-    },
-  },
-  {
-    id: "mediums",
-    accessorKey: "mediums",
-    header: "Medium",
-    cell: ({ row }) => {
-      const mediums: ClientMedium[] = row.getValue("mediums");
-      return (
-        <div className="flex gap-1 flex-wrap max-w-[250px]">
-          {mediums.slice(0, 2).map((medium) => {
-            const index = medium.medium_id % colors.length;
-
-            const color = colors[index] ?? "#233345";
-            return (
-              <Badge
-                key={medium.cm_id}
-                variant="outline"
-                className="text-white whitespace-nowrap"
-                style={{ backgroundColor: color }}
-              >
-                {medium.name}
-              </Badge>
-            );
-          })}
-          {mediums.length > 2 && (
-            <Tooltip>
-              <TooltipTrigger>...</TooltipTrigger>
-              <TooltipContentWithArrow>
-                {mediums.slice(2).map((medium) => (
-                  <p
-                    key={
-                      medium.client_id +
-                      "-" +
-                      medium.cm_id +
-                      "-" +
-                      medium.medium_id
-                    }
-                  >
-                    {medium.name}
-                  </p>
-                ))}
-              </TooltipContentWithArrow>
-            </Tooltip>
-          )}
-        </div>
-      );
-    },
-    filterFn: (row, columnId, filterValue) => {
-      const mediums: ClientMedium[] = row.getValue(columnId);
-      return mediums.some((medium) => filterValue.includes(medium.name));
-    },
-  },
-  {
-    id: "status_name",
+    id: "status",
     accessorKey: "status_name",
     header: "Status",
     cell: ({ row }) => {
       return <StatusSelect data={row.original} />;
     },
+    enableGlobalFilter: false,
+    filterFn: (row, columnId, filterValue) => {
+      const cellValue = row.getValue<Date>(columnId);
+
+      switch (filterValue.condition) {
+        case "is":
+          return cellValue === filterValue.value;
+        case "is not":
+          return cellValue !== filterValue.value;
+        case "contains":
+          return filterValue.value.includes(cellValue);
+        default:
+          return true;
+      }
+    },
+    meta: {
+      filterType: "dropdown",
+      allowedOptions: ["is", "is not", "contains"],
+      icon: LoaderIcon
+    }
   },
   {
     id: "actions",
     accessorKey: "action",
     header: "Action",
     cell: ActionCell,
+    enableColumnFilter: false,
+    enableGlobalFilter: false
   },
 ];
 

@@ -58,7 +58,7 @@ const Main = () => {
             ? fetchStatus
             : data && (
               <>
-                <ResponsiveTable columns={filteredColumns} data={data} size={500}>
+                <ResponsiveTable columns={filteredColumns} data={data} size={100}>
                   <Button asChild variant="outline" className="px-3" size="sm">
                     <Link to="/sites/add">
                       <CirclePlus />

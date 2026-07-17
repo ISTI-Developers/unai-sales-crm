@@ -1,13 +1,14 @@
 import ClientNameField from '@/components/clients/name.client';
 import { MultiComboBox } from '@/components/multicombobox';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { InputGroup, InputGroupAddon, InputGroupText, InputGroupTextarea } from '@/components/ui/input-group';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useAllClientOptions } from '@/hooks/useClientOptions';
-import { useAccess, useCreateClient } from '@/hooks/useClients';
+import { useAccess, useClientNames, useCreateClient } from '@/hooks/useClients';
 import { useCompanies, useSalesUnits } from '@/hooks/useCompanies';
 import { useMediums } from '@/hooks/useMediums';
 import { List } from '@/interfaces';
@@ -23,6 +24,7 @@ import { Link, useNavigate } from 'react-router-dom';
 type Option = { id: number; name: string }
 const AddClient = () => {
   const { user } = useAuth();
+  const { data: clients } = useClientNames();
   const { data: companies, isLoading } = useCompanies();
   const { data: mediums } = useMediums();
   const { data: salesUnits } = useSalesUnits()
@@ -49,6 +51,8 @@ const AddClient = () => {
     type: "",
     source: "",
     initial_transaction: "",
+    is_parent: false,
+    parent_name: undefined,
   });
 
   const onInputChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -213,6 +217,9 @@ const AddClient = () => {
       mediums: (client.mediums as List[]).map(medium => medium.id),
     }
 
+    if (client.parent_name) {
+      data.parent_name = String(clients?.find(c => c.name === client.parent_name)?.ID ?? "");
+    }
     // console.log(data)
     // return;
     insertClient(data, {
@@ -249,7 +256,8 @@ const AddClient = () => {
       String(client.type).trim() !== "" &&
       String(client.source).trim() !== ""
     );
-  }, [client])
+  }, [client]);
+
   return client && (
     <Page className="flex flex-col gap-4">
       <Helmet>
@@ -272,6 +280,22 @@ const AddClient = () => {
             <FormField id='name' required>
               <ClientNameField name={client.name} setName={(name) => onSelectChange(name, "name")} />
             </FormField>
+            <hr />
+            <FormField id='is_parent'>
+              <Checkbox checked={client.is_parent} onCheckedChange={(checked) => setClient(prev => {
+                if (!prev) return prev;
+                return {
+                  ...prev,
+                  is_parent: !!checked
+                }
+              })} />
+            </FormField>
+            {!client.is_parent &&
+              <FormField id='parent_name'>
+                <ClientNameField name={client.parent_name ?? ""} setName={(name) => onSelectChange(name, "parent_name")} isParentClients />
+              </FormField>
+            }
+            <hr />
             <InputField id='brand' value={client['brand']} disabled={false} onChange={onInputChange} />
             <SelectField required id='industry' value={client['industry'] as string} disabled={false} onChange={onSelectChange} options={getOptions('industry')} />
             <SelectField required id='company' value={client['company'] as string} disabled={!(editCompany || editAll)} onChange={onSelectChange} options={isLoading ? [] : companyOptions} />

@@ -4,7 +4,6 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
     Command,
-    CommandEmpty,
     CommandGroup,
     CommandInput,
     CommandItem,
@@ -72,7 +71,7 @@ export function ClientCombobox({ clients, value, onChange }: ClientComboboxProps
                         }}
                     />
                     <CommandList>
-                        <CommandEmpty className="py-1">
+                        {/* <CommandEmpty className="py-1">
                             <Button
                                 variant="ghost"
                                 className="w-full justify-start font-light text-xs"
@@ -83,7 +82,17 @@ export function ClientCombobox({ clients, value, onChange }: ClientComboboxProps
                             >
                                 Press <kbd className="border p-1 px-2 rounded-md text-xs">Enter</kbd> to use <span className="font-medium p-0">{inputValue}</span>
                             </Button>
-                        </CommandEmpty>
+                        </CommandEmpty> */}
+                        {inputValue.length > 0 && <Button
+                            variant="ghost"
+                            className="w-full justify-start font-light text-xs"
+                            onClick={() => {
+                                onChange(inputValue)
+                                setOpen(false)
+                            }}
+                        >
+                            Click me or Press <kbd className="border p-1 px-2 rounded-md text-xs">Enter</kbd> to use <span className="font-medium p-0">{inputValue}</span>
+                        </Button>}
                         <CommandGroup>
                             {filteredClients.map((client) => (
                                 <CommandItem

@@ -1,28 +1,24 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import Search from '@/components/search';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { cn } from '@/lib/utils';
-import { ColumnDef, ColumnFiltersState, flexRender, getCoreRowModel, getExpandedRowModel, getFacetedRowModel, getFacetedUniqueValues, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, PaginationState, SortingState, useReactTable } from '@tanstack/react-table'
+import { cn, darkenColor } from '@/lib/utils';
+import { ColumnDef, ColumnFiltersState, FilterFn, flexRender, getCoreRowModel, getExpandedRowModel, getFacetedRowModel, getFacetedUniqueValues, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, PaginationState, SortingState, useReactTable } from '@tanstack/react-table'
 import { ReactNode, useState } from 'react'
 import ResponsiveTableFilters from './responsive-table-filters';
 import ResponsiveTableFilterDisplay from './responsive-table-filter-display';
+import { Button } from '@/components/ui/button';
+import { Filter } from '@/interfaces/tanstack-table';
 
 interface ResponsiveTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
     data: TData[];
     children?: ReactNode,
-    size?: number
+    size?: number,
+    getSubRows?: (row: TData) => TData[] | undefined;
+    getRowClassName?: (row: TData) => string;
+    globalFilterFn?: FilterFn<TData>;
 }
 
-export type FilterOption = "is" | "is not" | "contains" | "between";
-export type Filter = {
-    columnId: string;
-    condition: FilterOption;
-    value: unknown;
-
-}
-
-function ResponsiveTable<TData, TValue>({ data, columns, children, size = 10 }: ResponsiveTableProps<TData, TValue>) {
+function ResponsiveTable<TData, TValue>({ data, columns, children, size = 10, getSubRows, getRowClassName, globalFilterFn }: ResponsiveTableProps<TData, TValue>) {
     const [sorting, setSorting] = useState<SortingState>([]);
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
     const [globalFilter, setGlobalFilter] = useState("");
@@ -45,6 +41,8 @@ function ResponsiveTable<TData, TValue>({ data, columns, children, size = 10 }: 
         onPaginationChange: setPaginationState,
         getFacetedRowModel: getFacetedRowModel(),
         getFacetedUniqueValues: getFacetedUniqueValues(),
+        getSubRows,
+        globalFilterFn,
         state: {
             sorting,
             columnFilters,
@@ -103,7 +101,10 @@ function ResponsiveTable<TData, TValue>({ data, columns, children, size = 10 }: 
                     </TableHeader>
                     <TableBody>
                         {table.getRowModel().rows?.length ? (table.getRowModel().rows.map(row => {
-                            return <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                            const bgColor = row.depth > 0 ? darkenColor("#FEFEFE", row.depth, 0.025) : "white"
+                            return <TableRow key={row.id} data-state={row.getIsSelected() && "selected"} className={cn(getRowClassName?.(row.original))} style={{
+                                background: bgColor
+                            }}>
                                 {row.getVisibleCells().filter(cell => !cell.column.columnDef.meta?.hidden).map((cell) => {
                                     const columnDef = cell.column.columnDef;
                                     return <TableCell
@@ -127,6 +128,49 @@ function ResponsiveTable<TData, TValue>({ data, columns, children, size = 10 }: 
                     </TableBody>
                 </Table>
             </main>
+            <div className="flex items-center justify-end space-x-2">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => table.previousPage()}
+                    disabled={!table.getCanPreviousPage()}
+                >
+                    Previous
+                </Button>
+                {(() => {
+                    const currentPage = table.getState().pagination.pageIndex;
+                    const pageCount = table.getPageCount();
+
+                    // Calculate the range of pages to show (at most 3 buttons)
+                    const startPage = Math.max(0, currentPage - 1); // Show at least the previous page
+                    const endPage = Math.min(pageCount - 1, startPage + 2); // Show at most 3 pages
+
+                    const pagesToShow = [];
+                    for (let i = startPage; i <= endPage; i++) {
+                        pagesToShow.push(i);
+                    }
+
+                    return pagesToShow.map((index) => (
+                        <Button
+                            key={index}
+                            variant="outline"
+                            size="sm"
+                            onClick={() => table.setPageIndex(index)}
+                            disabled={table.getState().pagination.pageIndex === index}
+                        >
+                            {index + 1}
+                        </Button>
+                    ));
+                })()}
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => table.nextPage()}
+                    disabled={!table.getCanNextPage()}
+                >
+                    Next
+                </Button>
+            </div>
         </div >
     )
 }

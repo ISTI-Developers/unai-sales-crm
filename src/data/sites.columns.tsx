@@ -108,19 +108,25 @@ export const columns: ColumnDef<Site>[] = [
       switch (filterValue.condition) {
         case "is":
           return cellValue === Number(value);
-        case "between":
-          return cellValue >= Number(value.from) && cellValue <= Number(value.to);
+        case "between": {
+          const from = Number(value.from);
+          const to = Number(value.to);
+
+          if (from !== 0 && to === 0) {
+            // from -> Infinity
+            return cellValue >= from;
+          }
+
+          if (from === 0 && to !== 0) {
+            // 0 -> to
+            return cellValue <= to;
+          }
+
+          return cellValue >= from && cellValue <= to;
+        }
         default:
           return true;
       }
-      // switch (filterValue.condition) {
-      //   case "is":
-      //     return isSameDay(cellValue, filterDate)
-      //   case "between":
-      //     return cellValue >= filterDate.from && cellValue <= filterDate.to;
-      //   default:
-      //     return true;
-      // }
     },
     meta: {
       filterType: "price_range",
@@ -133,7 +139,7 @@ export const columns: ColumnDef<Site>[] = [
     header: "Remarks",
     cell: RemarksCell,
     enableColumnFilter: false,
-    meta:{
+    meta: {
       icon: Quote
     }
   },
