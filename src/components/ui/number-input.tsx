@@ -8,36 +8,44 @@ const InputNumber = React.forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLI
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const raw = e.target.value.replace(/,/g, "");
-        if (!/^\d*\.?\d*$/.test(raw)) return; // only allow valid numbers
 
-        // Format for display
-        const formatted = raw.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        if (!/^\d*\.?\d*$/.test(raw)) return;
+
+        const [integer, decimal] = raw.split(".");
+
+        const formatted =
+            integer.replace(/\B(?=(\d{3})+(?!\d))/g, ",") +
+            (decimal !== undefined ? `.${decimal}` : "");
+
         setDisplay(formatted);
 
-        // Notify parent (unformatted numeric string)
-        if (onChange) {
-            const syntheticEvent = {
-                ...e,
-                target: { ...e.target, id: props.id, value: raw },
-            };
-            onChange(syntheticEvent as React.ChangeEvent<HTMLInputElement>);
-        }
+        onChange?.({
+            ...e,
+            target: {
+                ...e.target,
+                id: props.id,
+                value: raw,
+            },
+        } as React.ChangeEvent<HTMLInputElement>);
     };
 
     useEffect(() => {
-        if (value === undefined || value === null || value === "") {
+        if (value == null || value === "") {
             setDisplay("");
             return;
         }
 
-        const num = Number(String(value).replace(/,/g, ""));
-        if (!isNaN(num)) {
-            const formatted = new Intl.NumberFormat("en-PH", {
-                style: "decimal",
-                maximumFractionDigits: 4,
-            }).format(num);
-            setDisplay(formatted);
-        }
+        const raw = String(value).replace(/,/g, "");
+
+        if (!/^\d*\.?\d*$/.test(raw)) return;
+
+        const [integer, decimal] = raw.split(".");
+
+        const formatted =
+            integer.replace(/\B(?=(\d{3})+(?!\d))/g, ",") +
+            (decimal !== undefined ? `.${decimal}` : "");
+
+        setDisplay(formatted);
     }, [value]);
 
     return (

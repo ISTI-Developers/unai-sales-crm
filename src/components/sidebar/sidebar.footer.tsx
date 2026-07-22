@@ -30,7 +30,7 @@ const FooterSidebar = () => {
                             size="lg"
                             className="flex items-center hover:bg-main-400 data-[active=true]:bg-main-400 overflow-hidden"
                         >
-                            <Avatar>
+                            <Avatar className='size-8'>
                                 <AvatarImage src={userData.avatar} className='object-cover object-top' />
                             </Avatar>
                             {/* <div className={cn("bg-transparent text-sidebar-primary-foreground flex aspect-square transition-all items-center justify-center rounded-lg overflow-hidden size-8")}>
