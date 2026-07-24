@@ -8,6 +8,7 @@ import { useMemo } from 'react';
 function ContactsTab({ client }: { client: ClientInformation }) {
     const { user } = useAuth();
     const { access: viewAll } = useAccess("clients.viewAll");
+    const { access: viewContact } = useAccess("clients.viewContactInformation");
 
     const isViewable = useMemo(() => {
         if (!user) return false;
@@ -16,15 +17,13 @@ function ContactsTab({ client }: { client: ClientInformation }) {
         if (client.sales_unit_id === user.sales_unit?.sales_unit_id) {
             return true;
         }
-        return viewAll;
-    }, [client.sales_unit_id, user, viewAll])
+        return viewAll && viewContact;
+    }, [client.sales_unit_id, user, viewAll, viewContact])
 
     if (!isViewable) {
         return <div className="flex shadow bg-white p-4 border rounded-xl gap-4 items-center justify-center">
             <div className="text-center text-zinc-500">
                 Only the admin and the client account owner can view this contact information details.
-                <br />
-                Please contact them if you wish to have access.
             </div>
         </div>
     }
