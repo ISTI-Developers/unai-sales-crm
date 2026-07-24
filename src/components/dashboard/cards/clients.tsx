@@ -8,23 +8,41 @@ const Clients = () => {
     const { data, isLoading } = useClients();
     const { user } = useAuth();
 
+    const cleanedUpClients = useMemo(() => {
+        if (!data || isLoading) return undefined;
+
+        const uniqueClients = Array.from(
+            new Map(
+                data.map(client => [
+                    client.parent_id !== null
+                        ? `parent-${client.parent_id}`
+                        : `name-${client.name.trim().toLowerCase()}`,
+                    client
+                ])
+            ).values()
+        );
+
+        return uniqueClients;
+
+    }, [data, isLoading])
     const count = useMemo(() => {
-        if (!data || isLoading || !user) return undefined;
+        if (!cleanedUpClients || !user) return undefined;
         const roleID = Number(user.role.role_id);
         const companyID = Number(user.company?.ID);
-        if ([1, 10, 11].includes(roleID)) {
-            return data.length;
+        if ([1, 10].includes(roleID)) {
+            return cleanedUpClients.length;
         }
-        const companyClients = data.filter(d => d.company_id === companyID);
-        if (roleID === 4 || roleID === 5) {
-            return companyClients.filter(c => c.sales_unit_id === user.sales_unit?.sales_unit_id).length;
+        const companyClients = cleanedUpClients.filter(d => d.company_id === companyID);
+
+        if (user.sales_unit?.sales_unit_id) {
+            return companyClients.filter(c => c.sales_unit_id === user.sales_unit!.sales_unit_id).length;
         }
 
         return companyClients.length;
-    }, [data, isLoading, user])
+    }, [cleanedUpClients, user])
 
     const trend: TrendProps | undefined = useMemo(() => {
-        if (!data || isLoading) return undefined;
+        if (!cleanedUpClients) return undefined;
 
         // Group by month (based on modified_date)
         const now = new Date();
@@ -36,12 +54,12 @@ const Clients = () => {
         const lastMonthYear = lastMonthDate.getFullYear();
 
 
-        const currentMonthBookings = data.filter(item => {
+        const currentMonthBookings = cleanedUpClients.filter(item => {
             const modified = new Date(item.created_at);
             return modified.getMonth() === currentMonth && modified.getFullYear() === currentYear;
         });
 
-        const previousMonthBookings = data.filter(item => {
+        const previousMonthBookings = cleanedUpClients.filter(item => {
             const modified = new Date(item.created_at);
             return modified.getMonth() === lastMonth && modified.getFullYear() === lastMonthYear;
         });
@@ -65,7 +83,7 @@ const Clients = () => {
             trend,
             description: `compared from last month`,
         };
-    }, [data, isLoading]);
+    }, [cleanedUpClients]);
 
     return (
         <MetricCard icon={BookUser} link='clients' title="Total Clients" count={count} style={{ background: "#dbeafe", color: "#1e40af" }} trend={trend} />

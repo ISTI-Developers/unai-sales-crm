@@ -125,7 +125,11 @@ const ManageClient = () => {
               }
             </TabsList>
             <TabsContent value="reports">
-              <ReportsTab clientID={client.client_id} />
+              {hasEditAccess ?
+                <ReportsTab clientID={client.client_id} />
+                : <div className="bg-zinc-50 w-full h-full p-4 text-center text-zinc-400 rounded-lg">
+                  You don't have access to view their reports.
+                </div>}
             </TabsContent>
             <TabsContent value="logs">
               <ClientHistory clientIDs={[client.client_id]} />

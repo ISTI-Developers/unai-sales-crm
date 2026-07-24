@@ -21,10 +21,11 @@ import { ClientTable } from "@/interfaces/client.interface";
 import { cn, colors } from "@/lib/utils";
 import { useAuth } from "@/providers/auth.provider";
 import { CellContext, ColumnDef, Row } from "@tanstack/react-table";
-import { AwardIcon, BriefcaseBusinessIcon, Building2Icon, CalendarDaysIcon, ComponentIcon, FactoryIcon, ListChevronsDownUp, ListChevronsUpDown, LoaderIcon, MoreHorizontal, ShoppingBasketIcon, Users } from "lucide-react";
+import { AwardIcon, BriefcaseBusinessIcon, Building2Icon, CalendarDaysIcon, ComponentIcon, FactoryIcon, LoaderIcon, MoreHorizontal, ShoppingBasketIcon, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { TagsMapping } from "./clients.keymap";
+import ClientName from "@/pages/clients/name.client";
 
 const ActionCell = ({ row }: { row: Row<ClientTable> }) => {
   const { user } = useAuth();
@@ -139,41 +140,7 @@ export const columns: ColumnDef<ClientTable>[] = [
     id: "name",
     accessorKey: "name",
     header: "Name",
-    cell: ({ row }) => {
-      const name: string = row.getValue("name");
-      const last_submitted_on = row.original.last_submitted_on;
-      const tags = row.original.tags;
-      const tag = tags ? TagsMapping[tags as keyof typeof TagsMapping] : null;
-
-      const padding = row.original.parent_id ? `${row.depth * 2.25}rem` : `${row.depth * 2.25}rem`
-      return (
-        <div className={cn("w-full max-w-[325px] flex gap-4 items-center truncate")} style={{ paddingLeft: padding }}>
-
-          {row.getCanExpand() && (
-            <Button variant="ghost" size="icon" className="size-5" onClick={row.getToggleExpandedHandler()}>
-              {row.getIsExpanded() ? <ListChevronsDownUp /> : <ListChevronsUpDown />}
-            </Button>
-          )}
-          <div className="grid gap-1">
-            <div className={cn("text-xs uppercase flex items-center gap-2")}>
-              {tag && <div title={tag.label}>
-                <tag.icon size={14} className={cn(tag.className, "shrink-0")} />
-              </div>}
-              <Link to={`./${(name).replace(/ /g, "_").replace(/\//g, "-")}`} title={name} onClick={() => localStorage.setItem("client", String(row.original.client_id))} className="font-semibold leading-none hover:underline truncate">{name}</Link>
-              {(row.original.children &&
-                row.original.children.length > 0) &&
-                <p className="text-[0.65rem] bg-emerald-400 w-4 h-4 flex items-center justify-center rounded text-white font-semibold">{row.original.children.length}</p>}
-            </div>
-            <p className="text-[0.65rem] leading-tight italic text-neutral-400">
-              {last_submitted_on !== null ?
-                `${last_submitted_on} days since last activity` :
-                `No activities found`
-              }
-            </p>
-          </div>
-        </div>
-      );
-    },
+    cell: ClientName,
     meta: {
       icon: BriefcaseBusinessIcon
     },
