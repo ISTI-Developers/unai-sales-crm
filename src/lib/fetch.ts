@@ -539,7 +539,7 @@ export const getLatestBooking = (bookings: Booking[]) => {
     ) {
       score = 70;
     } else if (booking.booking_status.includes("CONTRACT")) {
-      score = 75;
+      score = 81;
       distance = diff;
     }
     // CURRENT ACTIVE

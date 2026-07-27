@@ -75,7 +75,12 @@ function ResponsiveTableFilterDisplay<TData>({ columnFilters, setColumnFilters, 
                     <button type='button' onClick={(e) => {
                         e.stopPropagation();
                         setColumnFilters(prev => {
-                            return prev.filter(filter => filter.id !== columnFilter.id);
+                            const next = prev.filter(filter => filter.id !== columnFilter.id);
+
+                            if (next.length === 0) {
+                                sessionStorage.setItem(`filter${location.pathname}`, JSON.stringify(next));
+                            }
+                            return next;
                         })
                     }}>
                         <XIcon size={14} className='ml-1' />
