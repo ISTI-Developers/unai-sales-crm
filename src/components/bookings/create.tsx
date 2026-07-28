@@ -82,7 +82,7 @@ function CreateBooking({ site }: { site: SiteAvailability }) {
         return [...sales, { id: v4(), value: "Other (JV Partner)", label: "Other (JV Partner)" }, { id: v4(), value: "Others (In-house account)", label: "Others (In-house account)" }]
     }, [users, isUsersLoading, user]);
 
-    const minStart = useMemo(() => booking.booking_status === "CHANGE OF CONTRACT PERIOD/DURATION" ? undefined : new Date(site.date_from ?? booking.start), [booking.booking_status, booking.start, site.date_from])
+    const minStart = useMemo(() => booking.booking_status === "CHANGE OF CONTRACT PERIOD/DURATION" ? undefined : new Date(site.end_date ?? booking.start), [booking.booking_status, booking.start, site.end_date])
 
     const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();

@@ -171,13 +171,14 @@ export const useUpdateClientStatus = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ status, ID }: { status: string; ID: string }) => {
+    mutationFn: async ({ status, ID, transaction }: { status: string; ID: string; transaction: string; }) => {
       if (!user) {
         throw new Error("User not found.");
       }
       const response = await spAPI.put<DefaultResponse>("clients", {
         status: status,
-        action: "status",
+        transaction: transaction,
+          action: "status",
         id: ID,
         logger: user.ID,
       });

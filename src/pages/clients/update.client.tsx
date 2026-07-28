@@ -4,6 +4,7 @@ import { MultiComboBox } from '@/components/multicombobox';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
+import { InputGroup, InputGroupAddon, InputGroupText, InputGroupTextarea } from '@/components/ui/input-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useAllClientOptions } from '@/hooks/useClientOptions';
@@ -17,7 +18,7 @@ import { SalesUnitMember } from '@/interfaces/user.interface';
 import { capitalize } from '@/lib/utils';
 import Page from '@/misc/Page';
 import { useAuth } from '@/providers/auth.provider';
-import { ChevronLeft, LoaderCircle } from 'lucide-react';
+import { ArrowLeftRight, ChevronLeft, LoaderCircle } from 'lucide-react';
 import { ChangeEvent, ChangeEventHandler, FormEvent, ReactNode, useEffect, useMemo, useState } from 'react'
 import { Helmet } from 'react-helmet';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -207,9 +208,6 @@ const UpdateClient = () => {
       data.parent_name = String(clients?.find(c => c.name === client.parent_name)?.ID ?? "");
     }
 
-    // console.log(data);
-    // return;
-
     updateClient(data, {
       onSuccess: (data) => {
         if (data.acknowledged) {
@@ -319,6 +317,20 @@ const UpdateClient = () => {
             })}
             <SelectField id='type' value={client['type'] as string} disabled={!editAll && !editContact} onChange={onSelectChange} options={getOptions('type')} />
             <SelectField id='source' value={client['source'] as string} disabled={!editAll && !editContact} onChange={onSelectChange} options={getOptions('source')} />
+            <InputGroup>
+              <InputGroupAddon align="block-start">
+                <ArrowLeftRight />
+                <InputGroupText>Initial Transaction</InputGroupText>
+              </InputGroupAddon>
+              <InputGroupTextarea value={client.initial_transaction ?? ""} onChange={(e) => setClient(prev => {
+                if (!prev) return prev;
+
+                return {
+                  ...prev,
+                  initial_transaction: e.target.value
+                }
+              })} />
+            </InputGroup>
           </FormSection>
           <Button
             type="submit"
