@@ -7,7 +7,7 @@ import { Skeleton } from "../ui/skeleton";
 const SiteList = () => {
     const { sites, selectedSites, setSelectedSites } = useDeck();
     return (
-        <ScrollArea>
+        <ScrollArea className="h-[40vh] lg:h-[70vh]">
             <section className="text-[0.6rem] leading-[1.4] h-full overflow-y-auto scrollbar-none space-y-1">
                 {sites.length > 0 ? sites.map(site => {
                     const formattedAvailability = site.availability

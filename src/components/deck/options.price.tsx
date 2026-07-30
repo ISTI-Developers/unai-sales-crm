@@ -7,7 +7,7 @@ import InputNumber from '../ui/number-input';
 import { Button } from '../ui/button';
 import { PlusIcon, Trash2 } from 'lucide-react';
 import MultiComboBoxWithAll from '../multicomboboxwithall';
-import { priceAdjustment } from '@/interfaces/deck.interface';
+import { DEFAULTS, priceAdjustment } from '@/interfaces/deck.interface';
 import { v4 } from 'uuid';
 const PriceAdjustmentOption = () => {
     const { selectedOptions, selectedSites, setOptions } = useDeck();
@@ -16,28 +16,47 @@ const PriceAdjustmentOption = () => {
         return Math.max(...selectedSites.map(x => Number(x.price)));
     }, [selectedSites]);
 
-    if (!selectedOptions.price_adjustment) return;
+    const { rate_adjustment } = selectedOptions;
 
     return (
         <>
-            {selectedOptions.price_adjustment.map(adjustment => {
-                return <div className='flex flex-col gap-1 bg-zinc-200 p-2 rounded-lg relative'>
-                    <PriceAdjustmentField max={max} {...adjustment} />
-                </div>
-            })}
-            <Button disabled={selectedSites.length === 1 || selectedOptions.price_adjustment.some(adj => adj.apply_to === "ALL")} className='h-7 w-fit text-[0.65rem] px-2 pl-1.5 ml-auto' size={"sm"} variant={"outline"} onClick={() => {
-                setOptions(prev => {
-                    if (!prev) return prev;
-
+            <h1 className="font-bold uppercase text-[0.6rem]">Rates Adjustment</h1>
+            {rate_adjustment.length === 0 ? <Button className='h-7 w-full text-[0.65rem] px-2 pl-1.5'
+                size="sm"
+                variant="outline" onClick={() => setOptions(prev => {
                     return {
                         ...prev,
-                        price_adjustment: [...prev.price_adjustment!, { ...priceAdjustment, id: v4(), apply_to: { type: "sites", list: [] } }]
-                    };
-                });
-            }}>
+                        rate_adjustment: DEFAULTS.rate_adjustment
+                    }
+                })}>
                 <PlusIcon />
-                <p>Add New</p>
-            </Button>
+                <p>Add Adjustment</p>
+            </Button> : <>
+                {rate_adjustment.map(adjustment => {
+                    return <div className='flex flex-col gap-1 bg-zinc-100 p-2 rounded-md relative'>
+                        <PriceAdjustmentField max={max} {...adjustment} />
+                    </div>
+                })}
+                <Button
+                    disabled={selectedSites.length === 1 || rate_adjustment.some(adj => adj.apply_to === "ALL")}
+                    className='h-7 w-fit text-[0.65rem] px-2 pl-1.5 float-right'
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                        setOptions(prev => {
+                            if (!prev) return prev;
+
+                            return {
+                                ...prev,
+                                rate_adjustment: [...prev.rate_adjustment!, { ...priceAdjustment, id: v4(), apply_to: { type: "sites", list: [] } }]
+                            };
+                        });
+                    }}>
+                    <PlusIcon />
+                    <p>Add New</p>
+                </Button>
+            </>}
+          
         </>
     )
 }
@@ -77,7 +96,7 @@ const PriceAdjustmentField = ({ max = 999999, amount, operation, type, apply_to,
 
             return {
                 ...prev,
-                price_adjustment: prev.price_adjustment?.map(adj =>
+                rate_adjustment: prev.rate_adjustment?.map(adj =>
                     adj.id === id
                         ? { ...adj, amount: key === "type" ? 0 : adj.amount, [key]: key === "amount" ? Number(val) : val } // update only one key
                         : adj
@@ -87,16 +106,16 @@ const PriceAdjustmentField = ({ max = 999999, amount, operation, type, apply_to,
     }
 
     return <>
-        {selectedOptions.price_adjustment!.length > 1 && <button type='button' className='absolute top-1 right-1 h-5 w-5 bg-red-400 flex items-center justify-center text-white rounded-md' onClick={() => setOptions(prev => {
+        <button type='button' className='absolute top-1 right-1 h-5 w-5 bg-red-400 flex items-center justify-center text-white rounded-md' onClick={() => setOptions(prev => {
             if (!prev) return prev;
 
             return {
                 ...prev,
-                price_adjustment: prev.price_adjustment?.filter(adj => adj.id !== id)
+                rate_adjustment: prev.rate_adjustment?.filter(adj => adj.id !== id)
             }
         })}>
             <Trash2 size={12} />
-        </button>}
+        </button>
         <Label className='text-[0.6rem] uppercase font-semibold'>Amount:</Label>
         <div className='flex items-center bg-white rounded-md shadow'>
             <Select value={operation} onValueChange={(value) => onChange("operation", value)}>
@@ -126,7 +145,7 @@ const PriceAdjustmentField = ({ max = 999999, amount, operation, type, apply_to,
                     <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value='ALL' disabled={selectedOptions.price_adjustment?.findIndex(adj => adj.id === id) !== 0}>All</SelectItem>
+                    <SelectItem value='ALL' disabled={selectedOptions.rate_adjustment?.findIndex(adj => adj.id === id) !== 0}>All</SelectItem>
                     <SelectItem value='SITES' disabled={selectedSites.length < 2}>Select Sites</SelectItem>
                     <SelectItem value='PRICE_RANGE' disabled={selectedSites.length < 2}>Price Range</SelectItem>
                 </SelectContent>
@@ -139,7 +158,7 @@ const PriceAdjustmentField = ({ max = 999999, amount, operation, type, apply_to,
 
                     return {
                         ...prev,
-                        price_adjustment: prev.price_adjustment?.map(adj => adj.id === id ? {
+                        rate_adjustment: prev.rate_adjustment?.map(adj => adj.id === id ? {
                             ...adj, apply_to: {
                                 type: "sites",
                                 list: value
@@ -156,7 +175,7 @@ const PriceAdjustmentField = ({ max = 999999, amount, operation, type, apply_to,
 
                     return {
                         ...prev,
-                        price_adjustment: prev.price_adjustment?.map(adj => adj.id === id ? {
+                        rate_adjustment: prev.rate_adjustment?.map(adj => adj.id === id ? {
                             ...adj, apply_to: {
                                 type: "range",
                                 range: {

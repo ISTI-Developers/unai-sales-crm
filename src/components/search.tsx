@@ -41,6 +41,7 @@ const Search = ({
       onChange={(event) => {
         setInputValue(String(event.target.value));
       }}
+      tabIndex={-1}
       className={cn("w-full max-w-md transition-all h-7", className)}
     />
   );

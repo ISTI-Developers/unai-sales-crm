@@ -8,6 +8,7 @@ const CurrencyExchangeOption = () => {
     const currencyOptions = ["PHP", "USD", "EUR", "JPY"];
     return (
         <>
+            <h1 className="font-bold uppercase text-[0.6rem]">Currency Exchange</h1>
             <p className="text-[0.6rem] leading-tight">
                 Choose your preferred currency and its conversion rate to PHP. For
                 reference, see the{" "}
@@ -53,7 +54,6 @@ const CurrencyExchangeOption = () => {
                 <Label className='text-[0.6rem] uppercase font-semibold'>PESO Equivalent</Label>
                 <InputNumber
                     className='h-7 bg-white text-xs'
-                    type="number"
                     value={selectedOptions.currency_exchange?.equivalent ?? 0}
                     onChange={(e) =>
                         setOptions((prev) => {

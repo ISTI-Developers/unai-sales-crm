@@ -53,7 +53,7 @@ function ClientBrandCombobox({ value, onValueChange, className }: ClientBrandCom
                     variant="outline"
                     role="combobox"
                     aria-expanded={open}
-                    className={cn("w-full justify-between h-15", className)}
+                    className={cn("w-full overflow-hidden justify-between h-15", className)}
                 >
                     <div className='flex flex-col items-start'>
                         {value ?

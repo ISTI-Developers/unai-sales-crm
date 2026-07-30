@@ -9,13 +9,13 @@ import {
   ContractOverride,
   SiteRental,
 } from "@/interfaces/sites.interface";
-import { catchError, getQuery, ooh, saveQuery, spAPI, wp } from "@/providers/api";
+import { catchError, getQuery, getRecord, ooh, saveQuery, saveRecord, spAPI, wp } from "@/providers/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { toast } from "./use-toast";
 import { WorkplaceRes } from "@/interfaces";
 import { haversineDistance } from "@/lib/utils";
-import { getLandmarks } from "@/lib/fetch";
+import { fetchImage, getLandmarks } from "@/lib/fetch";
 
 export const useSites = () => {
   return useQuery({
@@ -541,3 +541,112 @@ export const getSiteLandmarks = async (coordinates: { latitude: string, longitud
   })
 
 }
+
+export async function getSiteImage(
+  site_code: string,
+  selectedUploadId?: number
+) {
+  const response = await wp.get<WorkplaceRes<SiteImage[]>>(
+    `images/${site_code}`
+  );
+
+  const images = response.data.data.sort(
+    (a, b) =>
+      new Date(b.date_uploaded).getTime() -
+      new Date(a.date_uploaded).getTime()
+  );
+
+  if (!images.length) {
+    return {
+      images: [],
+      selectedImage: undefined,
+    };
+  }
+
+  const imageMap = new Map(
+    images.map(img => [img.upload_id, img])
+  );
+
+  // Priority:
+  // 1. Saved deck image
+  // 2. Local storage
+  // 3. Newest image
+  const uploadId =
+    selectedUploadId ??
+    Number(localStorage.getItem(`${site_code}_selected`));
+
+  const selected =
+    imageMap.get(uploadId) ?? images[0];
+
+  const imageData = await fetchImage(selected.upload_path);
+
+  return {
+    images,
+    selectedImage: {
+      ...selected,
+      ...imageData,
+    },
+  };
+}
+export const useImage = (site_code: string, selectedUploadID?: number) => {
+  return useQuery({
+    queryKey: ["sites", "image", site_code, selectedUploadID],
+    queryFn: () => getSiteImage(site_code, selectedUploadID),
+    enabled: !!site_code,
+    staleTime: Infinity,
+    gcTime: Infinity,
+    retry: 3,
+  });
+};
+
+export async function fetchMap(
+  site_code: string,
+  mapURL: string,
+  signal?: AbortSignal
+): Promise<string> {
+  // Check IndexedDB first
+  const cached = await getRecord<string>("maps", site_code);
+
+  const isFresh =
+    cached &&
+    (Date.now() - cached.lastFetched) / 1000 < 86400;
+
+  if (isFresh) {
+    return cached.data;
+  }
+
+  // Download map
+  const res = await fetch(mapURL, { signal });
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch map (${res.status})`);
+  }
+
+  const blob = await res.blob();
+
+  // Convert blob -> Base64
+  const map = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = reject;
+
+    reader.readAsDataURL(blob);
+  });
+
+  // Save to IndexedDB
+  await saveRecord("maps", site_code, map);
+
+  return map;
+}
+export const useMap = (
+  site_code: string,
+  mapURL: string
+) => {
+  return useQuery({
+    queryKey: ["map", site_code],
+    queryFn: ({ signal }) => fetchMap(site_code, mapURL, signal),
+    staleTime: Infinity,
+    gcTime: Infinity,
+  });
+};

@@ -8,15 +8,22 @@ const SiteStatus = () => {
     const { setFilters, selectedFilters } = useDeck();
     const { data, isLoading } = useSites()
 
-    const selectedSiteOwners: List[] = useMemo(() => {
-        if (!selectedFilters) return [];
-        if (!selectedFilters.site_owner) return [];
+    const statusMap = new Map([
+        [1, { id: 1, label: "active", action: "reactivate" }],
+        [2, { id: 2, label: "inactive", action: "deactivate" }],
+        [3, { id: 3, label: "Under Construction", action: "Under Construction" }],
+        [5, { id: 5, label: "dismantled", action: "dismantle" }],
+    ])
 
-        return selectedFilters.site_owner.map((item) => {
+    const selectedStatuses: List[] = useMemo(() => {
+        if (!selectedFilters) return [];
+        if (!selectedFilters.status) return [];
+
+        return selectedFilters.status.map((item) => {
             return {
-                id: item,
-                label: item,
-                value: item,
+                id: String(item),
+                label: statusMap.get(item)?.label ?? "",
+                value: String(item),
             };
         })
 
@@ -25,12 +32,12 @@ const SiteStatus = () => {
     const list: List[] = useMemo(() => {
         if (isLoading || !data) return [];
 
-        const siteOwners = [...new Set(data.map(item => item.site_owner))];
-        return siteOwners.map((item) => {
+        const siteStatuses = [...new Set(data.map(item => item.status))];
+        return siteStatuses.map((item) => {
             return {
-                id: item,
-                label: item,
-                value: item,
+                id: String(item),
+                label: statusMap.get(item)?.label ?? "",
+                value: String(item),
             };
         });
     }, [data, isLoading]);
@@ -39,20 +46,20 @@ const SiteStatus = () => {
         <>
             <MultiComboBox
                 list={list}
-                title="site owner"
-                value={selectedSiteOwners}
+                title="status"
+                value={selectedStatuses}
                 setValue={(id) =>
                     setFilters((prev) => {
                         if (!prev) return prev;
 
-                        const current = prev.site_owner ?? [];
-                        const exists = current.some((item) => item === id);
+                        const current = prev.status ?? [];
+                        const exists = current.some((item) => item === Number(id));
 
                         if (exists) {
                             // Remove if already selected
                             return {
                                 ...prev,
-                                site_owner: current.filter((item) => item !== id),
+                                status: current.filter((item) => item !== Number(id)),
                             };
                         }
 
@@ -61,7 +68,7 @@ const SiteStatus = () => {
                         return found
                             ? {
                                 ...prev,
-                                site_owner: [...current, found.value],
+                                status: [...current, Number(found.value)],
                             }
                             : prev;
                     })

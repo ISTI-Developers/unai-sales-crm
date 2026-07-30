@@ -130,6 +130,7 @@ export const useUpdateClient = <TData = unknown>(ID: string | null) => {
     onSuccess: () => {
       queryClient.refetchQueries({ queryKey: ["clients"] });
       queryClient.refetchQueries({ queryKey: ["clients", ID] });
+      queryClient.refetchQueries({ queryKey: ["reports", "client", ID] });
     },
     onError: catchError,
   });
@@ -178,7 +179,7 @@ export const useUpdateClientStatus = () => {
       const response = await spAPI.put<DefaultResponse>("clients", {
         status: status,
         transaction: transaction,
-          action: "status",
+        action: "status",
         id: ID,
         logger: user.ID,
       });

@@ -34,27 +34,47 @@ const FiltersContent = () => {
         landmark: <LandmarkFilter />,
         price: <PriceFilter />,
         site_owner: <SiteOwnerFilter />,
-        // site_status: <SiteStatus/>
+        status: <SiteStatus />
     }
     return (
-        <div className="text-sm flex flex-col gap-2">
-            {deckFilterKeys.filter(key => key !== "search").map(key => {
-                const filterKey = key as keyof typeof selectedFilters;
-                const filteredToggledOn = selectedFilters[filterKey];
-                return <div key={key} className="border-b">
-                    <header className="text-xs flex w-full items-center justify-between p-1">
-                        <p className="font-semibold text-opacity-60">{capitalize(key, "_")}</p>
-                        <Button variant="ghost" className="h-7" size="icon" onClick={() => toggleFilter(key, !!filteredToggledOn)}>
-                            {filteredToggledOn ? <Minus size={12} /> : <Plus size={12} />}
-                        </Button>
-                    </header>
-                    {filteredToggledOn &&
-                        <main className="p-2 space-y-2">
-                            {contentMap[key as keyof typeof contentMap]}
-                        </main>
-                    }
-                </div>
-            })}
+        <div className="space-y-2">
+            {deckFilterKeys
+                .filter(key => key !== "search")
+                .map(key => {
+                    const filterKey = key as keyof typeof selectedFilters;
+                    const isOpen = !!selectedFilters[filterKey];
+
+                    return (
+                        <div
+                            key={key}
+                            className="overflow-hidden rounded-lg border bg-background"
+                        >
+                            <button
+                                type="button"
+                                onClick={() => toggleFilter(key, isOpen)}
+                                className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-zinc-100"
+                            >
+                                <span className="text-sm font-medium">
+                                    {capitalize(key, "_")}
+                                </span>
+
+                                <div className="rounded-full bg-muted p-1">
+                                    {isOpen ? (
+                                        <Minus size={14} />
+                                    ) : (
+                                        <Plus size={14} />
+                                    )}
+                                </div>
+                            </button>
+
+                            {isOpen && (
+                                <div className=" px-4 py-3">
+                                    {contentMap[key as keyof typeof contentMap]}
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
         </div>
     )
 }

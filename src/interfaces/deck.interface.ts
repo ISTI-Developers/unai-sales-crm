@@ -1,10 +1,13 @@
 import { Dispatch, SetStateAction } from "react";
 import { Landmarks, SiteDetailswithMapping } from "./sites.interface";
 import {
+  BookingTerm,
   DeckFilters,
   DeckOptions,
   InclusionGenerator,
+  Packages,
   PriceAdjustment,
+  RateBasis,
   RateGenerator,
 } from "@/misc/deckTemplate";
 import { v4 } from "uuid";
@@ -27,13 +30,18 @@ export interface DeckProvider {
   sites: DeckSite[];
   selectedSites: DeckSite[];
   selectedFilters: Partial<DeckFilters>;
-  selectedOptions: Partial<DeckOptions>;
+  selectedOptions: DeckOptions;
   isLoading: boolean;
   title: string;
+  selectedSite: number;
+  option?: string;
+  setSelectedSite: Dispatch<SetStateAction<number>>;
+  setOption: Dispatch<SetStateAction<string | undefined>>;
   setSelectedSites: Dispatch<SetStateAction<DeckSite[]>>;
   setFilters: Dispatch<SetStateAction<Partial<DeckFilters>>>;
-  setOptions: Dispatch<SetStateAction<Partial<DeckOptions>>>;
+  setOptions: Dispatch<SetStateAction<DeckOptions>>;
   setTitle: Dispatch<SetStateAction<string>>;
+  toggleFilter: (key: string, remove: boolean) => void;
 }
 
 export const deckFilterKeys: readonly string[] = [
@@ -42,7 +50,7 @@ export const deckFilterKeys: readonly string[] = [
   "landmark",
   "price",
   "site_owner",
-  // "site_status",
+  "status",
   "search",
 ];
 
@@ -84,12 +92,34 @@ export const optionsBaseContent = {
 };
 
 export const regions = {
-  1: "luzon",
-  2: "luzon",
-  3: "luzon",
+  1: "north_luzon",
+  2: "metro_manila",
+  3: "south_luzon",
   4: "visayas",
   5: "mindanao",
 } as const;
+
+export const bookingTerm: BookingTerm = {
+  duration: 1,
+  label: "Monthly",
+};
+export const DEFAULTS = {
+  rate_basis: "SINGLE" as RateBasis,
+  rate_adjustment: [priceAdjustment],
+  booking_terms: [bookingTerm],
+  packages: {
+    3: { value: 0, type: "FLAT" },
+    6: { value: 0, type: "FLAT" },
+    12: { value: 0, type: "FLAT" },
+  } as Packages,
+  printing_cost: {
+    north_luzon: 25,
+    metro_manila: 23,
+    south_luzon: 25,
+    visayas: 25,
+    mindanao: 25,
+  },
+};
 
 export const displayOptions = {
   base: {
@@ -111,5 +141,31 @@ export const displayOptions = {
       { ...inclusionGenerator, duration: 12, count: 4 },
     ],
     landmark_visibility: false,
+  },
+};
+export const ADD_ON_TEMPLATES = [
+  {
+    key: "installation_dismantling",
+    label: "Installation & Dismantling",
+  },
+  {
+    key: "material_printing",
+    label: "Material Printing",
+  },
+] as const;
+
+export const DEFAULT_OPTIONS: DeckOptions = {
+  rate_adjustment: [],
+  packages: {},
+  currency_exchange: {
+    currency: "PHP",
+    equivalent: 1,
+  },
+  add_ons: [],
+  settings: {
+    rate_basis: DEFAULTS.rate_basis,
+    booking_terms: DEFAULTS.booking_terms,
+    printing_cost: DEFAULTS.printing_cost,
+    version: 1,
   },
 };

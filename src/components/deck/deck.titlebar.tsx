@@ -1,7 +1,7 @@
 import { useUpdateDeck, useDeck as useOneDeck } from '@/hooks/useDeck';
 import { useGeneratePowerpoint } from '@/hooks/usePrint';
 import { Deck } from '@/misc/deckTemplate';
-import { MoreHorizontalIcon } from 'lucide-react';
+import { CheckIcon, Loader2, MoreHorizontalIcon } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { ButtonGroup } from '../ui/button-group';
 import { Input } from '../ui/input';
@@ -18,18 +18,22 @@ import { toast } from '@/hooks/use-toast';
 const progressMap = {
     STALE: {
         label: "Awaiting changes",
-        className: "bg-zinc-500 ",
+        icon: CheckIcon,
+        className: "bg-zinc-500",
     },
     STORED: {
         label: "Draft saved!",
+        icon: CheckIcon,
         className: "bg-emerald-100 hover:bg-emerald-100 text-emerald-600",
     },
     SAVED: {
         label: "Deck is up to date",
+        icon: CheckIcon,
         className: "bg-emerald-100 hover:bg-emerald-100 text-emerald-600",
     },
     SAVING: {
         label: "Saving draft...",
+        icon: Loader2,
         className: "bg-yellow-100 hover:bg-yellow-100 text-yellow-600 animate-pulse"
     }
 } as const;
@@ -53,12 +57,8 @@ const TitleBar = () => {
 
     const onSave = (status?: number) => {
         if (!user || !deckID || selectedSites.length === 0) return;
-
         if (!selectedSites[0].image) return;
-
-        console.count("rendered")
-        console.log(selectedSites)
-
+        
         const deck: Deck = {
             ID: data?.ID ?? 1,
             user_id: data?.user_id ?? Number(user.ID),
@@ -85,7 +85,9 @@ const TitleBar = () => {
                     })
                 }
                 setProgress(status === 3 ? progressMap.STORED : progressMap.SAVED)
-
+            },
+            onError: (e) => {
+                console.log(e)
             }
         });
     }
@@ -132,9 +134,15 @@ const TitleBar = () => {
     }, [shouldSave, selectedSites, selectedFilters, selectedOptions, title]);
 
 
-    return <div className="flex gap-4 justify-between items-center w-full">
-        <Input value={title} onChange={(e) => setTitle(e.target.value)} className="shadow-none h-7 w-fit text-xs border-zinc-100 hover:border-zinc-300 focus-visible:ring-0" />
-        <Badge className={cn('ml-auto h-5 font-medium text-[0.65rem]', progress?.className)}>{progress?.label}</Badge>
+
+    return <div className="absolute lg:relative top-0 flex gap-4 justify-between items-center w-full p-4">
+        <Input value={title} onChange={(e) => setTitle(e.target.value)} className="shadow-none h-7 w-full lg:w-fit text-xs border-zinc-4 focus-visible:ring-0 font-semibold" />
+        <Badge className={cn('ml-auto rounded-full lg:h-5 font-medium text-[0.65rem]', progress?.className)}>
+            <progress.icon size={16} className={cn(progress?.label === "Saving draft..." ? "animate-spin" : "", "lg:hidden")} />
+            <div className="hidden lg:block">
+                {progress?.label}
+            </div>
+        </Badge>
         <ButtonGroup>
             <Button className="h-6 px-2 text-[0.6rem] " variant="outline" onClick={onSaveAndGenerate} disabled={selectedSites.length === 0}>Save & Generate</Button>
             <DropdownMenu >

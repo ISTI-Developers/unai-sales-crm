@@ -1,28 +1,24 @@
-import { DeckSite, displayOptions, regions } from "@/interfaces/deck.interface";
+import { DeckSite, regions } from "@/interfaces/deck.interface";
 import { cn } from "@/lib/utils";
 import SiteImages from "./sites.images";
 import { Landmarks } from "@/interfaces/sites.interface";
 import { ReactNode, useEffect, useMemo, useState } from "react";
-import { getSiteLandmarks } from "@/hooks/useSites";
+import { getSiteLandmarks, useMap } from "@/hooks/useSites";
 import { format, isBefore, subDays } from "date-fns";
-import { applyPriceAdjustment, formatAmount } from "@/lib/format";
-import { getRecord, saveRecord } from "@/providers/api";
+import { applyPriceAdjustment, formatAmount, formatNumber } from "@/lib/format";
 import { useDeck } from "@/providers/deck.provider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { useGeneratePowerpoint } from "@/hooks/usePrint";
 import classNames from "classnames";
 import { Button } from "../ui/button";
 import { Trash2 } from "lucide-react";
-import { FreeInclusionGenerator, InclusionGenerator, ProductionCost } from "@/misc/deckTemplate";
+import { AddOn } from "@/misc/deckTemplate";
+import { createMapURL } from "./helpers.deck";
 
-export const SiteItem = ({ item, width, className }: { item: DeckSite; width: number; className?: string }) => {
+export const SiteItem = ({ item, className }: { item: DeckSite; className?: string }) => {
     const { setSelectedSites } = useDeck()
-    // const imageResult = useSiteImages(item.site_code);
-    // const [siteImages, setSiteImages] = useState<SiteImage[]>([]);
-    // const [loading, setLoading] = useState(false);
-
     const availability = useMemo(() => {
-        if (!item.availability) return "N/A";
+        if (!item?.availability) return "N/A";
 
         if (item.is_prime) {
             const rofrDate = subDays(new Date(item.availability), 61);
@@ -37,67 +33,25 @@ export const SiteItem = ({ item, width, className }: { item: DeckSite; width: nu
             return 'N/A'
         }
         return format(rofrDate, "PP");
-    }, [item.availability, item.is_prime])
+    }, [item?.availability, item?.is_prime])
 
-    // useEffect(() => {
-    //     let isCancelled = false;
-    //     const objectUrls: string[] = []; // Track all created object URLs
-
-    //     const setup = async () => {
-    //         console.log(imageResult.error);
-    //         if (!imageResult.data) return;
-
-    //         const processedImagePromises = imageResult.data.map(async (image) => {
-    //             setLoading(true)
-    //             const imgUrl = await fetchImage(image.upload_path); // returns object URL
-    //             if (imgUrl) {
-    //                 objectUrls.push(imgUrl); // Track it for cleanup
-    //             }
-    //             return {
-    //                 ...image,
-    //                 url: imgUrl ?? "",
-    //             };
-    //         });
-
-    //         const processedImages = await Promise.all(processedImagePromises);
-    //         if (!isCancelled) {
-    //             setSiteImages(processedImages);
-    //             setLoading(false);
-    //         }
-    //     };
-
-    //     setup();
-
-    //     return () => {
-    //         isCancelled = true;
-    //         objectUrls.forEach((url) => URL.revokeObjectURL(url)); // Clean up blob URLs
-    //     };
-    // }, [imageResult.data]);
-
-    const imageWidth = useMemo(() => {
-        if (width > 600) {
-            return 200;
-        }
-
-        return 125;
-    }, [width])
-    return (
+    return item && (
         <div
+            key={item.site_code}
             id={item.site_code}
             className={cn(
-                "relative group w-full bg-white bg-contain bg-no-repeat rounded overflow-hidden flex-shrink-0",
-
+                "relative group w-full h-full bg-white overflow-hidden",
                 className
             )}
             onMouseDown={(e) => e.stopPropagation()}
             onTouchStart={(e) => e.stopPropagation()}
         >
-            <div className="relative w-full h-[5vh] bg-main-500 flex items-center justify-between px-4">
-                <img src="/unai-w.png" alt="" className="h-full p-2 px-0" />
+            <div className="relative w-full h-[clamp(20px,4.5vh,100px)] bg-main-500 flex items-center justify-between px-4">
+                <img src="/unai-w.png" alt="" className="w-[clamp(70px,4vw,200px)] p-2 px-0" />
                 <p className="text-white font-semibold text-sm">
                     {`Billboard Site in ${item.city}`}
                 </p>
-                <Button onClick={() => {
+                <Button type="button" onClick={() => {
                     setSelectedSites(prev => {
                         return prev.filter(p => p.ID !== item.ID)
                     })
@@ -106,16 +60,16 @@ export const SiteItem = ({ item, width, className }: { item: DeckSite; width: nu
                 </Button>
             </div>
             <div className="grid grid-cols-[1.75fr_1fr] pb-8 h-full">
-                <SiteImages site_code={item.site_code} />
+                <SiteImages site_code={item.site_code} selectedImage={item.image} />
                 {/* BASIC INFO */}
-                <div className="py-4 grid grid-cols-2 h-fit gap-y-2 gap-x-4 pr-3">
-                    <div className="flex gap-1">
+                <div className="py-2 lg:py-4 grid grid-cols-2 h-fit gap-0.5 lg:gap-y-2 gap-x-4 pr-3">
+                    <div className="flex gap-0.5 items-end">
                         <DeckLabel>
                             Availability
                         </DeckLabel>
                         <AvailabilityField site={item} />
                     </div>
-                    <div className="flex gap-1">
+                    <div className="flex gap-0.5 items-end">
                         <DeckLabel>
                             ROFR
                         </DeckLabel>
@@ -137,7 +91,7 @@ export const SiteItem = ({ item, width, className }: { item: DeckSite; width: nu
                         <DeckLabel>
                             Address
                         </DeckLabel>
-                        <DeckValue className="text-[8px]">{item.address}</DeckValue>
+                        <DeckValue>{item.address}</DeckValue>
                     </div>
                     <div className="leading-none col-[1/3]">
                         <DeckLabel>
@@ -155,13 +109,13 @@ export const SiteItem = ({ item, width, className }: { item: DeckSite; width: nu
                         <DeckLabel>
                             Traffic Count
                         </DeckLabel>
-                        <DeckValue>{item.traffic_count}</DeckValue>
+                        <DeckValue>{formatNumber(item.traffic_count ?? 0)}</DeckValue>
                     </div>
                     <div className="leading-none">
                         <DeckLabel>
                             Population
                         </DeckLabel>
-                        <DeckValue>{item.vicinity_population}</DeckValue>
+                        <DeckValue>{formatNumber(item.vicinity_population ?? 0)}</DeckValue>
                     </div>
                     <div className="leading-none col-[1/3]">
                         <DeckLabel>
@@ -172,7 +126,7 @@ export const SiteItem = ({ item, width, className }: { item: DeckSite; width: nu
                     <PriceField site={item} />
                     <div className="leading-none col-[1/3]">
                         <DeckValue className="text-[11px] relative">
-                            <MapField site_code={item.site_code} latitude={item.latitude} longitude={item.longitude} ideal_view={item.ideal_view} width={imageWidth} />
+                            <MapField site_code={item.site_code} latitude={item.latitude} longitude={item.longitude} ideal_view={item.ideal_view} />
                         </DeckValue>
                     </div>
                 </div>
@@ -184,44 +138,31 @@ export const SiteItem = ({ item, width, className }: { item: DeckSite; width: nu
 
 const PriceField = ({ site }: { site: DeckSite }) => {
     const { selectedOptions } = useDeck();
-    const { applyOptions } = useGeneratePowerpoint();
+    const { applyOptions, applyExchangeRate } = useGeneratePowerpoint();
     const updatedPrice = applyOptions(site, site.price, Number(site.price));
+    const settings = selectedOptions.settings;
 
-    const adtlCost = useMemo(() => {
-        const cost = {
-            material: [] as InclusionGenerator[] | (InclusionGenerator & { type: "PAID", rates?: ProductionCost })[],
-            installation: [] as FreeInclusionGenerator[],
-        }
-        if (!selectedOptions.display_options) return cost;
-        const inclusions = selectedOptions.display_options;
+    const addOns = useMemo(() => {
+        if (!selectedOptions.add_ons) return new Map<string, AddOn>([]);
 
-        if (!inclusions?.material_inclusions && !inclusions?.installation_inclusions) return cost;
+        return new Map<string, AddOn>(selectedOptions.add_ons.map(addOn => [addOn.key, addOn]))
+    }, [selectedOptions])
 
-        if (inclusions.material_inclusions) {
-            cost.material = inclusions.material_inclusions;
-        }
-        if (inclusions.installation_inclusions) {
-            cost.installation = inclusions.installation_inclusions;
-        }
+    const bookingTerms = useMemo(() => {
+        return settings.booking_terms.map(term => term.duration);
+    }, [settings.booking_terms])
 
-        cost.material = cost.material.map(mat => {
-            if (mat.type === "PAID") {
-                return {
-                    ...mat,
-                    rates: inclusions.production_cost
-                }
-            }
-            return mat;
-        })
-        return cost;
-    }, [selectedOptions.display_options])
+    const materialPrinting = addOns.get("material_printing")
+    const installationDismantling = addOns.get("installation_dismantling")
+    const hasInstallation = Object.values(
+        installationDismantling?.rates ?? {}
+    ).some(rate => rate.value > 0);
+    const hasMaterial = Object.values(
+        materialPrinting?.rates ?? {}
+    ).some(rate => rate.value > 0);
 
-    const hasAdtlCost = Object.values(adtlCost).every(item => item.length > 0);
-    const hasMaterialFree = adtlCost.material.every(mat => mat.type === "FREE" && mat.count !== 0);
-
-    const productionCost = useMemo(() => {
-        if (!selectedOptions.display_options) return 0;
-        const production_cost = selectedOptions.display_options.production_cost ?? displayOptions.base.production_cost;
+    const printingCost = useMemo(() => {
+        const production_cost = selectedOptions.settings.printing_cost;
         const prefix = Number(site.site_code.substring(0, 1)) as keyof typeof regions;
         const rate = production_cost[regions[prefix] as keyof typeof production_cost]
 
@@ -231,183 +172,112 @@ const PriceField = ({ site }: { site: DeckSite }) => {
 
         const cost = dims?.reduce((acc, n) => acc * n, rate) ?? 0
 
-        return cost
+        return applyExchangeRate(cost, selectedOptions.currency_exchange.equivalent);
 
-    }, [selectedOptions.display_options, site.site_code, site.size])
+    }, [applyExchangeRate, selectedOptions.currency_exchange.equivalent, selectedOptions.settings.printing_cost, site.site_code, site.size])
 
-    return <div className={cn("leading-none flex flex-col gap-1 col-[1/3]", adtlCost.material.length === 1 && !hasMaterialFree && !selectedOptions.rate_generator ? "grid grid-cols-2" : "")}>
-        {adtlCost.material.length > 1 && selectedOptions.rate_generator ?
-            <DeckValue className="text-[8px] font-normal">
-                <table className="w-full border">
-                    <thead>
-                        <tr>
-                            <th className="p-1 border">Months</th>
-                            <th>Monthly Rate</th>
-                            {adtlCost && <>
-                                <th>Material</th>
-                                <th>Installation</th>
-                            </>}
-                        </tr>
-                    </thead>
-                    <tbody className="text-center">
-                        {selectedOptions.rate_generator.map((month, index) => {
-                            const { discount, type, duration } = month;
-                            const monthlyRate = discount === 0 ? updatedPrice : applyPriceAdjustment(updatedPrice, { amount: discount, type: type })
-                            return <tr key={duration} className="border">
-                                <td className="p-0.5 border">{duration}</td>
-                                <td>{formatAmount(monthlyRate, {
-                                    style: "currency",
-                                    currency: selectedOptions.currency_exchange?.currency ?? "PHP",
-                                })}</td>
-                                {adtlCost.material[index].type === "FREE" ? <td className="lowercase">{adtlCost.material[index].count}x free</td> :
-                                    <td className="lowercase">{formatAmount(productionCost, {
-                                        style: "currency",
-                                        currency: selectedOptions.currency_exchange?.currency ?? "PHP",
-                                    })}</td>}
-                                {adtlCost.installation[index].type === "FREE" && adtlCost.installation[index].count ? <td className="lowercase">{adtlCost.installation[index].count}x free</td> : <td>n/a</td>}
-                            </tr>
-                        })}
-                    </tbody>
-                </table>
-            </DeckValue>
-            : <>
+    return <div className={cn("leading-none flex flex-col gap-1 col-[1/3]")}>
+        {settings.rate_basis === "SINGLE"
+            ?
+            <div className="flex gap-2">
                 <div>
-                    <DeckLabel className="text-[#000] font-bold">
-                        Monthly Rate
-                    </DeckLabel>
-                    <DeckValue className={cn("text-[11px] flex flex-col")}>
+                    <DeckLabel className="text-[#000] font-bold">Monthly Rate</DeckLabel>
+                    <DeckValue className={cn("text-[clamp(7px,1vw,11px)] flex flex-col")}>
                         <p>{`${formatAmount(updatedPrice, {
                             style: "currency",
                             currency: selectedOptions.currency_exchange?.currency ?? "PHP",
                         })} + VAT`}</p>
                         <p className="font-normal lowercase space-x-1 text-[10px] leading-normal">
-                            {hasAdtlCost && hasMaterialFree &&
-                                <>
-                                    <span>w/ free</span>
-                                    {adtlCost.material[0].type === "FREE" ? ` ${adtlCost.material[0].count}x material` : ''}
-                                </>
-                            }
-                            {hasAdtlCost && adtlCost.installation[0].count !== 0 ? `${hasMaterialFree ? ' &' : 'w/ free'} ${adtlCost.installation[0].count}x installation` : ''}
+                            {bookingTerms.map(term => {
+                                const materialRate = materialPrinting?.rates[term];
+                                const installationRate = installationDismantling?.rates[term];
+
+                                const freebies = [];
+
+                                if (installationRate && installationRate.value !== 0) {
+                                    freebies.push(`${installationRate.value}x installation`)
+                                }
+                                if (materialRate?.type === "FREE" && materialRate.value !== 0) {
+                                    freebies.push(`${materialRate.value}x material`)
+                                }
+
+                                return freebies.length > 0 && <span key={term}>
+                                    {`w/ free ${freebies.join(" & ")}`}
+                                </span>
+                            })}
                         </p>
                     </DeckValue>
                 </div>
-                {!hasMaterialFree && <div>
-                    <DeckLabel className="text-[#000] font-bold">
-                        Production Cost
-                    </DeckLabel>
-                    <DeckValue className="text-[11px] flex flex-col">
-                        <p>{`${formatAmount(productionCost, {
-                            style: "currency",
-                            currency: selectedOptions.currency_exchange?.currency ?? "PHP",
-                        })}`}</p>
-                    </DeckValue>
-                </div>}
-            </>}
+                {materialPrinting?.rates[1].value === 0 &&
+                    <div>
+                        <DeckLabel className="text-[#000] font-bold">Production Cost</DeckLabel>
+                        <DeckValue className={cn("text-[clamp(7px,1vw,11px)] flex flex-col")}>
+                            <p>{`${formatAmount(printingCost, {
+                                style: "currency",
+                                currency: selectedOptions.currency_exchange?.currency ?? "PHP",
+                            })}`}</p>
+                        </DeckValue>
+                    </div>}
+            </div>
+            :
+            <div>
+                <DeckValue className="font-normal">
+                    <table className="border-collapse border w-full">
+                        <thead>
+                            <tr className="text-[clamp(3px,1vw,7px)]">
+                                <th>Month</th>
+                                <th>Monthly Rate</th>
+                                {hasMaterial && <th>Material</th>}
+                                {hasInstallation && <th>Installation</th>}
+                            </tr>
+                        </thead>
+                        <tbody className="text-center text-[clamp(4px,1vw,7px)]">
+                            {bookingTerms.map(term => {
+                                const materialRate = materialPrinting?.rates[term];
+                                const installationRate = installationDismantling?.rates[term];
+                                const adjustment = selectedOptions.packages[term];
+                                const rate = adjustment ? Object.values(adjustment).length > 0 ? applyPriceAdjustment(updatedPrice, { amount: adjustment.value, type: adjustment.type }) : updatedPrice : updatedPrice;
+                                return <tr key={term} className="border">
+                                    <td>{term}</td>
+                                    <td>{formatAmount(rate, {
+                                        style: "currency",
+                                        currency: selectedOptions.currency_exchange?.currency ?? "PHP",
+                                    })}</td>
+                                    {materialRate &&
+                                        <td>{materialRate?.type === "FREE" ? materialRate.value > 0 ? `${materialRate.value}x free` : formatAmount(printingCost, {
+                                            style: "currency",
+                                            currency: selectedOptions.currency_exchange?.currency ?? "PHP",
+                                        }) : formatAmount(printingCost, {
+                                            style: "currency",
+                                            currency: selectedOptions.currency_exchange?.currency ?? "PHP",
+                                        })}</td>
+                                    }
+                                    {installationRate &&
+                                        <td>{installationRate ? installationRate.value > 0 && `${installationRate.value}x free` : ''}</td>
+                                    }
+                                </tr>
+                            })}
+                        </tbody>
+                    </table>
+                </DeckValue>
+            </div>
+        }
     </div >
 }
-const MapField = ({ site_code, longitude, latitude, ideal_view, width }: { site_code: string; longitude: string; latitude: string; ideal_view: string, width: number }) => {
+const MapField = ({ site_code, longitude, latitude, ideal_view }: { site_code: string; longitude: string; latitude: string; ideal_view: string }) => {
 
-    const url = import.meta.env.VITE_BASE_MAP_URL;
+    const { selectedOptions } = useDeck();
+    const mapURL = createMapURL({ latitude, longitude });
+    const { data } = useMap(site_code, mapURL)
 
-    const { setSelectedSites, selectedOptions } = useDeck();
-
-    const [zoom] = useState(16);
-    const [center] = useState<google.maps.LatLngLiteral>({
-        lat: Number(latitude),
-        lng: Number(longitude)
-    })
-
-    const mapURL = useMemo(() => {
-        if (!center) return;
-
-        const params = new URLSearchParams({
-            center: `${center.lat},${center.lng} `,
-            zoom: String(zoom),
-            size: "350x350",
-            key: import.meta.env.VITE_GCP_API,
-        });
-
-        params.append(
-            "markers",
-            `icon: https://salespf.unmg.com.ph/billboard_64.png|${center.lat},${center.lng}`
-        );
-
-        return `${url}?${params.toString()}`;
-    }, [center, zoom, url])
-
-    useEffect(() => {
-        if (!site_code || !mapURL) return;
-
-        const controller = new AbortController();
-        const { signal } = controller;
-
-        const setup = async () => {
-            try {
-                // 🧠 Try getting cached version first
-                const cached = await getRecord<string>("maps", site_code);
-                const isFresh = cached && (Date.now() - cached.lastFetched) / 1000 < 86400;
-
-                let map: string;
-
-                if (isFresh) {
-                    map = cached.data;
-                } else {
-                    const res = await fetch(mapURL, { signal });
-                    if (!res.ok) throw new Error(`Failed to fetch map: ${res.status}`);
-
-                    const blob = await res.blob();
-
-                    // Convert blob → base64 Data URL
-                    map = await new Promise<string>((resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => resolve(reader.result as string);
-                        reader.onerror = reject;
-                        reader.readAsDataURL(blob);
-                    });
-
-                    await saveRecord("maps", site_code, map);
-                }
-
-                // 🧩 Skip updating state if request was aborted mid-process
-                if (signal.aborted) return;
-
-                setSelectedSites(prev => {
-                    if (!prev) return prev;
-                    return prev.map(item =>
-                        item.site_code === site_code
-                            ? { ...item, map }
-                            : item
-                    );
-                });
-            } catch (err: unknown) {
-                if (err instanceof Error) {
-                    if (err.name === "AbortError") {
-                        console.log("Map fetch aborted for", site_code);
-                    } else {
-                        console.error("Failed to fetch/convert map:", err);
-                    }
-                }
-            }
-        };
-
-        setup();
-
-        return () => {
-            controller.abort();
-        };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [site_code, mapURL]);
-
-
-    return mapURL &&
+    return data &&
         <>
-            <img src={mapURL} alt="map preview" className={classNames("w-full transition-all")} style={{
-                width: selectedOptions.rate_generator ? `${width - 35}px` : `${width}px`
+            <img src={data} alt="map preview" data-rates={selectedOptions.settings.rate_basis === "MULTIPLE"} className={classNames("w-[clamp(60px,7vw,150px)] lg:w-[clamp(120px,6vw,150px)] data-[rates=true]:w-[clamp(60px,6vw,200px)] data-[rates=true]:lg:w-[clamp(90px,8vw,170px)] transition-all")} style={{
             }} loading="lazy" />
             <Tooltip delayDuration={0}>
                 <TooltipTrigger asChild>
-                    <a className={classNames("absolute bottom-0 left-0 bg-[#F2F2F2] w-full text-center text-[0.5rem] p-1")} style={{
-                        width: selectedOptions.rate_generator ? `${width - 35}px` : `${width}px`
+                    <a data-rates={selectedOptions.settings.rate_basis === "MULTIPLE"} className={classNames("absolute bottom-0 left-0 bg-[#F2F2F2] w-[clamp(60px,6vw,150px)] lg:w-[clamp(120px,6vw,150px)] data-[rates=true]:w-[clamp(60px,6vw,200px)] data-[rates=true]:lg:w-[clamp(90px,8vw,170px)] text-center text-[clamp(4px,1vw,7px)] p-1")} style={{
+                        // width: selectedOptions.rate_generator ? `${width - 35}px` : `${width}px`
                     }} href={ideal_view} target="_blank">View Google Map</a>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-[300px] text-[0.6rem] font-normal lowercase">
@@ -426,7 +296,7 @@ const LandmarkField = ({ site }: { site: DeckSite }) => {
         setup();
     }, [site.latitude, site.longitude])
 
-    return <DeckValue className="text-[7px] font-normal w-full">
+    return <DeckValue className="text-[clamp(4px,1.2vw,8px)] font-normal w-full max-w-full truncate">
         {landmarks.map(lm => lm.display_name).slice(0, 5).join(" • ")}
     </DeckValue>
 }
@@ -445,9 +315,9 @@ const AvailabilityField = ({ site }: { site: DeckSite }) => {
 };
 
 const DeckLabel = ({ children, className }: { children: ReactNode; className?: string }) => {
-    return <p className={cn("text-[7px] text-slate-500 uppercase", className)}>{children}:</p>
+    return <p className={cn("text-[clamp(4px,1vw,7px)] text-slate-500 uppercase", className)}>{children}:</p>
 }
 
 const DeckValue = ({ children, className }: { children: ReactNode; className?: string }) => {
-    return <div className={cn("text-[8px] font-bold uppercase", className)}>{children}</div>;
+    return <div className={cn("text-[clamp(5px,1.2vw,8px)] font-bold uppercase", className)}>{children}</div>;
 }

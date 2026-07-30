@@ -1,11 +1,13 @@
+import { createMapURL, syncPackages } from "@/components/deck/helpers.deck";
 import { useBookings } from "@/hooks/useBookings";
 import { useDeck as useOneDeck } from "@/hooks/useDeck";
-import { useOverridenSiteEndDates, useSitelandmarks, useSites } from "@/hooks/useSites";
+import { fetchMap, getSiteImage, useOverridenSiteEndDates, useSitelandmarks, useSites } from "@/hooks/useSites";
 import { ProviderProps } from "@/interfaces";
-import { DeckProvider as DeckProviderType, DeckSite, displayOptions } from "@/interfaces/deck.interface";
+import { DeckProvider as DeckProviderType, DeckSite, DEFAULT_OPTIONS, DEFAULTS, displayOptions, optionsBaseContent } from "@/interfaces/deck.interface";
 import { getEndDate, getLatestBooking } from "@/lib/fetch";
 import { haversineDistance } from "@/lib/utils";
-import { DeckFilters, DeckOptions, FreeInclusionGenerator, InclusionGenerator } from "@/misc/deckTemplate";
+import { DeckFilters, DeckOptions } from "@/misc/deckTemplate";
+import { useQueryClient } from "@tanstack/react-query";
 import { addDays, differenceInCalendarDays, format, isBefore } from "date-fns";
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -24,6 +26,7 @@ export const useDeck = (): DeckProviderType => {
 export function DeckProvider({ children }: ProviderProps) {
   const [searchParams] = useSearchParams()
   const deckID = searchParams.get("token");
+  const queryClient = useQueryClient();
 
   const hydratedDeckRef = useRef<string | null>(null);
   const { data: landmarks } = useSitelandmarks();
@@ -31,10 +34,11 @@ export function DeckProvider({ children }: ProviderProps) {
   const { data: bookings } = useBookings();
   const { data: adjustments } = useOverridenSiteEndDates();
   const { data: deckData } = useOneDeck(deckID);
-
+  const [option, setOption] = useState<string | undefined>("site_selection")
+  const [selectedSite, setSelectedSite] = useState(0);
   const [selectedSites, setSelectedSites] = useState<DeckSite[]>([]);
   const [selectedFilters, setFilters] = useState<Partial<DeckFilters>>({});
-  const [selectedOptions, setOptions] = useState<Partial<DeckOptions>>({});
+  const [selectedOptions, setOptions] = useState<DeckOptions>(DEFAULT_OPTIONS);
   const [title, setTitle] = useState<string>("New Deck")
 
   const isLoading =
@@ -46,9 +50,7 @@ export function DeckProvider({ children }: ProviderProps) {
   const sites: DeckSite[] = useMemo(() => {
     if (isLoading) return [];
 
-    const activeSites = allSites.filter(site => [1, 3].includes(site.status));
-
-    const contracts = activeSites.map(site => {
+    const contracts = allSites.map(site => {
       const siteBookings = bookings.filter(booking => booking.site_code === site.site_code);
       const adjustment = adjustments.find(adjustment => adjustment.site_code === site.site_code);
       const updatedBookings = siteBookings.map(sb => ({ ...sb, is_prime: site.is_prime }))
@@ -69,7 +71,9 @@ export function DeckProvider({ children }: ProviderProps) {
 
   const searchedSites: DeckSite[] = useMemo(() => {
     if (!sites) return sites;
+
     const query = selectedFilters?.search?.trim().toLowerCase();
+
     if (!query) return sites;
     // Detect pattern like: 4cebceb039-1aa01
     const SITE_CODE_PATTERN = /\b\d[a-z0-9]{6}\d{3}-\d[a-z]{2}\d{2}\b/;
@@ -129,9 +133,6 @@ export function DeckProvider({ children }: ProviderProps) {
         })
 
       }
-      // temp = temp.filter(site =>
-      //   selectedFilters.area!.includes(site.city)
-      // );
     }
 
     if (selectedFilters.landmark && selectedFilters.landmark.length > 0 && landmarks) {
@@ -184,44 +185,31 @@ export function DeckProvider({ children }: ProviderProps) {
     return temp;
   }, [landmarks, searchedSites, selectedFilters]);
 
+  const toggleFilter = (key: string, remove: boolean) => {
+    setOptions(prev => {
+      if (!prev) return prev;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const normalizeMaterialInclusions = (inclusions: number | any[]): InclusionGenerator[] => {
-    if (typeof inclusions === "number") {
-      return [{
-        type: "FREE",
-        count: inclusions,
-        duration: 1,
-      }];
-    }
-
-    return inclusions.map((item) => {
-      if ("type" in item) return item;
-
-      return {
-        type: "FREE",
-        count: item.count ?? 0,
-        duration: item.duration,
-      };
-    });
-  };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const normalizeInstallationInclusions = (inclusions: number | any[]): FreeInclusionGenerator[] => {
-    if (typeof inclusions === "number") {
-      return [{
-        type: "FREE",
-        count: inclusions,
-        duration: 1,
-      }];
-    }
-    return inclusions.map((item) => {
-      return {
-        type: "FREE",
-        count: item.count ?? 0,
-        duration: item.duration,
-      };
-    });
-  };
+      if (remove) {
+        // Remove the key from filters
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { [key as keyof typeof prev]: _, ...rest } = prev;
+        if (key === "rate_generator" && selectedOptions.settings.rate_basis) {
+          return { ...rest, display_options: displayOptions.base }
+        }
+        return rest;
+      }
+      if (key === "display_options") {
+        if (selectedOptions.settings.rate_basis) {
+          return { ...prev, [key]: displayOptions.withRateGenerator }
+        }
+        return { ...prev, [key]: displayOptions.base }
+      }
+      if (key === "rate_generator" && selectedOptions.settings.rate_basis) {
+        return { ...prev, [key]: optionsBaseContent[key as keyof typeof optionsBaseContent], display_options: displayOptions.withRateGenerator }
+      }
+      return { ...prev, [key]: optionsBaseContent[key as keyof typeof optionsBaseContent] }
+    })
+  }
 
   useEffect(() => {
     if (!deckData || !deckID || isLoading) return;
@@ -229,9 +217,8 @@ export function DeckProvider({ children }: ProviderProps) {
     if (hydratedDeckRef.current === deckID) return;
 
     const siteMap = new Map(
-      deckData.sites.map(s => [s.site_code, s])
+      (deckData.sites).map(s => [s.site_code, s])
     );
-
 
     const siteCodes = new Set(deckData.sites.map(s => s.site_code));
 
@@ -250,29 +237,108 @@ export function DeckProvider({ children }: ProviderProps) {
         };
       })
     );
-    setFilters(deckData.filters ?? {});
-    const normalizedOptions = Object.values(deckData.options ?? {}).length !== 0 ? {
-      ...deckData.options,
-      display_options: {
-        ...deckData.options?.display_options,
-        production_cost: displayOptions.base.production_cost,
-        material_inclusions: normalizeMaterialInclusions(
-          deckData.options?.display_options?.material_inclusions ?? displayOptions.base.material_inclusions,
-        ),
-        installation_inclusions: normalizeInstallationInclusions(
-          deckData.options?.display_options?.installation_inclusions ?? displayOptions.base.installation_inclusions,
-        ),
-      },
-    } : {};
 
-    setOptions(normalizedOptions);
+    setFilters(deckData.filters ?? {});
+    setOptions(!Array.isArray(deckData.options) ? {
+      rate_adjustment: deckData.options.rate_adjustment ?? [],
+      currency_exchange: deckData.options.currency_exchange ?? DEFAULT_OPTIONS.currency_exchange,
+      packages: Array.isArray(deckData.options.packages) ? syncPackages(deckData.options?.settings.booking_terms, deckData.options.packages) : deckData.options.packages ?? DEFAULT_OPTIONS.packages,
+      add_ons: deckData.options.add_ons ?? DEFAULT_OPTIONS.add_ons,
+      settings: {
+        rate_basis: deckData.options?.settings.rate_basis ?? "SINGLE",
+        booking_terms: deckData.options?.settings.booking_terms ?? DEFAULTS.booking_terms,
+        printing_cost: deckData.options?.settings.printing_cost ?? DEFAULTS.printing_cost,
+        version: 1
+      }
+
+    } : DEFAULT_OPTIONS)
+
     setTitle(deckData.title ?? "");
     hydratedDeckRef.current = deckID;
 
   }, [deckData, deckID, isLoading, sites]);
 
+  useEffect(() => {
+    if (!selectedSites.length) return;
 
-  return <DeckProviderContext.Provider value={{ sites: filteredSites, isLoading, selectedSites, selectedFilters, selectedOptions, title, setTitle, setSelectedSites, setFilters, setOptions }}>
+    selectedSites.forEach(site => {
+      const mapURL = createMapURL({ latitude: site.latitude, longitude: site.longitude });
+
+      queryClient.prefetchQuery({
+        queryKey: ["sites", "image", site.site_code],
+        queryFn: () => getSiteImage(site.site_code, site.image),
+        staleTime: Infinity,
+      });
+
+      queryClient.prefetchQuery({
+        queryKey: ["map", site.site_code],
+        queryFn: ({ signal }) =>
+          fetchMap(site.site_code, mapURL, signal),
+        staleTime: Infinity,
+        gcTime: Infinity,
+      });
+    });
+  }, [selectedSites, queryClient]);
+
+  useEffect(() => {
+    const sitesToLoad = selectedSites.filter(site => !site.url);
+
+    if (!sitesToLoad.length) return;
+
+    let cancelled = false;
+
+    (async () => {
+      const updates = await Promise.all(
+        sitesToLoad.map(async site => {
+          const data = await queryClient.fetchQuery({
+            queryKey: ["sites", "image", site.site_code],
+            queryFn: () => getSiteImage(site.site_code, site.image),
+            staleTime: Infinity,
+          });
+
+          return {
+            site_code: site.site_code,
+            ...data.selectedImage,
+          };
+        })
+      );
+
+      if (cancelled) return;
+
+      const updateMap = new Map(
+        updates.map(update => [update.site_code, update])
+      );
+
+      setSelectedSites(prev =>
+        prev.map(site => {
+          const update = updateMap.get(site.site_code);
+          return update ? { ...site, ...update } : site;
+        })
+      );
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedSites, queryClient, setSelectedSites]);
+
+  return <DeckProviderContext.Provider value={{
+    sites: filteredSites,
+    selectedSite,
+    isLoading,
+    selectedSites,
+    selectedFilters,
+    selectedOptions,
+    title,
+    option,
+    setOption,
+    setTitle,
+    setSelectedSite,
+    setSelectedSites,
+    setFilters,
+    setOptions,
+    toggleFilter,
+  }}>
     {children}
   </DeckProviderContext.Provider>
 }
