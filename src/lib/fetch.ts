@@ -490,9 +490,8 @@ export const getLatestBooking = (bookings: Booking[]) => {
     }
   }
 
-  const valid = Array.from(latestPerStartDate.values()).filter(
-    (b) => b.booking_status !== "CANCELLED",
-  );
+  const valid = Array.from(latestPerStartDate.values());
+
   if (!valid.length) return;
 
   let best: Booking | undefined;
@@ -506,9 +505,6 @@ export const getLatestBooking = (bookings: Booking[]) => {
 
     const diff = differenceInCalendarDays(from, now);
 
-    // if (bookings.length > 0 && latestPerStartDate.size !== 0) {
-    //   console.log(valid, diff);
-    // }
     let score = 0;
     let distance = Infinity;
 
@@ -539,7 +535,7 @@ export const getLatestBooking = (bookings: Booking[]) => {
     ) {
       score = 70;
     } else if (booking.booking_status.includes("CONTRACT")) {
-      score = 81;
+      score = 75;
       distance = diff;
     }
     // CURRENT ACTIVE
