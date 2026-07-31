@@ -56,8 +56,9 @@ export const fetchImage: (
     }
 
     const base64 = btoa(binary);
+
     return {
-      url: `data:image/webp;base64,${base64}`,
+      url: `data:image/jpeg;base64,${base64}`,
       height: Number(height),
       width: Number(width),
     };

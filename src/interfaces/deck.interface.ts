@@ -92,8 +92,8 @@ export const optionsBaseContent = {
 };
 
 export const regions = {
-  1: "north_luzon",
-  2: "metro_manila",
+  1: "metro_manila",
+  2: "north_luzon",
   3: "south_luzon",
   4: "visayas",
   5: "mindanao",
