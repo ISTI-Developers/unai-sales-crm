@@ -107,6 +107,7 @@ export const DEFAULTS = {
   rate_basis: "SINGLE" as RateBasis,
   rate_adjustment: [priceAdjustment],
   booking_terms: [bookingTerm],
+  filters: { status: [1] },
   packages: {
     3: { value: 0, type: "FLAT" },
     6: { value: 0, type: "FLAT" },

@@ -37,7 +37,7 @@ export function DeckProvider({ children }: ProviderProps) {
   const [option, setOption] = useState<string | undefined>("site_selection")
   const [selectedSite, setSelectedSite] = useState(0);
   const [selectedSites, setSelectedSites] = useState<DeckSite[]>([]);
-  const [selectedFilters, setFilters] = useState<Partial<DeckFilters>>({});
+  const [selectedFilters, setFilters] = useState<Partial<DeckFilters>>(DEFAULTS.filters);
   const [selectedOptions, setOptions] = useState<DeckOptions>(DEFAULT_OPTIONS);
   const [title, setTitle] = useState<string>("New Deck")
 

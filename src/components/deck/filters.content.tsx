@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { deckFilterKeys } from "@/interfaces/deck.interface"
 import { capitalize } from "@/lib/utils"
-import { Button } from "../ui/button"
 import { Minus, Plus } from "lucide-react"
 import { useDeck } from "@/providers/deck.provider"
 import AreaFilter from "./filters.area"

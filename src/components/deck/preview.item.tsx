@@ -13,7 +13,7 @@ const PreviewItem = ({ item, className }: { item: DeckSite; className?: string }
             role='button'
             onClick={() => setSelectedSite(selectedSites.findIndex(s => s === item))}
             className={cn(
-                "bg-white border rounded-md aspect-video overflow-hidden relative w-[clamp(150px,8vw,180px)]  shrink-0",
+                "bg-white border-2 rounded-md aspect-video overflow-hidden relative w-[clamp(150px,8vw,180px)]  shrink-0 transition-all",
                 className
             )}
         >

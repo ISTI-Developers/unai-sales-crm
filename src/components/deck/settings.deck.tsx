@@ -55,9 +55,9 @@ function DeckSettings() {
         });
     };
     return (
-        <div className="p-2 pl-0 flex flex-col gap-2">
+        <div className="p-2 lg:pl-0 flex flex-col gap-2">
             <h1 className="font-bold uppercase text-[0.6rem]">Settings</h1>
-            <ScrollArea className="h-[82vh]">
+            <ScrollArea className="h-[50vh] lg:h-[82vh]">
                 <div className="space-y-2 pb-2">
                     <section className="space-y-1">
                         <Label>Rate Basis</Label>
