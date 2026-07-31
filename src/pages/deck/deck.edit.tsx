@@ -1,57 +1,32 @@
 import TitleBar from "@/components/deck/deck.titlebar";
-import OptionsPanel from "@/components/deck/options.panel";
-import PreviewsList from "@/components/deck/preview.list";
-import SitesPreview from "@/components/deck/sites.preview";
-import SiteSelection from "@/components/deck/sites.selection";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useHorizontalWheelScroll } from "@/hooks/useHorizontalScroll";
 import { cn } from "@/lib/utils";
-import Page from "@/misc/Page";
-import { PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from "lucide-react";
-import { useState } from "react";
 import { Navigate, useLocation, useSearchParams } from "react-router-dom"
+import DeckToolbar from "./toolbar.deck";
+import DeckWorkplace from "./workplace.deck";
+import PreviewsList from "@/components/deck/preview.list";
+import { useDeck } from "@/providers/deck.provider";
 
 const EditDeck = () => {
   const [params] = useSearchParams();
   const location = useLocation();
   const scrollRef = useHorizontalWheelScroll<HTMLDivElement>()
-
-  const [isLeftOpen, toggleLeftBar] = useState(true);
-  const [isRightOpen, toggleRightBar] = useState(true);
-
+  const { option } = useDeck()
 
   if (!params.get("token") && location.pathname.includes("edit")) {
     return <Navigate to="/deck" replace />
   }
   return (
-    <Page>
-      <div className={cn("grid w-full overflow-x-hidden gap-2 text-xs", isLeftOpen && isRightOpen ? "grid-cols-[200px_1fr_200px] xl:grid-cols-[240px_1fr_240px] 2xl:grid-cols-[300px_1fr_300px]" : isLeftOpen ? "grid-cols-[200px_1fr] xl:grid-cols-[240px_1fr] 2xl:grid-cols-[300px_1fr]" : isRightOpen ? "grid-cols-[1fr_200px] xl:grid-cols-[1fr_240px] 2xl:grid-cols-[1fr_300px]" : "grid-cols-1")}>
-        <section className={cn("bg-zinc-100 w-full h-[calc(100vh-130px)]  rounded-md p-2 gap-2", isLeftOpen ? "flex flex-col" : "hidden")}>
-          <SiteSelection />
-        </section>
-        <section className={cn("min-w-0 w-full h-[calc(100vh-130px)]  rounded-md grid gap-2 grid-rows-[36px_1fr_auto] 2xl:grid-rows-[36px_1fr_auto]")}>
-          <section className="bg-zinc-100 rounded-md flex justify-between items-center">
-            <Button variant="ghost" size="icon" onClick={() => toggleLeftBar(prev => !prev)}>
-              {isLeftOpen ? <PanelLeftClose /> : <PanelLeftOpen />}
-            </Button>
-            <TitleBar />
-            <Button variant="ghost" size="icon" onClick={() => toggleRightBar(prev => !prev)}>
-              {isRightOpen ? <PanelRightClose /> : <PanelRightOpen />}
-            </Button>
-          </section>
-          <SitesPreview />
-          <section ref={scrollRef} className="bg-zinc-100 rounded-md min-w-0 p-2 flex items-center gap-2 overflow-x-auto">
-            <PreviewsList />
-          </section>
-        </section>
-        <ScrollArea className="h-[calc(100vh-130px)] overflow-y-auto">
-          <section className={cn("bg-zinc-100 w-full rounded-md p-2", isRightOpen ? "flex flex-col" : "hidden")}>
-            <OptionsPanel />
-          </section>
-        </ScrollArea>
-      </div>
-    </Page>
+    <div className="relative flex h-[calc(100vh-10px)] overflow-y-hidden flex-col-reverse lg:flex-row">
+      <DeckToolbar />
+      <section className={cn("relative flex min-w-0 min-h-0 flex-1 flex-col pb-[5rem] lg:pb-0 transition-all", option ? "pb-[45vh]" : "")}>
+        <TitleBar />
+        <DeckWorkplace />
+        <div ref={scrollRef} className="px-4 flex gap-4 overflow-x-auto scrollbar-none max-w-full lg:max-w-2xl xl:max-w-[850px] mx-auto lg:pb-4">
+          <PreviewsList />
+        </div>
+      </section>
+    </div>
   )
 }
 

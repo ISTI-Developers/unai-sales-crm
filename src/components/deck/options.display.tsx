@@ -251,16 +251,4 @@ const MaterialCost = ({ materialCost, isSingle }: { materialCost?: InclusionGene
     </div>
 }
 
-// const LandmarkOption = ({ checked, onCheckedChange }: { checked: boolean; onCheckedChange: (checked: boolean) => void }) => {
-//     return <div className="flex items-center justify-between gap-2">
-//         <Label htmlFor="show" className="text-xs">Show Landmarks on map</Label>
-//         <Checkbox
-//             id="show"
-//             checked={checked}
-//             onCheckedChange={onCheckedChange}
-//             className="bg-white border-none"
-//         />
-//     </div>
-// }
-
 export default DisplayOption

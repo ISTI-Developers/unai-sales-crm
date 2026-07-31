@@ -1,27 +1,21 @@
+import { useImage } from '@/hooks/useSites';
 import { DeckSite } from '@/interfaces/deck.interface';
 import { cn } from '@/lib/utils';
+import { useDeck } from '@/providers/deck.provider';
 import { format, isBefore } from 'date-fns';
 import { ReactNode, useMemo } from 'react';
 const PreviewItem = ({ item, className }: { item: DeckSite; className?: string }) => {
+    const { selectedSites, setSelectedSite } = useDeck();
+    const { data } = useImage(item.site_code, item.image)
+
     return (
         <div
             role='button'
-            onClick={() => {
-                const element = document.getElementById(item.site_code);
-                if (element) {
-                    element.scrollIntoView({
-                        behavior: "smooth",
-                        inline: "center",
-                        block: "nearest"
-                    });
-                }
-            }}
+            onClick={() => setSelectedSite(selectedSites.findIndex(s => s === item))}
             className={cn(
-                "w-full bg-white aspect-video bg-contain bg-no-repeat rounded overflow-hidden relative flex-shrink-0 max-w-[200px]",
+                "bg-white border rounded-md aspect-video overflow-hidden relative w-[clamp(150px,8vw,180px)]  shrink-0",
                 className
             )}
-            onMouseDown={(e) => e.stopPropagation()}
-            onTouchStart={(e) => e.stopPropagation()}
         >
             <div className="w-full h-[2vh] bg-main-500 flex items-center gap-4 justify-between px-2">
                 <img src="/unai-w.png" alt="" className="h-full p-1 px-0" />
@@ -30,10 +24,10 @@ const PreviewItem = ({ item, className }: { item: DeckSite; className?: string }
                 </p>
             </div>
             <div className="grid grid-cols-[2fr_1fr] h-full px-2 gap-2">
-                {item.url ?
-                    <img src={item.url} alt="" className="w-full p-1 px-0  aspect-video translate-y-3" />
+                {data?.selectedImage?.url ?
+                    <img src={data?.selectedImage?.url} alt="" className="w-full p-1 px-0 aspect-[7/5] translate-y-1.5 rounded-md object-cover" />
                     : <div className='w-[95%] h-[55%] mt-[40%] -translate-y-1/2 bg-zinc-100'></div>}
-                <div className="py-4 grid grid-cols-2 h-fit pr-3">
+                <div className="py-2 xl:py-4 grid grid-cols-2 h-fit pr-3">
                     <div className="leading-none">
                         <DeckLabel>
                             Availability

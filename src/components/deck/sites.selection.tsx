@@ -22,12 +22,13 @@ const SiteSelection = () => {
     });
   };
   const canSelectAll = useMemo(() => {
-    return Object.values(selectedFilters).filter(val => typeof val !== "string").length > 0 || !!(selectedFilters.search && selectedFilters.search.length > 2)
+    return Object.values(selectedFilters).some(filter => filter.length !== 0);
   }, [selectedFilters]);
 
-  const activeFilters = selectedFilters ? Object.keys(selectedFilters).filter(key => key !== "search").length : 0;
+  const activeFilters = selectedFilters ? Object.values(selectedFilters).filter(value => value.length !== 0).length : 0;
+
   return (
-    <>
+    <div className="p-2 pl-0 flex flex-col gap-2">
       <h1 className="font-bold uppercase text-[0.6rem]">Select Sites</h1>
       <div className="flex gap-2">
         <Search setValue={(value) => setFilters(prev => {
@@ -67,7 +68,7 @@ const SiteSelection = () => {
                   animate={{ opacity: 0.4 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.15 }}
-                  className="bg-[000] w-full h-full fixed top-0 left-0 z-[19] cursor-pointer pointer-events-auto"
+                  className="bg-[000] w-full h-full fixed top-0 left-0 z-[19] pointer-events-auto"
                   onClick={() => onOpenChange(false)}
                 />
               </>
@@ -79,12 +80,12 @@ const SiteSelection = () => {
         <div className="text-[0.65rem] pb-1 pl-1 text-zinc-600">{`Showing ${sites.length} results`}</div>
         <div className="flex gap-1 justify-between">
           {canSelectAll && <Button onClick={selectAll} variant="outline" className="h-6 p-0 px-2 text-[0.6rem]" size="sm">Select All</Button>}
-          {selectedSites.length > 0 && <Button onClick={() => setSelectedSites([])} variant="destructive" className="h-6 p-0 px-2 text-[0.6rem]" size="sm">Clear Selected</Button>}
+          {selectedSites.length > 0 && <Button onClick={() => setSelectedSites([])} variant="destructive" className="h-6 p-0 px-2 text-[0.6rem]" size="sm">Clear Sites</Button>}
         </div>
       </div>
       {/* SITE LIST BELOW */}
       <SiteList />
-    </>
+    </div>
   );
 };
 

@@ -7,20 +7,21 @@ import { Suspense } from "react";
 import ErrorPage from "@/misc/ErrorPage";
 import { useSettings } from "@/providers/settings.provider";
 import { LoaderCircle } from "lucide-react";
-// import { SidebarProvider } from "@/providers/sidebar.provider";
 import { useAuth } from "@/providers/auth.provider";
 import { RolesProvider } from "@/providers/roles.provider";
 import Container from "@/misc/Container";
 import useLinks from "@/data/links";
 import HomeSidebar from "@/components/sidebar/sidebar.home";
+import { cn } from "@/lib/utils";
+import { SidebarProvider, useSidebar } from "@/components/ui/sidebar";
 // import { useQueryClient } from "@tanstack/react-query";
 // import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 // import { registerServiceWorker, subscribeUserToPush } from "@/lib/notifications";
 
 const Home = () => {
   // const queryClient = useQueryClient();
-  const { user } = useAuth();
   const { isLoading } = useSettings();
+  const defaultOpen = localStorage.getItem("sidebar_state") === "true"
   // const hasSubscribed = localStorage.getItem("subscribed");
   // const [open, setOpen] = useState(Boolean(!hasSubscribed))
 
@@ -77,21 +78,11 @@ const Home = () => {
         )}
       </AnimatePresence>
       <RolesProvider>
-        <HomeSidebar>
-          <main className="relative max-h-screen w-full">
-            <Helmet>
-              <title>Home | Sales Platform</title>
-            </Helmet>
-            {/* <Sidebar /> */}
+        <SidebarProvider defaultOpen={defaultOpen}>
+          <HomeSidebar>
             <HomeRoutes />
-            <AnimatePresence mode="wait">
-              {user &&
-                (user.status === "new" || user.status === "password reset") && (
-                  <InitialSetup />
-                )}
-            </AnimatePresence>
-          </main>
-        </HomeSidebar>
+          </HomeSidebar>
+        </SidebarProvider>
       </RolesProvider>
     </>
   );
@@ -99,36 +90,50 @@ const Home = () => {
 
 const HomeRoutes = () => {
   const { links } = useLinks()
+  const { user } = useAuth();
+  const { state } = useSidebar();
 
   return (
-    links.length > 0 && (
-      <Routes>
-        {links.filter(link => import.meta.env.MODE !== "development" ? link.handler !== "/new" : link).map((route) =>
-          route.element ? (
-            <Route
-              key={route.handler}
-              path={`${route.handler}/*`}
-              element={
-                <Suspense
-                  fallback={
-                    <Container title="Loading...">Loading...</Container>
-                  }
-                >
-                  {route.isActive ? <route.element /> : <ErrorPage />}
-                </Suspense>
-              }
-            />
-          ) : (
-            <Route
-              key={route.handler}
-              path={route.handler}
-              element={<UnderConstructionPage withContainer />}
-            />
-          )
-        )}
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-    )
+    <main data-state={state} className={cn("relative max-h-[100dvh] w-full transition-all data-[state=collapsed]:lg:max-w-[calc(100dvw-5rem)] data-[state=expanded]:lg:max-w-[calc(100dvw-14rem)]",
+    )}>
+      <Helmet>
+        <title>Home | Sales Platform</title>
+      </Helmet>
+      {links.length > 0 && (
+        <Routes>
+          {links.filter(link => import.meta.env.MODE !== "development" ? link.handler !== "/new" : link).map((route) =>
+            route.element ? (
+              <Route
+                key={route.handler}
+                path={`${route.handler}/*`}
+                element={
+                  <Suspense
+                    fallback={
+                      <Container title="Loading...">Loading...</Container>
+                    }
+                  >
+                    {route.isActive ? <route.element /> : <ErrorPage />}
+                  </Suspense>
+                }
+              />
+            ) : (
+              <Route
+                key={route.handler}
+                path={route.handler}
+                element={<UnderConstructionPage withContainer />}
+              />
+            )
+          )}
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      )}
+      <AnimatePresence mode="wait">
+        {user &&
+          (user.status === "new" || user.status === "password reset") && (
+            <InitialSetup />
+          )}
+      </AnimatePresence>
+    </main>
   );
 };
 export default Home;

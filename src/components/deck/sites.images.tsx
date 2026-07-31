@@ -1,67 +1,47 @@
-import { SiteImage } from "@/interfaces/sites.interface";
 import { useDeck } from "@/providers/deck.provider";
-import { Dispatch, lazy, SetStateAction, Suspense, useEffect, useRef, useState } from "react";
+import { useEffect } from "react";
 import { ImageOff, LoaderIcon } from "lucide-react";
-import { useSiteImages } from "@/hooks/useSites";
-import { fetchImage } from "@/lib/fetch";
-import { Button } from "../ui/button";
+import { useImage } from "@/hooks/useSites";
 
-const SiteImageSelector = lazy(() => import("./site.image.selector"))
-
-const SiteImages = ({ site_code }: { site_code: string; }) => {
-    const { data: images, isLoading } = useSiteImages(site_code)
-    const { setSelectedSites } = useDeck();
-    const [selectedImage, setImage] = useState<SiteImage | undefined>()
-
-    const initializedRef = useRef<Record<string, boolean>>({});
+const SiteImages = ({ site_code, selectedImage }: { site_code: string; selectedImage?: number }) => {
+    const { setSelectedSites, setOption } = useDeck();
+    const { data: images, isLoading } = useImage(site_code, selectedImage);
 
     useEffect(() => {
-        if (initializedRef.current[site_code]) return;
-        if (!images || images.length === 0) return;
+        if (!images || !images.selectedImage) return;
 
-        let isActive = true;
+        setSelectedSites(prev => {
+            let changed = false;
 
-        const cached = localStorage.getItem(`${site_code}_selected`);
-        const imageMap = new Map(images.map(img => [img.upload_id, img]));
+            const next = prev.map(site => {
+                if (site.site_code !== site_code) return site;
 
-        let image = images[0];
+                if (site.image === images.selectedImage.upload_id && site.url) return site;
 
-        if (cached) {
-            const stored = imageMap.get(Number(cached));
-            if (stored) image = stored;
-        }
+                changed = true;
 
-        const setup = async () => {
-            if (!image) return;
+                return {
+                    ...site,
+                    image: images.selectedImage.upload_id,
+                    ...images.selectedImage,
+                };
+            });
 
-            const imageData = await fetchImage(image.upload_path);
-            if (!isActive || !imageData) return;
-
-            setImage({ ...image, ...imageData });
-            setSelectedSites(prev =>
-                prev.map(site =>
-                    site.site_code === site_code
-                        ? { ...site, image: image.upload_id, ...imageData }
-                        : site
-                )
-            );
-
-            initializedRef.current[site_code] = true;
-        };
-
-        setup();
-
-        console.count("image rendered");
-
-        return () => {
-            isActive = false;
-        };
+            return changed ? next : prev;
+        });
     }, [images, site_code, setSelectedSites]);
 
     return (
         <div className="flex justify-center items-center px-4 w-full min-w-0 pb-4">
-            {selectedImage ?
-                <ImageItem site_code={site_code} item={selectedImage} images={images} setSelectedImage={setImage} />
+            {images?.selectedImage ?
+                <div role="button" onClick={() => setOption("images")} className="overflow-hidden rounded-sm group border">
+                    <img
+                        src={images.selectedImage.url ?? undefined}
+                        className="w-full aspect-[7/5] object-cover"
+                        loading="lazy"
+                        alt={`image_${images.selectedImage.upload_id}`}
+                    />
+                </div>
                 : isLoading ? <div className="w-full aspect-video bg-zinc-50 flex flex-col items-center justify-center text-zinc-500 font-semibold gap-2">
                     <LoaderIcon className="animate-spin" />
                     <p>Loading image preview</p>
@@ -73,37 +53,5 @@ const SiteImages = ({ site_code }: { site_code: string; }) => {
         </div>
     )
 }
-const ImageItem = ({
-    site_code,
-    item,
-    images,
-    setSelectedImage
-}: {
-    site_code: string;
-    item: SiteImage;
-    images?: SiteImage[];
-    setSelectedImage: Dispatch<SetStateAction<SiteImage | undefined>>;
-}) => {
-    const [show, setShow] = useState(false)
-
-    return (
-        <div>
-            <div className="relative overflow-hidden rounded-md group">
-                <img
-                    src={item.url ?? undefined}
-                    className="w-full max-w-full"
-                    loading="lazy"
-                    alt={`image_${item.upload_id}`}
-                />
-                <Button onClick={() => setShow(true)} className="bg-white absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-all" variant="outline" size="sm">Change</Button>
-            </div>
-            {show &&
-                <Suspense fallback={<>Loading</>}>
-                    <SiteImageSelector site_code={site_code} images={images} selectedImage={item} setSelectedImage={setSelectedImage} setShow={setShow} />
-                </Suspense>
-            }
-        </div>
-    );
-};
 
 export default SiteImages

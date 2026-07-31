@@ -1,3 +1,4 @@
+import { DeckType } from "@/misc/deckTemplate";
 import {
   addDays,
   addWeeks,
@@ -14,7 +15,7 @@ export function formatAmount(
   return Intl.NumberFormat("en-PH", {
     style: "currency",
     currency: "PHP",
-    maximumFractionDigits: 4,
+    maximumFractionDigits: 2,
     ...options,
   }).format(Number(amount));
 }
@@ -88,13 +89,13 @@ export const applyPriceAdjustment = (
   price: number,
   adjustment: {
     amount: number;
-    type: "%" | "---";
+    type: "%" | "---" | DeckType;
     operation?: "+" | "-";
   },
 ): number => {
   let adjustedAmount = Number(adjustment.amount);
 
-  if (adjustment.type === "%") {
+  if (adjustment.type === "%" || adjustment.type === "PERCENTAGE") {
     adjustedAmount = (price * adjustedAmount) / 100;
   }
 

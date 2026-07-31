@@ -3,6 +3,20 @@ import { catchError, spAPI } from "@/providers/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "./use-toast";
 import { useAuth } from "@/providers/auth.provider";
+import { v4 } from "uuid";
+import { DefaultResponse } from "@/interfaces";
+
+export const useAllDecks = () => {
+    const { user } = useAuth();
+    return useQuery({
+        queryKey: ["decks", user?.ID, "all"],
+        queryFn: async () => {
+            const response = await spAPI.get<Deck[]>(`deck`);
+            return response.data;
+        },
+        staleTime: 1000 * 60 * 10,
+    });
+};
 export const useDecks = (userID: number | null) => {
     return useQuery({
         queryKey: ["decks", userID],
@@ -98,6 +112,38 @@ export const useDeleteMultipleDecks = () => {
             toast({
                 variant: "success",
                 title: "Decks has been deleted."
+            })
+        },
+        onError: catchError,
+    });
+}
+
+export const useImportDeck = () => {
+    const { user } = useAuth();
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (token: string) => {
+            const newToken = v4();
+            const formdata = new FormData();
+            formdata.append("data", JSON.stringify({
+                user_id: user?.ID,
+                source_token: token,
+                new_token: newToken
+            }))
+            const response = await spAPI.post<DefaultResponse>("deck", formdata)
+            if (response.data) {
+                return {
+                    ...response.data,
+                    token: newToken
+                }
+            }
+        },
+        onSuccess: () => {
+            queryClient.refetchQueries({ queryKey: ["decks", user?.ID] })
+            toast({
+                variant: "success",
+                title: "Deck has been imported. Redirecting to edit page."
             })
         },
         onError: catchError,
