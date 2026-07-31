@@ -25,7 +25,7 @@ const SiteSelection = () => {
     return Object.values(selectedFilters).some(filter => filter.length !== 0);
   }, [selectedFilters]);
 
-  const activeFilters = selectedFilters ? Object.values(selectedFilters).filter(value => value.length !== 0).length : 0;
+  const activeFilters = selectedFilters ? Object.entries(selectedFilters).filter(([key, value]) => value.length !== 0 && key !== "search").length : 0;
 
   return (
     <div className="p-2 pl-0 flex flex-col gap-2">
@@ -57,7 +57,7 @@ const SiteSelection = () => {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute top-0 left-full min-w-[300px] translate-x-2 bg-white shadow border p-2 rounded-lg z-[20]"
+                  className="absolute top-4 lg:top-0 right-0 lg:left-full min-w-[300px] translate-x-2 bg-white shadow border p-2 rounded-lg z-[20]"
                 >
                   <FiltersContent />
                 </motion.div>

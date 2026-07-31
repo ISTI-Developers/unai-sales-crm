@@ -2,11 +2,10 @@ import { SiteItem } from '@/components/deck/sites.item';
 import { Button } from '@/components/ui/button';
 import { useDeck } from '@/providers/deck.provider'
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import React, { useMemo, useRef } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 
 function DeckWorkplace() {
     const { selectedSites: sites, selectedSite, setSelectedSite } = useDeck();
-
 
     const canScroll = useRef(true);
     const direction = useRef(1);
@@ -41,6 +40,26 @@ function DeckWorkplace() {
         return sites[selectedSite];
     }, [selectedSite, sites]);
 
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            const key = e.key;
+            switch (key) {
+                case "ArrowUp":
+                case "ArrowLeft":
+                    e.preventDefault();
+                    goPrevious();
+                    break;
+                case "ArrowDown":
+                case "ArrowRight":
+                    e.preventDefault();
+                    goNext();
+                    break;
+            }
+        }
+        window.addEventListener("keydown", handleKeyDown)
+
+        return () => window.removeEventListener("keydown", handleKeyDown)
+    }, [sites])
     return (
         <div onWheel={handleWheel} className="flex flex-1 items-center justify-center overflow-hidden p-4 lg:p-0">
             <div
