@@ -1,9 +1,4 @@
 import AddOn from "@/components/deck/addOn.deck";
-import CurrencyExchangeOption from "@/components/deck/options.currency";
-import PriceAdjustmentOption from "@/components/deck/options.price";
-import RatesGeneratorOption from "@/components/deck/options.rate";
-import DeckSettings from "@/components/deck/settings.deck";
-import SiteSelection from "@/components/deck/sites.selection";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -11,8 +6,15 @@ import { cn } from "@/lib/utils";
 import { useDeck } from "@/providers/deck.provider";
 import { AnimatePresence, motion } from "framer-motion";
 import { BadgePercentIcon, ChevronsLeftIcon, CircleDollarSignIcon, ImagesIcon, MonitorIcon, PackagePlusIcon, PanelsTopLeftIcon, Settings2Icon } from "lucide-react";
-import { useMemo } from "react";
-import DeckImageOptions from "./images.deck";
+import { lazy, Suspense, useMemo } from "react";
+
+
+const SiteSelection = lazy(() => import("@/components/deck/sites.selection"))
+const DeckImageOptions = lazy(() => import("@/pages/deck/images.deck"))
+const CurrencyExchangeOption = lazy(() => import("@/components/deck/options.currency"))
+const PriceAdjustmentOption = lazy(() => import("@/components/deck/options.price"))
+const RatesGeneratorOption = lazy(() => import("@/components/deck/options.rate"))
+const DeckSettings = lazy(() => import("@/components/deck/settings.deck"))
 
 function DeckToolbar() {
     const { option, setOption, selectedOptions, selectedSites } = useDeck()
@@ -93,7 +95,9 @@ function DeckToolbar() {
                 }}>
                     {option &&
                         <SheetContent side="bottom" aria-describedby={undefined} className="h-[min(60vh,600px)] z-[40]" tabIndex={-1}>
-                            {tabs[option as keyof typeof tabs].content}
+                            <Suspense fallback={<>Loading options</>}>
+                                {tabs[option as keyof typeof tabs].content}
+                            </Suspense>
                         </SheetContent>
                     }
                 </Sheet>
@@ -115,7 +119,9 @@ function DeckToolbar() {
                         >
                             <header />
                             <div className="scrollbar-none h-full max-h-[70vh] p-2 pl-0 space-y-2">
-                                {tabs[option as keyof typeof tabs].content}
+                                <Suspense fallback={<>Loading options</>}>
+                                    {tabs[option as keyof typeof tabs].content}
+                                </Suspense>
                             </div>
                             <Button
                                 className="absolute top-1/2 -right-2 -translate-y-1/2 bg-white p-0 px-0.5"

@@ -37,7 +37,7 @@ const SiteImages = ({ site_code, selectedImage }: { site_code: string; selectedI
                 <div role="button" onClick={() => setOption("images")} className="overflow-hidden rounded-sm group border">
                     <img
                         src={images.selectedImage.url ?? undefined}
-                        className="w-full aspect-[7/5] object-cover"
+                        className="w-full object-cover"
                         loading="lazy"
                         alt={`image_${images.selectedImage.upload_id}`}
                     />
