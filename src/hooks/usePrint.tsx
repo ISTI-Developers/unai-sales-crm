@@ -10,6 +10,7 @@ import { getSiteLandmarks } from "./useSites";
 import mockup from "@/assets/mockup.png";
 import { AddOn } from "@/misc/deckTemplate";
 import { useQueryClient } from "@tanstack/react-query";
+import { Progress } from "@/components/ui/progress";
 
 export const useGeneratePowerpoint = () => {
     const queryClient = useQueryClient();
@@ -83,6 +84,7 @@ export const useGeneratePowerpoint = () => {
         }
 
         try {
+            let progress = 0
             const presentation = new PptxGenJS();
 
             presentation.defineLayout({
@@ -106,8 +108,22 @@ export const useGeneratePowerpoint = () => {
                 materialPrinting?.rates ?? {}
             ).some(rate => rate.value > 0);
 
+            const downloadToast = toast({
+                duration: Infinity,
+                className: "bg-sky-100 text-sky-600",
+                variant: "default",
+                action: (
+                    <div className="space-y-2 min-w-full">
+                        <p className="!text-[0.65rem] !font-semibold">Downloading...</p>
+                        <Progress value={0} className="w-full" />
+                    </div>
+                ),
+            })
+
             const printingCost = selectedOptions.settings.printing_cost;
-            for (const site of selectedSites) {
+            for (const [index, site] of selectedSites.entries()) {
+                progress = index / selectedSites.length
+
                 const slide = presentation.addSlide();
                 //SLIDE CONFIGURATIONS
                 slide.background = { path: "/finalbg.png" }
@@ -543,19 +559,18 @@ export const useGeneratePowerpoint = () => {
                             bold: true,
                             fontSize: 14.9,
                         });
-                    } else {
-                        if (text.length > 0) {
-                            addText(slide, `w/ free ${text.join(" & ")}`, {
-                                w: Inches(14.23),
-                                h: Inches(0.62),
-                                x: detailsSection,
-                                y: Inches(10.23),
-                                align: "left",
-                                color: "76899E",
-                                bold: false,
-                                fontSize: 8.5,
-                            })
-                        }
+                    }
+                    if (text.length > 0) {
+                        addText(slide, `w/ free ${text.join(" & ")}`, {
+                            w: Inches(14.23),
+                            h: Inches(0.62),
+                            x: detailsSection,
+                            y: Inches(10.23),
+                            align: "left",
+                            color: "76899E",
+                            bold: false,
+                            fontSize: 8.5,
+                        })
                     }
                 }
 
@@ -589,12 +604,34 @@ export const useGeneratePowerpoint = () => {
                         });
                     }
                 }
+                downloadToast.update({
+                    id: downloadToast.id,
+                    variant: "default",
+                    action: (
+                        <div className="space-y-2 w-full">
+                            <p>Downloading... {Number((progress * 100).toFixed(2))}%</p>
+                            <Progress value={Number((progress * 100).toFixed(2))} className="w-full" />
+                        </div>
+                    ),
+                });
             }
 
             try {
-                const response = await presentation.write({ outputType: "arraybuffer", compression: false })
+                downloadToast.update({
+                    id: downloadToast.id,
+                    action: (
+                        <div className="space-y-2 w-full">
+                            <p className="animate-pulse text-xs font-semibold">Exporting...</p>
+                        </div>
+                    ),
+                });
+                const response = await presentation.write({ outputType: "arraybuffer", compression: true })
                 downloadPptxFromArrayBuffer(response, title)
                 console.log("End:", new Date().getTime() - start)
+                toast({
+                    variant: "success",
+                    description: "Download complete!"
+                });
             } catch (e) {
                 console.log(e)
             }
