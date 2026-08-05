@@ -1,102 +1,114 @@
-import { useState, useEffect, useMemo, FormEvent, ChangeEvent } from "react";
-import { ReportTable, WeekData } from "@/interfaces/reports.interface";
-import { capitalize } from "@/lib/utils";
-import { Column, ColumnDef, FilterFnOption, Row } from "@tanstack/react-table";
+import { ReportTable } from "@/interfaces/reports.interface";
+import { generateWeeks } from "@/lib/utils";
+import { ColumnDef } from "@tanstack/react-table";
 import {
-  addHours,
-  addWeeks,
   format,
-  getISOWeek,
-  getISOWeeksInYear,
-  isMonday,
-  startOfYear,
 } from "date-fns";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { Check, Paperclip, Pen, Plus, Trash2, X } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useToast } from "@/hooks/use-toast";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useSettings } from "@/providers/settings.provider";
-import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarGroup, AvatarImage } from "@/components/ui/avatar";
 
 import { useUserReportViewAccesses } from "@/hooks/useSettings";
-import {
-  useDeleteReport,
-  useInsertReport,
-  useUpdateReport,
-} from "@/hooks/useReports";
 import { useAuth } from "@/providers/auth.provider";
-import { catchError } from "@/providers/api";
-import { getFridayFromISOWeek } from "@/lib/format";
-import { Label } from "@/components/ui/label";
-import { useAccess } from "@/hooks/useClients";
 import Status from "@/components/status";
 import ClientReport from "@/components/reports/client.report";
+import ReportCell from "@/components/reports/cell.report";
+import { ComponentIcon, LoaderIcon, Users } from "lucide-react";
 
-interface Cell {
-  row: Row<ReportTable>;
-  column: Column<ReportTable, unknown>;
+const renderAE = () => {
+  return {
+    id: "account_executives",
+    accessorFn: (row) => row.account_executives.map(ae => ae.ae),
+    accessorKey: "account_executives",
+    header: "AE",
+    cell: ({ row }) => {
+      const client = row.original;
+      const aes = client.account_executives.map(ae => ae);
+      return <div className="flex items-center justify-center">
+        <AvatarGroup>
+          {aes.map(ae => {
+            return <Tooltip key={`${client.ID}_${ae.account_id}`}>
+              <TooltipTrigger>
+                <Avatar className="size-8">
+                  <AvatarImage>{ae.image}</AvatarImage>
+                  <AvatarFallback className="text-[0.65rem] font-semibold uppercase">{ae.code}</AvatarFallback>
+                </Avatar>
+              </TooltipTrigger>
+              <TooltipContent className="uppercase">{ae.ae}</TooltipContent>
+            </Tooltip>
+          })}
+        </AvatarGroup>
+      </div>
+    },
+    size: 60,
+    enableGlobalFilter: false,
+    filterFn: (row, columnId, filterValue) => {
+      const cellValue = row.getValue<string>(columnId);
+
+      switch (filterValue.condition) {
+        case "is":
+          return cellValue.includes(filterValue.value);
+        case "is not":
+          return !cellValue.includes(filterValue.value);
+        case "contains":
+          return filterValue.value.some((val: string) => cellValue.includes(val));
+        default:
+          return true;
+      }
+    },
+    meta: {
+      filterType: "dropdown",
+      allowedOptions: ["is", "is not", "contains"],
+      icon: Users,
+      isSticky: true,
+      isArray: true
+    }
+  } as ColumnDef<ReportTable>
 }
-export const generateWeeks = (year: number = 2026) => {
-  const startDate = startOfYear(new Date(year, 0, 1));
+const renderSU = () => {
+  return {
+    id: "sales_unit",
+    accessorFn: (row) => row.account_executives.map(ae => ae.su),
+    accessorKey: "sales_unit",
+    header: "SU",
+    cell: ({ row }) => {
+      const client = row.original;
+      const salesUnits = [...new Set(client.account_executives.map(ae => ae.su))];
 
-  const weeks = [];
-  let currentMonth = format(startDate, "MMM");
-  let weekOfMonth = 1;
+      return <div className="text-[0.65rem] leading-tight">
+        {salesUnits.map(unit => {
+          return <p key={unit}>{unit}</p>
+        })}
+      </div>
+    },
+    size: 45,
+    enableGlobalFilter: false,
+    filterFn: (row, columnId, filterValue) => {
+      const cellValue = row.getValue<string>(columnId);
 
-  const totalWeeks = getISOWeeksInYear(startDate);
-
-  for (let i = 0; i < totalWeeks; i++) {
-    const weekStart = addWeeks(startDate, i);
-    const month = format(weekStart, "MMM");
-
-    if (month !== currentMonth) {
-      currentMonth = month;
-      weekOfMonth = 1;
+      switch (filterValue.condition) {
+        case "is":
+          return cellValue.includes(filterValue.value);
+        case "is not":
+          return !cellValue.includes(filterValue.value);
+        case "contains":
+          return filterValue.value.some((val: string) => cellValue.includes(val));
+        default:
+          return true;
+      }
+    },
+    meta: {
+      filterType: "dropdown",
+      allowedOptions: ["is", "is not", "contains"],
+      icon: ComponentIcon,
+      isSticky: true,
+      isArray: true
     }
-
-    weeks.push(`${month} Wk${weekOfMonth}`);
-    weekOfMonth++;
-  }
-
-  return weeks;
-};
-const renderColumn = (id: string) => ({
-  id,
-  accessorKey: id,
-  header: id === "account_executive" ? "AE" : id === "sales_unit" ? "SU" : capitalize(id, "_"),
-  cell: ({ row }: { row: Row<ReportTable> }) => {
-    const column: string = row.getValue(id);
-    let name = capitalize(column);
-    if (id === "account_executive") {
-      const item = row.original;
-      name = item.ae_code as string;
-    }
-    return id === "account_executive" ? (
-      <Tooltip delayDuration={100}>
-        <TooltipTrigger className="uppercase text-[0.65rem] font-semibold z-[101]">
-          {name}
-        </TooltipTrigger>
-        <TooltipContent>{capitalize(column)}</TooltipContent>
-      </Tooltip>
-    ) : (
-      <p className="text-center text-[0.65rem]">{name}</p>
-    );
-  },
-  filterFn: "not" as FilterFnOption<ReportTable>,
-  size: 30
-});
+  } as ColumnDef<ReportTable>
+}
 
 export const useWeekColumns = () => {
   const { user: currentUser } = useAuth();
@@ -107,22 +119,46 @@ export const useWeekColumns = () => {
       accessorFn: (item) => `${item.client} | ${item.brand}`,
       accessorKey: "client",
       cell: ({ row }) => {
-
         return <ClientReport data={row.original} />
       },
-      size: 150,
+      size: 100,
+      enableColumnFilter: false,
+      meta: {
+        isSticky: true,
+      }
     },
     {
       id: "status",
+      accessorFn: (row) => row.status,
       accessorKey: "status",
       cell: ({ row }) => {
         const status: string = row.getValue("status");
         return (
-          <Status status={status} className="rounded-full text-[0.6rem] h-5 px-1.5" />
+          <Status status={status} className="rounded-full text-[0.6rem] h-5 px-1.5 w-fit" />
         );
       },
-      filterFn: "not" as FilterFnOption<ReportTable>,
-      size: 30
+      size: 45,
+      enableGlobalFilter: false,
+      filterFn: (row, columnId, filterValue) => {
+        const cellValue = row.getValue<string>(columnId);
+
+        switch (filterValue.condition) {
+          case "is":
+            return cellValue === filterValue.value;
+          case "is not":
+            return cellValue !== filterValue.value;
+          case "contains":
+            return filterValue.value.includes(cellValue);
+          default:
+            return true;
+        }
+      },
+      meta: {
+        filterType: "dropdown",
+        allowedOptions: ["is", "is not", "contains"],
+        icon: LoaderIcon,
+        isSticky: true,
+      }
     },
   ];
 
@@ -130,457 +166,43 @@ export const useWeekColumns = () => {
     const { role_id } = currentUser.role;
     if ([1, 3].includes(role_id) || access?.report_access === "all") {
       weekColumns.push(
-        renderColumn("sales_unit"),
-        renderColumn("account_executive")
+        renderSU(),
+        renderAE()
       );
     } else if (role_id === 4 || access?.report_access === "team") {
-      weekColumns.push(renderColumn("account_executive"));
+      weekColumns.push(renderAE());
     }
   }
 
   weekColumns.push(
-    ...generateWeeks().map((week) => ({
-      id: week,
-      accessorKey: week,
-      cell: WeekForm,
-      size: 500,
-      minSize: 200,
-      filterFn: (
-        row: Row<ReportTable>,
-        columnId: string,
-        filterValue: string[]
-      ) => {
-        const item: string = row.getValue(columnId);
-        return filterValue[0] === "withContent"
-          ? item.length !== 0
-          : item.length === 0;
-      },
-    }))
+    ...generateWeeks().map((week) => {
+      const header = `Wk${week.isoWeek} • (${format(week.start, "MMM dd")} - ${format(week.end, "MMM dd")})`;
+      return {
+        // id: header,
+        accessorFn: (row) => {
+          if (row[week.yearweek].length === 0) {
+            return "Empty"
+          }
+          return "Not Empty"
+        },
+        accessorKey: String(week.yearweek),
+        header: header,
+        cell: ReportCell,
+        size: 300,
+        enableGlobalFilter: false,
+        filterFn: (row, columnId, filterValue) => {
+          const cellValue = row.getValue<string>(columnId);
+
+          return filterValue.value === cellValue;
+        },
+        meta: {
+          filterType: "dropdown",
+          allowedOptions: ["is"],
+          label: header
+        }
+      } as ColumnDef<ReportTable>
+    })
   );
 
   return weekColumns;
-};
-
-const WeekForm = ({ column, row }: Cell) => {
-  const { toast } = useToast();
-  const { mutate: deleteReport } = useDeleteReport();
-  const { weekAccess } = useSettings();
-  const [open, setOpen] = useState(false);
-  const [edit, setEdit] = useState(false);
-  const client = row.original;
-  const reportData = client[column.id] as string | WeekData;
-  const { access: add } = useAccess("reports.add")
-
-  const isOpen = useMemo(() => {
-    const weeks = generateWeeks();
-    const currentWeekIndex = getISOWeek(new Date());
-    const columnWeekIndex = weeks.indexOf(column.id);
-
-    if (weekAccess.find((wk) => wk.week === column.id)) {
-      return true;
-    }
-    if (columnWeekIndex === currentWeekIndex - 1) {
-      return true;
-    }
-
-    if (columnWeekIndex === currentWeekIndex - 2) {
-      const isItMonday = isMonday(new Date());
-      const currentTime = new Date().getHours();
-
-      if (isItMonday) {
-        return currentTime < 23;
-      }
-
-      return false;
-    }
-
-    return false;
-  }, [column.id, weekAccess]);
-
-  const onDelete = async (reportID: number) => {
-    if (reportID) {
-      deleteReport(
-        { ID: reportID },
-        {
-          onSuccess: () => {
-
-            setOpen(false);
-            toast({
-              title: "Deletion Success",
-              description: `Your activity has been cleared.`,
-              variant: "success",
-            });
-          },
-        }
-      );
-    }
-  };
-
-  const report = useMemo(() => {
-    if (typeof reportData === "string") {
-      return reportData;
-    }
-    return reportData.activity;
-  }, [reportData]);
-
-  const { name, initial } = useMemo(() => {
-    if (typeof reportData === "string") return { name: "", initial: "" };
-    return {
-      name: reportData.editor,
-      initial: reportData.editorCode,
-    };
-  }, [reportData]);
-  return (
-    <div className="w-full">
-      {open ? (
-        <ReportForm
-          week={column.id}
-          edit={edit}
-          setEdit={setEdit}
-          client={client}
-          setOpen={setOpen}
-          reportData={reportData}
-        />
-      ) : (
-        <div
-          className={cn(
-            "relative group p-2 flex items-center",
-            report.length > 0 ? "justify-start" : "justify-center"
-          )}
-        >
-          <p
-            className={cn(
-              "block indent-0 transition-all",
-              report.length === 0 && isOpen && add
-                ? "group-hover:hidden"
-                : "whitespace-break-spaces text-xs",
-              report.length !== 0 ? "group-hover:pl-12" : ""
-            )}
-          >
-            {report.length > 0 ? report : "---"}
-          </p>
-          {add && isOpen &&
-            <>
-              {report.length === 0
-                ? (
-                  <Button
-                    variant={null}
-                    disabled={!isOpen}
-                    onClick={() => {
-                      setOpen(true);
-                    }}
-                    className="hidden group-hover:flex w-full text-[0.6rem] p-1 px-2 h-5 gap-1"
-                  >
-                    <Plus size={12} /> Create Report
-                  </Button>
-                )
-                : (
-                  <div className="absolute w-full flex items-center justify-center">
-                    <Tooltip delayDuration={100}>
-                      <TooltipTrigger className="opacity-0 group-hover:opacity-80 duration-200 transition-all">
-                        <Avatar className="w-10 h-6">
-                          <AvatarFallback className="border border-slate-300 uppercase">
-                            {initial}
-                          </AvatarFallback>
-                        </Avatar>
-                      </TooltipTrigger>
-                      <TooltipContent className="capitalize">
-                        {name}
-                      </TooltipContent>
-                    </Tooltip>
-                    <div className="ml-auto flex gap-2 pr-2 h-full">
-                      <div className="flex gap-2 opacity-0 group-hover:opacity-100 overflow-hidden w-full transition-all">
-                        {typeof reportData !== "string" && reportData.file && (
-                          <Tooltip delayDuration={100}>
-                            <TooltipTrigger asChild>
-                              <Button
-                                asChild
-                                variant={null}
-                                disabled={!isOpen}
-                                className="p-1 h-6 w-6 rounded-full border border-gray-400 hover:bg-gray-400 hover:text-white text-gray-400 transition-all z-[2]"
-                              >
-                                <a
-                                  href={`${import.meta.env.VITE_SERVER}${reportData.file
-                                    }`}
-                                  title="Activity Attachment"
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-gray-600 bg-gray-100 underline ml-2"
-                                >
-                                  <Paperclip size={16} />
-                                </a>
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent className="z-[3]">
-                              View Attachment
-                            </TooltipContent>
-                          </Tooltip>
-                        )}
-                        <Tooltip delayDuration={100}>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant={null}
-                              disabled={!isOpen}
-                              onClick={() => {
-                                if (!isOpen) return;
-                                setEdit(true);
-                                setOpen(true);
-                              }}
-                              className="p-1 h-6 w-6 rounded-full border border-amber-400 bg-gray-100 hover:bg-amber-400 hover:text-white text-amber-400 transition-all z-[2]"
-                            >
-                              <Pen size={16} />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent className="z-[3]">Edit</TooltipContent>
-                        </Tooltip>
-                        <Popover>
-                          <Tooltip delayDuration={100}>
-                            <TooltipTrigger asChild>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant={null}
-                                  className="p-1 h-6 w-6 rounded-full border border-red-400 bg-gray-100 hover:bg-red-400 hover:text-white text-red-400 transition-all z-[2]"
-                                >
-                                  <Trash2 size={18} />
-                                </Button>
-                              </PopoverTrigger>
-                            </TooltipTrigger>
-                            <TooltipContent className="z-[3]">
-                              Delete
-                            </TooltipContent>
-                          </Tooltip>
-                          <PopoverContent className="max-w-60 mr-4">
-                            <div className="text-xs flex flex-col gap-2">
-                              <p>Are you sure you want to remove this report?</p>
-                              <div className="flex gap-2 justify-end items-center">
-                                <Button type="button" variant="ghost" size="sm">
-                                  Cancel
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant="destructive"
-                                  size="sm"
-                                  className="w-fit"
-                                  onClick={() => {
-                                    if (typeof reportData === "object") {
-                                      onDelete(reportData.reportID);
-                                    }
-                                  }}
-                                >
-                                  Proceed
-                                </Button>
-                              </div>
-                            </div>
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-                    </div>
-                  </div>
-                )}
-            </>}
-        </div>
-      )}
-    </div>
-  );
-};
-const ReportForm = ({
-  week,
-  client,
-  setOpen,
-  edit,
-  setEdit,
-  reportData,
-}: {
-  week: string;
-  edit: boolean;
-  setEdit: (bool: boolean) => void;
-  client: ReportTable;
-  setOpen: (bool: boolean) => void;
-  reportData: string | WeekData;
-}) => {
-  const { toast } = useToast();
-  const { user: currentUser } = useAuth();
-  const [report, setReport] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const { mutate: insertReport } = useInsertReport();
-  const { mutate: updateReport } = useUpdateReport();
-
-  const weeks = useMemo(() => generateWeeks(), []);
-  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!currentUser) return;
-    setLoading(true);
-    let dateSubmitted = new Date();
-    const currentWeek = weeks[getISOWeek(addHours(new Date(), import.meta.env.VITE_TIME_ADJUST)) - 1];
-
-    if (currentWeek !== week) {
-      dateSubmitted =
-        getFridayFromISOWeek(new Date().getFullYear(), weeks.indexOf(week) + 1) ?? new Date();
-    }
-    const ID = Number(currentUser.ID);
-    const SU = currentUser.sales_unit
-      ? currentUser.sales_unit.sales_unit_id
-      : 0;
-
-    if (report.trim().length === 0) {
-      toast({
-        description: `Report should not be empty.`,
-        variant: "warning",
-      });
-      return;
-    }
-
-    if (edit) {
-      if (typeof reportData === "string") return;
-      const reportID = Number(reportData.reportID);
-      updateReport(
-        {
-          report_id: reportID,
-          user_id: ID,
-          date: new Date().toISOString(),
-          report,
-          file_path: reportData.file ?? "",
-          file: selectedFile,
-          file_id: reportData.fileID,
-        },
-        {
-          onSuccess: () => {
-            setOpen(false);
-            setEdit(false)
-            toast({
-              description: `Your report has been updated!`,
-              variant: "success",
-            });
-          },
-        }
-      );
-    } else {
-      insertReport(
-        {
-          client_id: client.client_id,
-          sales_unit_id: SU,
-          user_id: ID,
-          date: dateSubmitted.toISOString() ?? new Date().toISOString(),
-          report,
-          file: selectedFile,
-        },
-        {
-          onSuccess: () => {
-            setOpen(false);
-            toast({
-              description: `Your report has been saved!`,
-              variant: "success",
-            });
-          },
-          onError: () => {
-            setLoading(false);
-          },
-        }
-      );
-    }
-  };
-
-  const onFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    try {
-      if (!e.target.files) throw new Error("File not found");
-
-      const file = e.target.files[0];
-      const maxSizeMB = 2;
-      const maxSizeBytes = maxSizeMB * 1024 * 1024;
-
-      if (file) {
-        if (file.size > maxSizeBytes) {
-          e.target.value = ""; // Clear the file input
-          throw new Error(`File is too large. Max size is ${maxSizeMB}MB.`);
-        } else {
-          setSelectedFile(file);
-          const url = URL.createObjectURL(file);
-          setPreviewUrl(url);
-        }
-      }
-    } catch (error) {
-      catchError(error);
-    }
-  };
-
-  const cantSubmit = useMemo(() => {
-    return report.length === 0;
-  }, [report]);
-
-  useEffect(() => {
-    if (typeof reportData === "string") return;
-    setReport(reportData.activity);
-    if (reportData.file) {
-      setPreviewUrl(`${import.meta.env.VITE_SERVER}${reportData.file}`);
-    }
-  }, [reportData]);
-
-  return (
-    <form
-      className="flex items-center relative gap-2"
-      onSubmit={onSubmit}
-      encType="multi-part/formdata"
-    >
-      <Textarea
-        value={report}
-        className="border-none outline-none min-h-0 focus-visible:ring-0 px-1 py-1 text-xs"
-        onKeyDown={(e) => {
-          if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
-            if (!loading && !cantSubmit) {
-              e.currentTarget.form?.requestSubmit();
-            }
-          }
-        }}
-        onChange={(e) => setReport(e.target.value)}
-        placeholder="Enter your activities here..."
-
-      />
-      <div className="w-fit mr-auto flex items-center gap-2">
-        {previewUrl && (
-          <a
-            href={previewUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 underline ml-2 text-xs flex items-center"
-          >
-            {selectedFile && `view file`}
-          </a>
-        )}
-        <Label htmlFor="attachment" className="size-6 flex items-center justify-center rounded-full cursor-pointer bg-yellow-100 text-yellow-300 border border-yellow-300 hover:bg-yellow-300 transition-all hover:text-yellow-500">
-          <Paperclip size={16} />
-        </Label>
-        <Input
-          id="attachment"
-          type="file"
-          className="hidden"
-          accept="image/*,application/pdf"
-          onChange={onFileChange}
-        />
-      </div>
-      <div className="flex gap-2 items-center">
-        <Button
-          type="submit"
-          variant="ghost"
-          disabled={loading || cantSubmit}
-          className="p-1 h-6 w-6 rounded-full border border-emerald-400 bg-emerald-100 hover:bg-emerald-400 hover:text-white text-emerald-400 transition-all z-[2]"
-        >
-          <Check size={16} />
-        </Button>
-        <Button
-          type="reset"
-          variant="ghost"
-          onClick={() => {
-            setEdit(false);
-            setOpen(false);
-          }}
-          className="p-1 h-6 w-6 rounded-full border border-zinc-400 bg-zinc-100 hover:bg-zinc-400 hover:text-white text-zinc-400 transition-all z-[2]"
-        >
-          <X size={16} />
-        </Button>
-      </div>
-    </form>
-  );
 };

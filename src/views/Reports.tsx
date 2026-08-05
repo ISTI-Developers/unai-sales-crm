@@ -1,3 +1,4 @@
+// import ReportDialog from "@/components/reports/dialog.report";
 import { ReportsTable } from "@/components/reports/table.reports";
 import { useWeekColumns } from "@/data/reports.columns";
 import Container from "@/misc/Container";
@@ -27,7 +28,9 @@ const Main = () => {
     <>
       <AnimatePresence mode="wait">
         <Page className="w-full space-y-4">
-          <ReportsTable columns={columns} data={reports} />
+          <ReportsTable columns={columns} data={reports}>
+            {/* <ReportDialog /> */}
+          </ReportsTable>
         </Page>
       </AnimatePresence>
     </>

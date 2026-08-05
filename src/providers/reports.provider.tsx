@@ -8,18 +8,17 @@ import {
   useState,
 } from "react";
 import { List, ProviderProps } from "@/interfaces";
-import { ReportTable } from "@/interfaces/reports.interface";
-import { generateWeeks } from "@/data/reports.columns";
-import { addHours, getISOWeek } from "date-fns";
+import { Activity, ReportTable, WeekColumns } from "@/interfaces/reports.interface";
+import { getISOWeek } from "date-fns";
 import { VisibilityState } from "@tanstack/react-table";
-// import { getISOWeekFromMonthWeek } from "@/lib/format";
 import { useReportsByWeek } from "@/hooks/useReports";
-import { capitalize } from "@/lib/utils";
+import { generateWeeks } from "@/lib/utils";
 
 interface Reports {
   reports: ReportTable[];
   isPending: boolean;
   filters: Conditions[];
+  selectedWeeks: number[];
   setFilters: Dispatch<SetStateAction<Conditions[]>>;
   visibleWeeks: VisibilityState;
   setVisibleWeeks: Dispatch<SetStateAction<VisibilityState>>;
@@ -52,38 +51,38 @@ export const useReports = (): Reports => {
 
 export function ReportProvider({ children }: ProviderProps) {
   const weeks = useMemo(() => generateWeeks(), []);
+  const weekMap = useMemo(() => {
+    return new Map(weeks.map(week => ([String(week.yearweek), week])))
+  }, [weeks])
   const [selectedWeeks, setSelectedWeeks] = useState<number[]>([
     getISOWeek(new Date()),
   ]);
   const [visibleWeeks, setVisibleWeeks] = useState<VisibilityState>(() => {
     const saved = localStorage.getItem("visibleWeeks");
-    const currentWeekIndex = getISOWeek(new Date()) - 1; // Adjust based on your week's zero-indexing
-    const currentWeekKey = weeks[currentWeekIndex]; // `week` is assumed to be the key
+    const currentWeek = weeks.find((week) => week.isCurrent);
 
-    let initialState: Record<string, boolean>;
+    let savedState: VisibilityState = {};
 
     if (saved) {
       try {
-        initialState = JSON.parse(saved);
-
-
-        // Force the current week to be visible
-        if (currentWeekKey) {
-          initialState[currentWeekKey] = true;
-        }
+        savedState = JSON.parse(saved);
       } catch {
-        // Fallback in case JSON parsing fails
-        initialState = {};
+        savedState = {};
       }
-    } else {
-      // Create new default state if no saved version exists
-      initialState = weeks.reduce<Record<string, boolean>>(
-        (acc, week, index) => {
-          acc[week] = index === currentWeekIndex;
-          return acc;
-        },
-        {}
-      );
+    }
+
+    const initialState = weeks.reduce<Record<string, boolean>>((acc, week) => {
+      const key = String(week.yearweek);
+
+      // Use saved value if exists, otherwise hide it
+      acc[key] = savedState[key] ?? false;
+
+      return acc;
+    }, {});
+
+    // Always force current week visible
+    if (currentWeek) {
+      initialState[String(currentWeek.yearweek)] = true;
     }
 
     return initialState;
@@ -100,120 +99,77 @@ export function ReportProvider({ children }: ProviderProps) {
     const indexes = Object.entries(visibleWeeks)
       .map(([k, v], i) => ({ key: k, value: v, index: i }))
       .filter(({ value }) => value)
-      .map(({ index }) => index + 1);
-    setSelectedWeeks(indexes as number[]);
-  }, [visibleWeeks]);
+      .map((week) => weekMap.get(week.key)!.isoWeek);
+    setSelectedWeeks(indexes);
+  }, [visibleWeeks, weekMap]);
 
   const reports = useMemo<ReportTable[]>(() => {
     if (isPending || !data) return [];
     const statusOrder = ["HOT", "ACTIVE", "ON/OFF", "POOL"];
 
-    const sortedReports = [...data].sort(
+
+    const sortedClients = [...data].sort(
       (a, b) => statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status)
     );
 
+    const processedClients = sortedClients.map((item) => {
+      const columns = weeks.reduce<Record<number, Activity[] | "">>(
+        (acc, week) => {
+          acc[week.yearweek] = "";
+          return acc;
+        },
+        {} as WeekColumns
+      );
 
-    const groupedClients = sortedReports.reduce<Record<string, ReportTable>>(
-      (acc, item) => {
-        const clientName = item.client;
-        const hasDateSubmission = item.date_submitted !== null;
-        const currentWeek = hasDateSubmission
-          ? getISOWeek(
-            new Date(
-              addHours(
-                new Date(item.date_submitted),
-                Number(import.meta.env.VITE_TIME_ADJUST)
-              )
-            )
-          )
-          : null;
+      // Populate the weeks that have reports
+      for (const [yearweek, reports] of Object.entries(item.reports)) {
+        columns[Number(yearweek)] = reports;
+      }
 
-        const reportColumns: ReportTable = weeks.reduce(
-          (acc, week) => {
-            acc[week] = "";
-            return acc;
-          },
-          {
-            client: "",
-            client_id: 0,
-            brand: item.brand,
-          } as ReportTable
-        );
-        const name = `${item.first_name} ${item.last_name}`;
-        const userCode = `${item.first_name[0]}${item.middle_name ? item.middle_name[0] : ""
-          }${item.last_name[0]}`;
-        if (!acc[item.client_id]) {
-          acc[item.client_id] = {
-            ...reportColumns,
-            client: clientName,
-            client_id: item.client_id,
-            sales_unit: item.sales_unit,
-            status: item.status,
-            sales_unit_id: item.sales_unit_id,
-            account_executive: name,
-            ae_code: userCode,
-            account_id: item.account_id,
-          };
-        }
-        if (hasDateSubmission) {
-          const weekKey = weeks[currentWeek! - 1];
-          if (weekKey && acc[item.client_id][weekKey] !== undefined) {
-            const weekData = {
-              activity: item.activity,
-              reportID: item.ID,
-              editorID: item.editor_id,
-              editor: capitalize(item.editor),
-              editorCode: item.editor_code,
-              fileID: item.file_id,
-              file: item.file,
-            };
-            acc[item.client_id][weekKey] = weekData;
-          }
-        }
+      return {
+        ...item,
+        ...columns,
+      };
+    });
 
-        return acc;
-      },
-      {}
-    );
-
-    const groupedValues = Object.values(groupedClients);
-    groupedValues.sort(
+    processedClients.sort(
       (a, b) => statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status)
     );
 
-    console.log(groupedValues)
-    return groupedValues;
+    return processedClients;
   }, [data, isPending, weeks]);
 
-  const filteredReports = useMemo(() => {
-    if (filters.length === 0) return reports;
-    const weekFilters = filters.filter(
-      (filter) => /Wk/.test(filter.column) && filter.condition.length !== 0
-    );
-    if (weekFilters.length === 0) return reports;
+  // const filteredReports = useMemo(() => {
+  //   if (filters.length === 0) return reports;
+  //   const weekFilters = filters.filter(
+  //     (filter) => /Wk/.test(filter.column) && filter.condition.length !== 0
+  //   );
+  //   if (weekFilters.length === 0) return reports;
 
-    return reports.filter((report) => {
-      return weekFilters.every((filter) => {
-        const value = report[filter.column];
-        const condition = filter.condition;
+  //   return reports.filter((report) => {
+  //     return weekFilters.every((filter) => {
+  //       const value = report[filter.column];
+  //       const condition = filter.condition;
 
-        if (condition === "is empty") {
-          return value === null || value === undefined || value === "";
-        }
+  //       if (condition === "is empty") {
+  //         return value === null || value === undefined || value === "";
+  //       }
 
-        if (condition === "is not empty") {
-          return value !== null && value !== undefined && value !== "";
-        }
+  //       if (condition === "is not empty") {
+  //         return value !== null && value !== undefined && value !== "";
+  //       }
 
-        return true; // fallback
-      });
-    });
-  }, [reports, filters]);
+  //       return true; // fallback
+  //     });
+  //   });
+  // }, [reports, filters]);
+
   const value = {
-    reports: filteredReports,
+    reports,
     isPending,
     filters,
     visibleWeeks,
+    selectedWeeks,
     setFilters,
     setVisibleWeeks,
   };

@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useClient, useAccess } from "@/hooks/useClients";
-import { capitalize } from "@/lib/utils";
+import { capitalize, generateWeeks } from "@/lib/utils";
 import Page from "@/misc/Page";
 import { useAuth } from "@/providers/auth.provider";
 import { ChevronLeft } from "lucide-react";
@@ -15,8 +15,7 @@ import ClientTab from "./client.tab";
 import ContactsTab from "./contacts.tab";
 import ReportsTab from "./reports.tab";
 import ClientHistory from "@/components/clients/history.clients";
-import { getISOWeek } from "date-fns";
-import { generateWeeks } from "@/data/reports.columns";
+import { format } from "date-fns";
 import { Label } from "@/components/ui/label";
 // import { Badge } from "@/components/ui/badge";
 
@@ -28,12 +27,13 @@ const ManageClient = () => {
   const { access: editStatus } = useAccess("clients.editStatus");
   const { access: editContact } = useAccess("clients.editContact");
   const { data: reportAccess } = useUserReportViewAccesses((user?.ID as number) ?? 0);
-  const currentISOWeek = getISOWeek(new Date());
   const clientID = localStorage.getItem("client");
   const { data: client, isLoading, isError, error } = useClient(clientID);
   const [tab, setTab] = useState("reports")
 
-  const weeks = useMemo(() => generateWeeks(), [])
+  const weeks = useMemo(generateWeeks, []);
+  const week = weeks.find(wk => wk.isCurrent)!;
+  const header = `Wk${week.isoWeek} • (${format(week.start, "MMM dd")} - ${format(week.end, "MMM dd")})`;
   const hasEditAccess = useMemo(() => {
     if (!user || !client || !reportAccess) return false;
 
@@ -121,7 +121,7 @@ const ManageClient = () => {
                 <TabsTrigger value="logs" className="mr-auto">Change History</TabsTrigger>
               </div>
               {tab === "reports" &&
-                <Label className="ml-auto pr-2" htmlFor="activity">Current: {weeks[currentISOWeek - 1]}</Label>
+                <Label className="ml-auto pr-2 font-semibold" htmlFor="activity">Current: {header}</Label>
               }
             </TabsList>
             <TabsContent value="reports">

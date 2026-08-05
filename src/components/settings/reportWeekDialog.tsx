@@ -9,10 +9,9 @@ import {
 } from "../ui/dialog";
 import { DropdownMenuItem } from "../ui/dropdown-menu";
 import { Lock, LockOpen } from "lucide-react";
-import { capitalize } from "@/lib/utils";
+import { capitalize, generateWeeks } from "@/lib/utils";
 import { Button } from "../ui/button";
 import { getISOWeek } from "date-fns";
-import { generateWeeks } from "@/data/reports.columns";
 import { useSettings } from "@/providers/settings.provider";
 import { useToast } from "@/hooks/use-toast";
 
@@ -71,7 +70,7 @@ function ReportWeekDialog({
     <Dialog open={openDialog} onOpenChange={onDialogOpen}>
       <DialogTrigger asChild>
         <DropdownMenuItem
-          disabled={weeks[currentWeekIndex] === access.week}
+          disabled={`Wk ${weeks[currentWeekIndex - 1].isoWeek}` === access.week}
           key={access.week}
           className="capitalize flex items-center justify-start gap-3 cursor-pointer"
         >

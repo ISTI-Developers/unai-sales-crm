@@ -1,3 +1,4 @@
+import { ChartConfig } from "@/components/ui/chart";
 import { Request, SiteRow } from "@/interfaces/requests.interface";
 import { clsx, type ClassValue } from "clsx";
 import {
@@ -8,6 +9,13 @@ import {
   differenceInMinutes,
   format,
   isToday,
+  getISOWeek,
+  getISOWeekYear,
+  startOfISOWeek,
+  getISOWeeksInYear,
+  addWeeks,
+  differenceInCalendarWeeks,
+  startOfMonth,
 } from "date-fns";
 import { twMerge } from "tailwind-merge";
 
@@ -201,11 +209,12 @@ export const getSiteMaterial = (
 };
 
 export const getTotalMonthly = (amount: number, to: Date, from: Date) => {
-  return amount * differenceInCalendarMonths(addDays(to, 0), from);
+  return amount * differenceInCalendarMonths(addDays(to, 1), from);
 };
 export const getAddOnTotal = (item: SiteRow) => {
   if (!item.site) return 0;
   if (!item.site.ID) return 0;
+
   const { installation, material } = item.add_ons;
 
   const installationAmt =
@@ -432,3 +441,124 @@ export const chartColors = [
   "#111827", // gray-900
   "#0f172a", // slate-900
 ].reverse();
+
+export function getCurrentYearWeek() {
+  const date = new Date();
+
+  const year = getISOWeekYear(date);
+  const week = getISOWeek(date);
+
+  return {
+    year,
+    week,
+    yearweek: Number(`${year}${String(week).padStart(2, "0")}`),
+  };
+}
+
+export type WeekInfo = {
+  label: string;
+  month: string;
+  weekOfMonth: number;
+  isoWeek: number;
+  yearweek: number;
+  isCurrent: boolean;
+  start: Date;
+  end: Date;
+};
+
+export const generateWeeks = (
+  year: number = new Date().getFullYear(),
+): WeekInfo[] => {
+  const startDate = startOfISOWeek(new Date(year, 0, 4));
+  const totalWeeks = getISOWeeksInYear(new Date(year, 0, 1));
+
+  const currentYearWeek = Number(
+    `${getISOWeekYear(new Date())}${String(getISOWeek(new Date())).padStart(
+      2,
+      "0",
+    )}`,
+  );
+
+  const weeks: WeekInfo[] = [];
+
+  for (let i = 0; i < totalWeeks; i++) {
+    const weekStart = addWeeks(startDate, i);
+    const weekEnd = addDays(weekStart, 6);
+
+    // Label based on the calendar month of the Monday
+    const month = format(weekStart, "MMM");
+
+    const weekOfMonth =
+      differenceInCalendarWeeks(weekStart, startOfMonth(weekStart), {
+        weekStartsOn: 1,
+      }) + 1;
+
+    const isoWeek = getISOWeek(weekStart);
+    const isoYear = getISOWeekYear(weekStart);
+    const yearweek = Number(`${isoYear}${String(isoWeek).padStart(2, "0")}`);
+
+    weeks.push({
+      label: `${month} Wk${weekOfMonth}`,
+      month,
+      weekOfMonth,
+      isoWeek,
+      yearweek,
+      isCurrent: yearweek === currentYearWeek,
+      start: weekStart,
+      end: weekEnd,
+    });
+  }
+
+  return weeks;
+};
+
+export const reportsSummaryConfig = {
+  DRF: {
+    label: "DRF",
+    color: "#991b1b",
+  },
+  SU_1: {
+    label: "SU 1",
+    color: "#9a3412",
+  },
+  SU_2: {
+    label: "SU 2",
+    color: "#854d0e",
+  },
+  SU_3: {
+    label: "SU 3",
+    color: "#065f46",
+  },
+  SU_4: {
+    label: "SU 4",
+    color: "#1e40af",
+  },
+  SU_5: {
+    label: "SU 5",
+    color: "#1e1b4b",
+  },
+  "SU_6-V": {
+    label: "SU 6",
+    color: "#581c87",
+  },
+  "SU_6-M": {
+    label: "SU 6",
+    color: "#671fa7",
+  },
+  SU_7: {
+    label: "SU 7",
+    color: "#881337",
+  },
+  MGM: {
+    label: "MGM",
+    color: "#d1a093",
+  },
+  Sales: {
+    label: "TAMC Sales",
+    color: "#a112e3",
+  },
+  UTASI_Sales: {
+    label: "UTASI Sales",
+    color: "#f19283",
+  },
+} satisfies ChartConfig;

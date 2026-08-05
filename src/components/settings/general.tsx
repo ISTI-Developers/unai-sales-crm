@@ -1,4 +1,3 @@
-import { generateWeeks } from "@/data/reports.columns";
 import { useEffect, useMemo, useState } from "react";
 import { Separator } from "../ui/separator";
 import { getISOWeek } from "date-fns";
@@ -6,7 +5,7 @@ import { useSettings } from "@/providers/settings.provider";
 import { Button } from "../ui/button";
 import { useClientMisc } from "@/hooks/useClientOptions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import { capitalize } from "@/lib/utils";
+import { capitalize, generateWeeks } from "@/lib/utils";
 import { ClientOptions } from "@/interfaces/client.interface";
 
 import {
@@ -101,12 +100,12 @@ function ReportWeekAccess() {
       const hasAccess =
         weeks[currentWeekIndex] === week
           ? true
-          : weekAccess.find((access) => access.week === week)
+          : weekAccess.find((access) => access.week === `Wk ${weeks[currentWeekIndex - 1].isoWeek}`)
             ? true
             : false;
       return {
-        ID: weekAccess.find((wk) => wk.week === week)?.ID,
-        week: week,
+        ID: weekAccess.find((wk) => wk.week === `Wk ${weeks[currentWeekIndex - 1].isoWeek}`)?.ID,
+        week: `Wk ${weeks[currentWeekIndex - 1].isoWeek}`,
         access: hasAccess,
       };
     });

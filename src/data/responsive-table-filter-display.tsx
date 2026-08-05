@@ -20,6 +20,7 @@ function ResponsiveTableFilterDisplay<TData>({ columnFilters, setColumnFilters, 
             {columnFilters.map(columnFilter => {
                 const column = table.getColumn(columnFilter.id)?.columnDef;
                 const config = columnFilter.value as Filter;
+                const label = column?.meta?.label ?? columnFilter.id.replace(/_/g, " ");
                 return <div role='button'
                     onClick={() => {
                         setEditingFilter({
@@ -32,7 +33,7 @@ function ResponsiveTableFilterDisplay<TData>({ columnFilters, setColumnFilters, 
                     }} key={columnFilter.id} className='flex items-center gap-0.5 border text-xs leading-tight p-1 px-2 rounded-md bg-blue-50 border-blue-200 text-blue-600'>
                     <div className='flex gap-1 items-center'>
                         {column?.meta?.icon && <column.meta.icon size={12} />}
-                        <p className='capitalize font-semibold leading-tight'>{columnFilter.id.replace("_", " ")}</p>
+                        <p className='capitalize font-semibold leading-tight'>{label}</p>
                     </div>
                     {config.condition === "is not" ? <EqualNot className='text-red-300' size={10} /> : ":"}
                     {['contains', 'between'].includes(config.condition) ?

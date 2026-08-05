@@ -17,42 +17,35 @@ import {
   getFilteredRowModel,
   PaginationState,
   getPaginationRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
 } from "@tanstack/react-table";
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo, ReactNode } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 
 import { Button } from "../ui/button";
-import { generateWeeks } from "@/data/reports.columns";
-import { getISOWeek } from "date-fns";
 import { useReports } from "@/providers/reports.provider";
 import { notFilter } from "@/misc/not.filter";
+import ResponsiveTableFilters from "@/data/responsive-table-filters";
+import { Filter } from "@/interfaces/tanstack-table";
+import ResponsiveTableFilterDisplay from "@/data/responsive-table-filter-display";
 import TableConfigurations from "./config.report";
-import SelectedFilters from "./filters.report";
 
 interface DataTable<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  children?: ReactNode
 }
 
 export function ReportsTable<TData, TValue>({
   columns,
   data,
+  children
 }: DataTable<TData, TValue>) {
-  const weeks = generateWeeks();
   const { isPending, filters, visibleWeeks } = useReports();
 
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
-    () => {
-      return visibleWeeks
-        ? visibleWeeks
-        : weeks.reduce<Record<string, boolean>>((acc, week, index) => {
-          const weekIndex = getISOWeek(new Date()) - 1;
-          acc[week] = weekIndex === index;
-          return acc;
-        }, {});
-    }
-  );
-
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(visibleWeeks);
+  const [isEditingFilter, setEditingFilter] = useState<Filter>()
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
   const [paginationState, setPaginationState] = useState<PaginationState>({
@@ -65,6 +58,8 @@ export function ReportsTable<TData, TValue>({
     columns,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
     getPaginationRowModel: getPaginationRowModel(),
     onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: setGlobalFilter,
@@ -87,20 +82,35 @@ export function ReportsTable<TData, TValue>({
   const rowVirtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 50, // adjust to your average row height
-    overscan: 10,
+    estimateSize: () => 35,
+    measureElement: (element) => element.getBoundingClientRect().height,
+    overscan: 15,
   });
+  const stickyOffsets = useMemo(() => {
+    let total = 0;
 
+    return table.getVisibleLeafColumns().map((column) => {
+      const offset = total;
+      total += column.getSize();
+
+      return offset;
+    });
+  }, [table]);
   return (
     <div className="flex flex-col gap-4">
-      <TableConfigurations
-        setValue={(value) => setGlobalFilter(value)}
-        table={table}
-        data={data}
-        filters={columnFilters}
-      />
-      <SelectedFilters />
-      <div className="w-full whitespace-nowrap rounded-md border">
+      <header className='flex items-start justify-between gap-2'>
+        <div className='space-y-2 w-full'>
+          <div className="flex items-center justify-between">
+            <TableConfigurations table={table} setValue={setGlobalFilter} />
+            {children}
+          </div>
+          <div className='flex gap-1 flex-wrap items-center'>
+            <ResponsiveTableFilterDisplay columnFilters={columnFilters} setEditingFilter={setEditingFilter} setColumnFilters={setColumnFilters} table={table} />
+            <ResponsiveTableFilters table={table} editingFilter={isEditingFilter} setEditingFilter={setEditingFilter} />
+          </div>
+        </div>
+      </header>
+      <div className="w-full whitespace-nowrap rounded-md border overflow-hidden">
         <div
           className={cn(
             "overflow-y-auto max-w-full relative",
@@ -113,20 +123,19 @@ export function ReportsTable<TData, TValue>({
           <Table className="border-collapse">
             <TableHeader className="sticky top-0 z-[3]">
               {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id} className="bg-main-400 hover:bg-main-400">
+                <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header, index) => {
                     const columnID = header.column.id;
-                    const isSticky = index < 4
-                    const lefts = [0, 150, 210, 255]
+                    const isSticky = header.column.columnDef.meta?.isSticky;
                     return (
                       <TableHead
                         key={header.id}
                         className={cn(
-                          "bg-main-400 text-white shadow text-[0.65rem] uppercase font-bold",
+                          "bg-white text-main-400 shadow text-[0.65rem] uppercase font-bold w-full",
                           columnID !== "client" ? "text-center" : "",
-                          isSticky ? "sticky" : ""
+                          isSticky ? "sticky z-[10] bg-white" : ""
                         )}
-                        style={{ left: lefts[index] }}
+                        style={{ left: stickyOffsets[index], width: header.column.getSize(), maxWidth: header.column.getSize() }}
                       >
                         {header.isPlaceholder
                           ? null
@@ -152,17 +161,14 @@ export function ReportsTable<TData, TValue>({
                 </TableRow>
               ) : rowVirtualizer.getVirtualItems().length > 0 ? (
                 <>
-                  {/* Top padding */}
-                  {rowVirtualizer.getVirtualItems()[0]?.start > 0 && (
-                    <TableRow>
-                      <TableCell
-                        style={{
-                          height: rowVirtualizer.getVirtualItems()[0].start,
-                        }}
-                        colSpan={columns.length}
-                      />
-                    </TableRow>
-                  )}
+                  <tr>
+                    <td
+                      colSpan={columns.length}
+                      style={{
+                        height: rowVirtualizer.getVirtualItems()[0]?.start ?? 0
+                      }}
+                    />
+                  </tr>
 
                   {/* Render visible rows */}
                   {rowVirtualizer.getVirtualItems().map((virtualRow) => {
@@ -170,14 +176,14 @@ export function ReportsTable<TData, TValue>({
                     return (
                       <TableRow
                         key={row.id}
+                        ref={rowVirtualizer.measureElement}
+                        data-index={virtualRow.index}
                         data-state={row.getIsSelected() && "selected"}
-                        className="hover:bg-white "
+                        className="hover:bg-white relative"
                       >
                         {row.getVisibleCells().map((cell, index) => {
                           const columnID = cell.column.id;
-                          const isSticky = index < 4
-                          const lefts = [0, 150, 210, 255]
-
+                          const isSticky = cell.column.columnDef.meta?.isSticky;
                           return (
                             <TableCell
                               key={cell.id}
@@ -186,14 +192,14 @@ export function ReportsTable<TData, TValue>({
                                   ? "uppercase px-2 font-semibold truncate"
                                   : [
                                     "sales_unit",
-                                    "account_executive",
+                                    "account_executives",
                                     "status",
                                   ].includes(columnID)
                                     ? "text-center"
-                                    : "text-left p-0 min-w-[300px]",
-                                isSticky ? "sticky z-[2] bg-white" : ""
+                                    : "text-left p-0",
+                                isSticky ? "sticky z-[2] bg-white" : "",
                               )}
-                              style={{ left: lefts[index], width: cell.column.getSize(), maxWidth: cell.column.getSize() }}
+                              style={{ left: stickyOffsets[index], width: cell.column.getSize(), minWidth: cell.column.getSize() }}
                             >
                               {flexRender(
                                 cell.column.columnDef.cell,
@@ -205,10 +211,9 @@ export function ReportsTable<TData, TValue>({
                       </TableRow>
                     );
                   })}
-
-                  {/* Bottom padding */}
                   {(() => {
-                    const lastItem = rowVirtualizer.getVirtualItems().at(-1);
+                    const lastItem = rowVirtualizer.getVirtualItems()[rowVirtualizer.getVirtualItems().length - 1];
+
                     if (!lastItem) return null;
 
                     const bottomSpace =
@@ -218,8 +223,10 @@ export function ReportsTable<TData, TValue>({
                       bottomSpace > 0 && (
                         <TableRow>
                           <TableCell
-                            style={{ height: bottomSpace }}
                             colSpan={columns.length}
+                            style={{
+                              height: bottomSpace,
+                            }}
                           />
                         </TableRow>
                       )

@@ -80,8 +80,10 @@ export interface ClientName {
 export interface ClientNameWithStatus {
   ID: number;
   name: string;
+  brand: string;
   status: number;
   status_name: string;
+  tags?: number;
 }
 export interface Client {
   client_id: number;
