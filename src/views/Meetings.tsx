@@ -1,16 +1,13 @@
+
+import MeetingWorkspace from "@/components/minutes/meeting.workspace";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { useColumns } from "@/data/meeting.columns";
-import { MeetingTable } from "@/data/meeting.table";
-import { generateWeeks } from "@/data/reports.columns";
-import { useMeetings } from "@/hooks/useMeetings";
-import { RawMinutes, WeekRow } from "@/interfaces/meeting.interface";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { cn, generateWeeks } from "@/lib/utils";
 import Container from "@/misc/Container";
-import Page from "@/misc/Page";
-import { ReportProvider } from "@/providers/reports.provider";
-import { getISOWeek } from "date-fns";
-import { AnimatePresence } from "framer-motion";
-import { useEffect, useMemo, useState } from "react";
+import { format } from "date-fns";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Helmet } from "react-helmet";
 
 const Meetings = () => {
@@ -19,120 +16,73 @@ const Meetings = () => {
       <Helmet>
         <title>Meetings | Sales Platform</title>
       </Helmet>
-      <ReportProvider>
-        <Main />
-      </ReportProvider>
+      <Main />
     </Container>
   );
 };
 
 const Main = () => {
-  const [openYear, setOpenYear] = useState(false)
   const [year, setYear] = useState(2026);
-  const [selectedWeeks, setWeeks] = useState<(`${string} Wk${number}`)[]>(
-    () => {
-    const stored = localStorage.getItem("meetingWeeks");
-
-    if (stored) {
-      return JSON.parse(stored);
-    }
-
-    const weeks = generateWeeks();
-    return [weeks[getISOWeek(new Date()) - 1] as `${string} Wk${number}`];
-  });
   const weeks = useMemo(() => generateWeeks(year), [year]);
-
-  const indexes = useMemo(() => {
-    return selectedWeeks
-      .map(w => weeks.indexOf(w) + 1)
-      .filter(i => i > 0);
-  }, [selectedWeeks, weeks]);
-
-  const {columns} = useColumns(year)
-  const { data } = useMeetings(
-    indexes ? indexes : [getISOWeek(new Date())],
-    year
-  );
-  const meetings: WeekRow[] = useMemo(() => {
-    if (!data) return [];
-    const weeks = generateWeeks(year);
-
-
-    const row = weeks.reduce<Record<string, RawMinutes | null>>(
-      (acc, week) => {
-        acc[week] = null
-        return acc
-      },
-      {}
-    )
-    data.forEach(item => {
-      const weekKey = weeks[item.week - 1];
-
-      if (weekKey in row) {
-        row[weekKey] = item;
-      }
-    })
-    return [row]
-
-  }, [data, year])
+  const [selectedWeek, setSelectedWeek] = useState(weeks.find(wk => wk.isCurrent));
+  const selectedWeekRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
-    const toggledWeeks = localStorage.getItem("meetingWeeks");
-    console.count("rendered initial");
-
-    if (toggledWeeks) {
-      const weeksArray: (`${string} Wk${number}`)[] = JSON.parse(toggledWeeks);
-
-      console.log(weeksArray);
-      if (weeksArray.length > 0) {
-        setWeeks(weeksArray);
-      }
-    } else {
-      const weeks = generateWeeks();
-      setWeeks([weeks[getISOWeek(new Date()) - 1] as `${string} Wk${number}`])
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem("meetingWeeks", JSON.stringify(selectedWeeks));
-  }, [selectedWeeks])
+    selectedWeekRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, [selectedWeek]);
   return (
-    <>
-      <AnimatePresence mode="wait">
-        <Page className="w-full space-y-4">
-          <MeetingTable columns={columns} data={meetings} selectedWeeks={selectedWeeks} setWeeks={setWeeks} year={year}>
-            <DropdownMenu open={openYear} onOpenChange={(open) => open && setOpenYear(open)}>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline">Select Year</Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                onPointerDownOutside={() => {
-                  setOpenYear(false);
-                }}
-                align="end"
-                className="max-h-[500px] overflow-y-auto scrollbar-thin"
-              >
-                {[2023, 2024, 2025, 2026]
-                  .map((column) => {
-                    return (
-                      <DropdownMenuCheckboxItem
-                        key={column}
-                        className="capitalize"
-                        checked={year === column}
-                        onCheckedChange={() => {
-                          setYear(column)
-                        }}
-                      >
-                        {column}
-                      </DropdownMenuCheckboxItem>
-                    );
-                  })}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </MeetingTable>
-        </Page>
-      </AnimatePresence>
-    </>
+    <div className="flex h-[calc(100vh-4rem)] overflow-hidden rounded-xl border">
+      {/* Sidebar */}
+      <aside className="flex w-[225px] flex-col border-r bg-muted/30">
+        <div className="p-4 flex gap-4 items-center">
+          <Label>Year: </Label>
+          <Select value={String(year)} onValueChange={(value) => setYear(Number(value))}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {[2025, 2026].map(option => (<SelectItem key={option} value={String(option)}>{option}</SelectItem>))}
+            </SelectContent>
+          </Select>
+        </div>
+        <ScrollArea className="flex-1">
+          <div className="space-y-2 p-2">
+            {weeks.map((week) => {
+              const header = `Wk ${week.isoWeek} • (${format(
+                week.start,
+                "MMM dd"
+              )} - ${format(week.end, "MMM dd")})`;
+
+              return (
+                <Button
+                  ref={
+                    selectedWeek?.yearweek === week.yearweek
+                      ? selectedWeekRef
+                      : undefined
+                  }
+                  variant="outline"
+                  key={week.yearweek}
+                  onClick={() => setSelectedWeek(week)}
+                  className={cn(
+                    "w-full justify-start rounded-lg border transition-colors hover:bg-zinc-100",
+                    selectedWeek?.yearweek === week.yearweek &&
+                    "border-emerald-400 bg-emerald-100 text-emerald-600"
+                  )}
+                >
+                  {header}
+                </Button>
+              );
+            })}
+          </div>
+        </ScrollArea>
+      </aside>
+
+      {/* Workspace */}
+      <MeetingWorkspace selectedWeek={selectedWeek ?? weeks[0]} year={year} />
+    </div>
   );
 };
 

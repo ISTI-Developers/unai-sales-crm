@@ -1,8 +1,7 @@
 import { DefaultResponse } from "@/interfaces";
-import { BaseMinutes, ParsedMinutes, RawMinutes } from "@/interfaces/meeting.interface";
+import { BaseMinutes, RawMinutes } from "@/interfaces/meeting.interface";
 import { catchError, spAPI } from "@/providers/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getISOWeek, getYear } from "date-fns";
 
 export const useMeetings = (week: number[], year: number = 2026) => {
     return useQuery({
@@ -23,15 +22,8 @@ export const useMeetings = (week: number[], year: number = 2026) => {
 
 export const useCreateMinute = () => {
     const queryClient = useQueryClient();
-    const year = new Date().getFullYear();
-    const toggledWeeks = localStorage.getItem("visibleWeeks") ?? '{}';
-    const indexes = Object.entries(JSON.parse(toggledWeeks))
-        .map(([k, v], i) => ({ key: k, value: v, index: i }))
-        .filter(({ value }) => value)
-        .map(({ index }) => index + 1);
-
     return useMutation({
-        mutationFn: async (meeting: Omit<BaseMinutes, "ID">) => {
+        mutationFn: async (meeting: Omit<BaseMinutes, "ID"> & { year: number }) => {
             const formdata = new FormData();
             formdata.append("activity", meeting.activity);
             formdata.append("week", String(meeting.week));
@@ -44,24 +36,9 @@ export const useCreateMinute = () => {
 
             return response.data;
         },
-        onSuccess: (data, variables) => {
-            const week = getISOWeek(new Date().toISOString());
-            const meetings = data.item;
-            queryClient.setQueryData<ParsedMinutes[]>(
-                ["meetings", year, week],
-                (old) => {
-                    if (!old) return old;
-                    const exists = old.some(
-                        (item) => item.week === variables.week && getYear(new Date(item.modified_at)) === new Date().getFullYear()
-                    );
-
-                    return old.map((item) =>
-                        exists ? (meetings as ParsedMinutes) : item
-                    );
-                }
-            );
+        onSuccess: (_, variables) => {
             queryClient.refetchQueries({
-                queryKey: ["meetings", year, indexes],
+                queryKey: ["meetings", variables.year, [variables.week]],
             });
 
         },
@@ -71,15 +48,9 @@ export const useCreateMinute = () => {
 
 export const useUpdateMinute = () => {
     const queryClient = useQueryClient();
-    const year = new Date().getFullYear();
-    const toggledWeeks = localStorage.getItem("visibleWeeks") ?? '{}';
-    const indexes = Object.entries(JSON.parse(toggledWeeks))
-        .map(([k, v], i) => ({ key: k, value: v, index: i }))
-        .filter(({ value }) => value)
-        .map(({ index }) => index + 1);
 
     return useMutation({
-        mutationFn: async (meeting: BaseMinutes) => {
+        mutationFn: async (meeting: BaseMinutes & { year: number }) => {
             const response = await spAPI.put<DefaultResponse<BaseMinutes>>(
                 `meetings`,
                 { ...meeting, date: new Date().toISOString() }
@@ -87,24 +58,9 @@ export const useUpdateMinute = () => {
 
             return response.data;
         },
-        onSuccess: (data, variables) => {
-            const week = getISOWeek(new Date().toISOString());
-            const meetings = data.item;
-            queryClient.setQueryData<ParsedMinutes[]>(
-                ["meetings", year, week],
-                (old) => {
-                    if (!old) return old;
-                    const exists = old.some(
-                        (item) => item.week === variables.week && getYear(new Date(item.modified_at)) === new Date().getFullYear()
-                    );
-
-                    return old.map((item) =>
-                        exists ? (meetings as ParsedMinutes) : item
-                    );
-                }
-            );
+        onSuccess: (_, variables) => {
             queryClient.refetchQueries({
-                queryKey: ["meetings", year, indexes],
+                queryKey: ["meetings", variables.year, [variables.week]],
             });
 
         },
@@ -112,15 +68,8 @@ export const useUpdateMinute = () => {
     })
 }
 
-export const useDeleteMinute = () => {
-    const year = new Date().getFullYear();
+export const useDeleteMinute = (week: number, year: number) => {
     const queryClient = useQueryClient();
-
-    const toggledWeeks = localStorage.getItem("visibleWeeks") ?? '{}';
-    const indexes = Object.entries(JSON.parse(toggledWeeks))
-        .map(([k, v], i) => ({ key: k, value: v, index: i }))
-        .filter(({ value }) => value)
-        .map(({ index }) => index + 1);
 
     return useMutation({
         mutationFn: async (ID: number) => {
@@ -135,7 +84,7 @@ export const useDeleteMinute = () => {
         },
         onSuccess: () => {
             queryClient.refetchQueries({
-                queryKey: ["meetings", year, indexes],
+                queryKey: ["meetings", year, [week]],
             });
 
         },
