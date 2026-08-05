@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
-import { useCurrentWeekReport, useReportsSummary } from "@/hooks/useDashboard";
-import { useAuth } from "@/providers/auth.provider";
+import { useMemo } from "react";
+import { useCurrentWeekReport } from "@/hooks/useDashboard";
+
 import { ChartConfig } from "@/components/ui/chart";
 
 export interface Report {
@@ -9,79 +9,10 @@ export interface Report {
   status: string;
   date: string;
 }
-type DynamicReportSummary = {
-  month: string;
-  [unitName: string]: string | number;
-};
-const useReportSummary = () => {
-  const MONTH_ORDER = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
 
-  const { user } = useAuth();
+const useReportSummary = () => {
   const { data: thisWeekReports, isLoading: isWeeklyReportLoading } =
     useCurrentWeekReport();
-  const [show, setShow] = useState("all");
-  const { data: summary, isLoading } = useReportsSummary({
-    ID: user?.ID as number,
-    selectedYear: new Date().getFullYear(),
-  });
-
-  const reportSummaryByMonth = useMemo(() => {
-    if (isLoading || !summary) return [];
-
-    const items =
-      show !== "all"
-        ? summary.filter((s) => s.unit_name === show.replace("_", " "))
-        : summary;
-
-    // 1. Collect all unique unit names (sanitized)
-    const allUnits = Array.from(
-      new Set(items.map((item) => item.unit_name.replace(/\s+/g, "_")))
-    );
-
-    // 2. Get current month in "Aug" format and slice MONTH_ORDER
-    const currentMonthShort = new Date().toLocaleString("default", {
-      month: "short",
-    });
-    const currentMonthIndex = MONTH_ORDER.indexOf(currentMonthShort);
-    const monthsUpToNow = MONTH_ORDER.slice(0, currentMonthIndex + 1);
-
-    // 3. Initialize map for only months up to now
-    const monthMap = new Map<string, DynamicReportSummary>();
-    for (const month of monthsUpToNow) {
-      const entry: DynamicReportSummary = { month };
-      allUnits.forEach((unit) => {
-        entry[unit] = 0;
-      });
-      monthMap.set(month, entry);
-    }
-
-    // 4. Fill in actual report values
-    for (const item of items) {
-      const month = item.month;
-      const unitKey = item.unit_name.replace(/\s+/g, "_");
-      const monthEntry = monthMap.get(month);
-      if (monthEntry) {
-        monthEntry[unitKey] = item.reports;
-      }
-    }
-
-    // 5. Convert to array
-    return monthsUpToNow.map((month) => monthMap.get(month)!);
-  }, [isLoading, summary, show]);
-
   const reportsSummaryConfig = {
     DRF: {
       label: "DRF",
@@ -142,12 +73,8 @@ const useReportSummary = () => {
   }, [thisWeekReports]);
 
   return {
-    reportSummaryByMonth,
     thisWeeksReports,
-    show,
-    setShow,
     reportsSummaryConfig,
-    isLoading,
     isWeeklyReportLoading,
   };
 };

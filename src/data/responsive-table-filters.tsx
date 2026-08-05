@@ -44,7 +44,7 @@ function ResponsiveTableFilters<TData>({ table, editingFilter, setEditingFilter 
                 <FilterIcon size={12} />
                 <p>Filter</p>
             </PopoverTrigger>
-            <PopoverContent align='start' className='p-1'>
+            <PopoverContent align='start' className='p-1 w-80'>
                 <div>
                     {column ?
                         <FilterItem column={column} setOption={setOption} onOpenChange={setOpen} editingFilter={editingFilter} />
@@ -53,8 +53,8 @@ function ResponsiveTableFilters<TData>({ table, editingFilter, setEditingFilter 
                             <CommandInput className='h-7' />
                             <CommandList>
                                 <CommandEmpty>Filter not found.</CommandEmpty>
-                                {table.getAllColumns().filter(col => col.getCanFilter()).map(column => {
-                                    const label = column.id.replace(/_/g, " ");
+                                {table.getVisibleLeafColumns().filter(col => col.getCanFilter()).map(column => {
+                                    const label = column.columnDef.meta?.label ?? column.id.replace(/_/g, " ");
                                     const Icon = column.columnDef.meta?.icon;
                                     const isDisabled = table.getState().columnFilters.some(filter => filter.id === column.id);
                                     return <CommandItem className='capitalize flex gap-2' disabled={isDisabled} onSelect={() => setOption(column.id)}>
@@ -79,7 +79,7 @@ interface FilterItemProps<TData> {
 }
 function FilterItem<TData>({ column, editingFilter, setOption, onOpenChange }: FilterItemProps<TData>) {
     const meta = column.columnDef.meta;
-    const label = column.id.replace(/_/g, " ");
+    const label = column.columnDef.meta?.label ?? column.id.replace(/_/g, " ");
     const [condition, setCondition] = useState("")
     const [value, setValue] = useState<unknown>("")
 
@@ -110,12 +110,7 @@ function FilterItem<TData>({ column, editingFilter, setOption, onOpenChange }: F
     const isInitializing = useRef(false);
 
     useEffect(() => {
-        // if (editingFilter) {
-        //     setValue(editingFilter.value);
-        //     return;
-        // }
         if (isInitializing.current) {
-            console.log("done")
             isInitializing.current = false;
             return;
         }
@@ -160,8 +155,6 @@ function FilterItem<TData>({ column, editingFilter, setOption, onOpenChange }: F
             setValue("");
         }
     }, [editingFilter, column, meta?.allowedOptions]);
-
-    console.log(value);
 
     return <div>
         <header className='flex items-center gap-2 p-2'>

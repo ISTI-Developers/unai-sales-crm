@@ -1,17 +1,16 @@
 import { useMemo } from 'react'
 import WeeklyReportsCard from '../weeklyReportsCard'
 import { Card, CardContent, CardTitle } from '@/components/ui/card'
-import { generateWeeks } from '@/data/reports.columns';
-import { getISOWeek } from 'date-fns';
 import BookingsCard from '../bookingsCard';
 import { useAuth } from '@/providers/auth.provider';
-import { cn } from '@/lib/utils';
+import { cn, generateWeeks } from '@/lib/utils';
+import { format } from 'date-fns';
 
 const Lists = () => {
     const { user } = useAuth();
     const weeks = useMemo(() => generateWeeks(), []);
-    const currentWeek = getISOWeek(new Date());
-
+    const week = weeks.find(week => week.isCurrent)!;
+    const header = `Wk ${week.isoWeek}`;
 
     const access = useMemo(() => {
         if (!user) return { bookings: false, reports: false };
@@ -26,7 +25,7 @@ const Lists = () => {
             }
             {access.reports &&
                 <Card className="p-4 flex flex-col gap-2 justify-between rounded-lg">
-                    <CardTitle className='font-normal text-sm'>{weeks[currentWeek - 1]} Activities</CardTitle>
+                    <CardTitle className='font-semibold text-sm'>{`${header} Activities (${format(week.start, "MMM dd")} - ${format(week.end, "MMM dd")})`}</CardTitle>
                     <CardContent className='p-0'>
                         <WeeklyReportsCard />
                     </CardContent>

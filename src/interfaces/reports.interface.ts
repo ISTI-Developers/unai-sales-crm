@@ -1,4 +1,4 @@
-export interface Report {
+export interface OldReport {
   ID: number;
   account_id: number;
   first_name: string;
@@ -17,6 +17,39 @@ export interface Report {
   file_id: number;
   date_submitted: string;
   status: string;
+}
+
+export interface AccountExecutive {
+  account_id: number;
+  ae: string;
+  image: string;
+  code: string;
+  su: string;
+}
+export interface Activity {
+  ID: number;
+  activity: string;
+  tags?: ReportTags[];
+  sales_unit_id: number;
+  client_id: number;
+  date_submitted: Date;
+  date_modified: Date;
+  status: number;
+  file?: string;
+  file_id?: number;
+  ae: string;
+  ae_code: string;
+  image: string | null;
+  sales_unit: string;
+  yearweek: number;
+}
+export interface Report {
+  ID: number;
+  client: string;
+  brand: string;
+  status: string;
+  account_executives: AccountExecutive[];
+  reports: Record<number, Activity[]>;
 }
 
 export interface ClientReport {
@@ -54,7 +87,7 @@ export interface WeekData {
   fileID: number;
   file: string | null;
 }
-export interface ReportTable {
+export interface OldReportTable {
   [key: string]: string | number | WeekData;
   client: string;
   client_id: number;
@@ -66,3 +99,21 @@ export interface ReportsContext {
   year: number;
   setYear: (year: number) => void;
 }
+
+export type WeekColumns = Record<number, Activity[] | "">;
+
+export type ReportTable = Report & WeekColumns;
+
+export const reportTags = [
+  "CLIENT VISIT",
+  "EMAIL",
+  "CALL",
+  "VIBER",
+  "CHAT",
+  "TEXT",
+  "FOLLOW UP",
+  "UPDATE",
+  "PROPOSAL",
+  "INITIAL TRANSACTION"
+] as const;
+export type ReportTags = (typeof reportTags)[number];

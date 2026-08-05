@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Popover, PopoverContent, PopoverTrigger } from './popover'
 import { useClients } from '@/hooks/useClients'
-// import { useAuth } from '@/providers/auth.provider';
+import { useAuth } from '@/providers/auth.provider';
 import { Button } from './button';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './command';
@@ -15,7 +15,7 @@ interface ClientBrandComboboxProps {
     className?: string;
 }
 function ClientBrandCombobox({ value, onValueChange, className }: ClientBrandComboboxProps) {
-    // const { user } = useAuth();
+    const { user } = useAuth();
     const { data: clients, isLoading } = useClients();
     const [open, setOpen] = useState(false)
     const [inputValue, setInputValue] = useState("")

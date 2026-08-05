@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import {
-  ReportSummary,
   WeeklyReportSummary,
 } from "@/interfaces/reports.interface";
 import { StatusSummary } from "@/data/clientSummary.data";
@@ -15,29 +14,6 @@ import { customOrder } from "@/lib/utils";
 import { useAuth } from "@/providers/auth.provider";
 import { spAPI } from "@/providers/api";
 
-export const useReportsSummary = ({
-  ID,
-  selectedYear,
-}: {
-  ID?: number;
-  selectedYear?: number;
-}) => {
-  return useQuery({
-    queryKey: ["dashboard", "report", ID],
-    queryFn: async () => {
-      const response = await spAPI.get<ReportSummary[]>(`reports`, {
-        params: {
-          summary: true,
-          user: ID,
-          year: selectedYear,
-        },
-      });
-      return response.data;
-    },
-    enabled: !!ID && !!selectedYear,
-    staleTime: 1000 * 60 * 10,
-  });
-};
 export const useCurrentWeekReport = () => {
   return useQuery({
     queryKey: ["dashboard", "report-week"],

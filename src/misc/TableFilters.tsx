@@ -12,7 +12,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { generateWeeks } from "@/data/reports.columns";
 import { ColumnFiltersState, Table as T } from "@tanstack/react-table";
 import { AnimatePresence, motion } from "framer-motion";
 import { Filter, PlusCircle, X } from "lucide-react";
@@ -326,7 +325,6 @@ function TableFilters<TData>({ table, data, filters }: Filters<TData>) {
                                 "name",
                                 "brand",
                                 "client",
-                                ...generateWeeks(),
                               ].includes(column.id) && (
                                 <SelectItem
                                   key={column.id}
