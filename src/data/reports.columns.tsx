@@ -16,7 +16,7 @@ import { useAuth } from "@/providers/auth.provider";
 import Status from "@/components/status";
 import ClientReport from "@/components/reports/client.report";
 import ReportCell from "@/components/reports/cell.report";
-import { ComponentIcon, LoaderIcon, Users } from "lucide-react";
+import { ComponentIcon, LoaderIcon, TagIcon, Users } from "lucide-react";
 
 const renderAE = () => {
   return {
@@ -160,6 +160,41 @@ export const useWeekColumns = () => {
         isSticky: true,
       }
     },
+    {
+      id: "tags",
+      accessorFn: (row) => {
+        if (Array.isArray(row.reports)) return [];
+        const reportTags = Object.values(row.reports).map((reports) => {
+          return reports.map(report => report.tags);
+        })
+        const tags = reportTags.flat().flat();
+        return tags
+      },
+      header: undefined,
+      cell: undefined,
+      enableGlobalFilter: false,
+      filterFn: (row, columnId, filterValue) => {
+        const cellValue = row.getValue<string>(columnId);
+
+        switch (filterValue.condition) {
+          case "is":
+            return cellValue.includes(filterValue.value);
+          case "is not":
+            return !cellValue.includes(filterValue.value);
+          case "contains":
+            return filterValue.value.some((val: string) => cellValue.includes(val));
+          default:
+            return true;
+        }
+      },
+      meta: {
+        hidden: true,
+        isArray: true,
+        filterType: "dropdown",
+        allowedOptions: ["is", "is not", "contains"],
+        icon: TagIcon,
+      }
+    }
   ];
 
   if (currentUser) {

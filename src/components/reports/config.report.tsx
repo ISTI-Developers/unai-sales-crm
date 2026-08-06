@@ -56,6 +56,7 @@ function TableConfigurations<TData>({
                   "account_executives",
                   "sales_unit",
                   "status",
+                  "tags",
                 ].includes(column.id) && (
                   <DropdownMenuCheckboxItem
                     key={column.id}

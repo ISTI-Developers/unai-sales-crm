@@ -120,11 +120,11 @@ export function ReportsTable<TData, TValue>({
           )}
           ref={parentRef}
         >
-          <Table className="border-collapse t">
+          <Table className="border-collapse">
             <TableHeader className="sticky top-0 z-[3]">
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header, index) => {
+                  {headerGroup.headers.filter(header => !header.column.columnDef.meta?.hidden).map((header, index) => {
                     const columnID = header.column.id;
                     const isSticky = header.column.columnDef.meta?.isSticky;
                     return (
@@ -181,7 +181,7 @@ export function ReportsTable<TData, TValue>({
                         data-state={row.getIsSelected() && "selected"}
                         className="hover:bg-white relative"
                       >
-                        {row.getVisibleCells().map((cell, index) => {
+                        {row.getVisibleCells().filter(cell => !cell.column.columnDef.meta?.hidden).map((cell, index) => {
                           const columnID = cell.column.id;
                           const isSticky = cell.column.columnDef.meta?.isSticky;
                           return (

@@ -57,7 +57,7 @@ function ResponsiveTableFilters<TData>({ table, editingFilter, setEditingFilter 
                                     const label = column.columnDef.meta?.label ?? column.id.replace(/_/g, " ");
                                     const Icon = column.columnDef.meta?.icon;
                                     const isDisabled = table.getState().columnFilters.some(filter => filter.id === column.id);
-                                    return <CommandItem className='capitalize flex gap-2' disabled={isDisabled} onSelect={() => setOption(column.id)}>
+                                    return <CommandItem key={label} className='capitalize flex gap-2' disabled={isDisabled} onSelect={() => setOption(column.id)}>
                                         {Icon && <Icon size={14} />}
                                         {label}
                                     </CommandItem>
@@ -197,7 +197,7 @@ function FilterItem<TData>({ column, editingFilter, setOption, onOpenChange }: F
                                 </SelectTrigger>
                                 <SelectContent>
                                     {choices.map(choice => {
-                                        return <SelectItem value={choice} className='capitalize'>{choice}</SelectItem>
+                                        return <SelectItem key={choice} value={choice} className='capitalize'>{choice}</SelectItem>
                                     })}
                                 </SelectContent>
                             </Select>}
