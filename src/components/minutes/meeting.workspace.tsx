@@ -8,6 +8,7 @@ import { Button } from "../ui/button";
 import { InputGroup, InputGroupAddon, InputGroupTextarea } from "../ui/input-group";
 import { toast } from "@/hooks/use-toast";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { useAccess } from "@/hooks/useClients";
 
 interface MeetingWorkspaceProps {
     selectedWeek: WeekInfo;
@@ -15,6 +16,7 @@ interface MeetingWorkspaceProps {
 }
 function MeetingWorkspace({ selectedWeek, year }: MeetingWorkspaceProps) {
     const { data, isLoading } = useMeetings([selectedWeek.isoWeek], year);
+    const { access } = useAccess("meetings.edit")
     const [isEdit, setIsEdit] = useState(false)
     const [activity, setActivity] = useState<string>()
     const { mutate: updateActivity } = useUpdateMinute();
@@ -113,7 +115,7 @@ function MeetingWorkspace({ selectedWeek, year }: MeetingWorkspaceProps) {
                     <span className="text-sm">{`${format(selectedWeek.start, "MMM dd")} - ${format(selectedWeek.end, "MMM dd")}, ${format(selectedWeek.end, "yyyy")}`}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                    {minutes &&
+                    {access && minutes &&
                         <>
                             {
                                 isEdit ?
@@ -172,7 +174,7 @@ function MeetingWorkspace({ selectedWeek, year }: MeetingWorkspaceProps) {
             <ScrollArea className="h-[70vh] border rounded-xl">
                 <div>
                     {isLoading ? <div className="p-4 animate-pulse">Retrieving minutes...</div> :
-                        !minutes || isEdit ? <MeetingForm activity={activity} setActivity={setActivity} /> :
+                        !minutes || isEdit ? access ? <MeetingForm activity={activity} setActivity={setActivity} /> : <div className="p-4">No minutes found.</div> :
                             <MeetingContent minutes={minutes} />}
                 </div>
             </ScrollArea>

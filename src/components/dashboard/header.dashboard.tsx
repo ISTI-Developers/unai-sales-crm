@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { useOnlineUsers } from "@/hooks/useUsers";
 import { cn } from "@/lib/utils";
-import { Tooltip, TooltipTrigger } from "../ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import { useAccess } from "@/hooks/useClients";
 // import { PenLine } from "lucide-react";
 // import { Button } from "../ui/button";
 // { onToggleEdit }: { onToggleEdit: (toggle: boolean) => void }
@@ -32,6 +33,7 @@ function DateAndTime() {
 
 function OnlineBadge() {
   const { data, isLoading } = useOnlineUsers();
+  const { access } = useAccess("dashboard.edit")
 
   const status = useMemo(() => {
     if (!data) {
@@ -68,15 +70,17 @@ function OnlineBadge() {
           <p className={status[2]}>{status[3]}</p>
         </div>
       </TooltipTrigger>
-      {/* <TooltipContent side="bottom">
-        <div>
-          {data?.map((user) => {
-            return (
-              <p key={user.ID}>{`${user.first_name} ${user.last_name}`}</p>
-            );
-          })}
-        </div>
-      </TooltipContent> */}
+      {access &&
+        <TooltipContent side="bottom">
+          <div>
+            {data?.map((user) => {
+              return (
+                <p key={user.ID}>{`${user.first_name} ${user.last_name}`}</p>
+              );
+            })}
+          </div>
+        </TooltipContent>
+       }
     </Tooltip>
   );
 }
