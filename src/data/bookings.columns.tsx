@@ -6,7 +6,7 @@ import { SiteAvailability } from "@/interfaces/sites.interface";
 import { getLatestBooking } from "@/lib/fetch";
 import { formatAmount } from "@/lib/format";
 import { ColumnDef } from "@tanstack/react-table";
-import { BookOpen, BriefcaseBusiness, Building, Calendar, Calendar1, Monitor, PhilippinePeso, Quote, User2 } from "lucide-react";
+import { BookOpen, BriefcaseBusiness, Building, Calendar, Calendar1, MapPin, Monitor, PhilippinePeso, Quote, User2 } from "lucide-react";
 
 export const columns: ColumnDef<SiteAvailability>[] = [
     {
@@ -60,6 +60,32 @@ export const columns: ColumnDef<SiteAvailability>[] = [
                     return true;
             }
         },
+    },
+    {
+        id: "area",
+        accessorFn: (row) => row.city,
+        header: undefined,
+        cell: undefined,
+        filterFn: (row, columnId, filterValue) => {
+            const cellValue = row.getValue<string>(columnId);
+
+            switch (filterValue.condition) {
+                case "is":
+                    return cellValue === filterValue.value;
+                case "is not":
+                    return cellValue !== filterValue.value;
+                case "contains":
+                    return filterValue.value.includes(cellValue);
+                default:
+                    return true;
+            }
+        },
+        meta: {
+            hidden: true,
+            filterType: "dropdown",
+            allowedOptions: ["is", "is not", "contains"],
+            icon: MapPin
+        }
     },
     {
         id: "availability",
