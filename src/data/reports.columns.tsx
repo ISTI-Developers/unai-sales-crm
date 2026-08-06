@@ -43,7 +43,7 @@ const renderAE = () => {
         </AvatarGroup>
       </div>
     },
-    size: 60,
+    size: 80,
     enableGlobalFilter: false,
     filterFn: (row, columnId, filterValue) => {
       const cellValue = row.getValue<string>(columnId);
@@ -84,7 +84,7 @@ const renderSU = () => {
         })}
       </div>
     },
-    size: 45,
+    size: 60,
     enableGlobalFilter: false,
     filterFn: (row, columnId, filterValue) => {
       const cellValue = row.getValue<string>(columnId);
@@ -121,7 +121,7 @@ export const useWeekColumns = () => {
       cell: ({ row }) => {
         return <ClientReport data={row.original} />
       },
-      size: 100,
+      size: 200,
       enableColumnFilter: false,
       meta: {
         isSticky: true,
@@ -137,7 +137,7 @@ export const useWeekColumns = () => {
           <Status status={status} className="rounded-full text-[0.6rem] h-5 px-1.5 w-fit" />
         );
       },
-      size: 45,
+      size: 60,
       enableGlobalFilter: false,
       filterFn: (row, columnId, filterValue) => {
         const cellValue = row.getValue<string>(columnId);

@@ -14,11 +14,20 @@ import { VisibilityState } from "@tanstack/react-table";
 import { useReportsByWeek } from "@/hooks/useReports";
 import { generateWeeks } from "@/lib/utils";
 
+interface SheetData {
+  client: ReportTable;
+  columnID: string;
+  reports: Activity[] | string
+}
 interface Reports {
   reports: ReportTable[];
   isPending: boolean;
   filters: Conditions[];
   selectedWeeks: number[];
+  sheetOpen: boolean;
+  sheetData?: SheetData;
+  setSheetOpen: Dispatch<SetStateAction<boolean>>;
+  openReportSheet: (data: SheetData) => void;
   setFilters: Dispatch<SetStateAction<Conditions[]>>;
   visibleWeeks: VisibilityState;
   setVisibleWeeks: Dispatch<SetStateAction<VisibilityState>>;
@@ -90,6 +99,19 @@ export function ReportProvider({ children }: ProviderProps) {
 
   const [filters, setFilters] = useState<Conditions[]>([]);
   const { data, isPending } = useReportsByWeek(selectedWeeks);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [sheetData, setSheetData] = useState<SheetData>();
+
+  const openReportSheet = (data: typeof sheetData) => {
+    if (!data) return;
+
+    setSheetData(data);
+
+    // Only open if closed
+    if (!sheetOpen) {
+      setSheetOpen(true);
+    }
+  };
 
   useEffect(() => {
     localStorage.setItem("visibleWeeks", JSON.stringify(visibleWeeks));
@@ -139,30 +161,6 @@ export function ReportProvider({ children }: ProviderProps) {
     return processedClients;
   }, [data, isPending, weeks]);
 
-  // const filteredReports = useMemo(() => {
-  //   if (filters.length === 0) return reports;
-  //   const weekFilters = filters.filter(
-  //     (filter) => /Wk/.test(filter.column) && filter.condition.length !== 0
-  //   );
-  //   if (weekFilters.length === 0) return reports;
-
-  //   return reports.filter((report) => {
-  //     return weekFilters.every((filter) => {
-  //       const value = report[filter.column];
-  //       const condition = filter.condition;
-
-  //       if (condition === "is empty") {
-  //         return value === null || value === undefined || value === "";
-  //       }
-
-  //       if (condition === "is not empty") {
-  //         return value !== null && value !== undefined && value !== "";
-  //       }
-
-  //       return true; // fallback
-  //     });
-  //   });
-  // }, [reports, filters]);
 
   const value = {
     reports,
@@ -170,6 +168,10 @@ export function ReportProvider({ children }: ProviderProps) {
     filters,
     visibleWeeks,
     selectedWeeks,
+    sheetOpen,
+    sheetData,
+    openReportSheet,
+    setSheetOpen,
     setFilters,
     setVisibleWeeks,
   };

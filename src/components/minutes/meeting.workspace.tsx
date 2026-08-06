@@ -100,6 +100,7 @@ function MeetingWorkspace({ selectedWeek, year }: MeetingWorkspaceProps) {
 
     useEffect(() => {
         setActivity(undefined);
+        setIsEdit(false);
     }, [selectedWeek, year])
 
     return (

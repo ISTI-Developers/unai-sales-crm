@@ -120,7 +120,7 @@ export function ReportsTable<TData, TValue>({
           )}
           ref={parentRef}
         >
-          <Table className="border-collapse">
+          <Table className="border-collapse t">
             <TableHeader className="sticky top-0 z-[3]">
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
