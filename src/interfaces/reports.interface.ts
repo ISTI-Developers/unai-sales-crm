@@ -74,6 +74,7 @@ export interface WeeklyReportSummary {
   code: string;
   image: string;
   sales_unit: string;
+  tags: string[];
   client: string;
   report: string;
   status: string;

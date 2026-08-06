@@ -8,7 +8,7 @@ import { format } from 'date-fns';
 
 const Lists = () => {
     const { user } = useAuth();
-    const weeks = useMemo(() => generateWeeks(), []);
+    const weeks = useMemo(generateWeeks, []);
     const week = weeks.find(week => week.isCurrent)!;
     const header = `Wk ${week.isoWeek}`;
 
