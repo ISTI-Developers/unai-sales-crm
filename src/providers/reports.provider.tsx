@@ -17,7 +17,6 @@ import { generateWeeks } from "@/lib/utils";
 interface SheetData {
   client: ReportTable;
   columnID: string;
-  reports: Activity[] | string
 }
 interface Reports {
   reports: ReportTable[];

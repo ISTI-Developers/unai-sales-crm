@@ -8,7 +8,7 @@ import ReportForm from "./form.report"
 import { useReports } from "@/providers/reports.provider"
 import { useMemo, useState } from "react"
 import { Activity } from "@/interfaces/reports.interface"
-import { useDeleteReport } from "@/hooks/useReports"
+import { useDeleteReport, useClientReportsByWeek } from "@/hooks/useReports"
 import { toast } from "@/hooks/use-toast"
 import { useQueryClient } from "@tanstack/react-query"
 import { useAuth } from "@/providers/auth.provider"
@@ -20,15 +20,15 @@ function ReportSheet() {
     const { selectedWeeks, sheetData, sheetOpen, setSheetOpen } = useReports();
     const { mutate: deleteReport } = useDeleteReport()
     const weekInfo = generateWeeks().find(item => item.yearweek === Number(sheetData?.columnID))!;
+    const { data } = useClientReportsByWeek(weekInfo?.isoWeek, sheetData?.client.ID)
     const [selectedReport, setSelectedReport] = useState<Activity | undefined>()
 
     const processedReports = useMemo(() => {
-        if (!sheetData) return undefined;
-        if (typeof sheetData.reports === "string") return undefined;
-        return [...sheetData.reports].sort((a, b) => {
+        if (!data) return [];
+        return data.sort((a, b) => {
             return new Date(b.date_modified).getTime() - new Date(a.date_modified).getTime();
         })
-    }, [sheetData])
+    }, [data])
     const handleDeleteReport = (ID: number) => {
 
         deleteReport({ ID: ID }, {
