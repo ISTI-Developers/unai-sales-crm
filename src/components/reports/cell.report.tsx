@@ -109,7 +109,6 @@ function ReportCell({ column, row }: CellContext<ReportTable, unknown>) {
                                         openReportSheet({
                                             client: client,
                                             columnID: column.id,
-                                            reports: reports
                                         })
                                     }} title="View All" size="icon" className='absolute -right-6 top-0 shrink-0 size-5 bg-emerald-400 text-white rounded-full flex items-center justify-center text-[0.65rem] leading-tight'>
                                         <p className='pointer-events-none'>{processedReports.length}</p>

@@ -30,6 +30,7 @@ export interface Activity {
   ID: number;
   activity: string;
   tags?: ReportTags[];
+  user_id: number;
   sales_unit_id: number;
   client_id: number;
   date_submitted: Date;
@@ -114,6 +115,6 @@ export const reportTags = [
   "FOLLOW UP",
   "UPDATE",
   "PROPOSAL",
-  "INITIAL TRANSACTION"
+  "INITIAL TRANSACTION",
 ] as const;
 export type ReportTags = (typeof reportTags)[number];

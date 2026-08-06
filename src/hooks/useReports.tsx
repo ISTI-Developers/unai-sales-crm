@@ -76,6 +76,28 @@ export const useReportsByWeek = (weeks: number[]) => {
     enabled: !!user,
   });
 };
+export const useClientReportsByWeek = (week?: number, client_id?: number) => {
+  const { user } = useAuth();
+  const { setProgress } = useAuth();
+
+  return useQuery({
+    queryKey: ["reports", new Date().getFullYear(), user?.ID, [week], client_id],
+    queryFn: async () => {
+      const response = await spAPI.get<Activity[]>("/reports", {
+        params: {
+          year: new Date().getFullYear(),
+          week: JSON.stringify([week]),
+          user: user?.ID,
+          client_id: client_id
+        },
+        onDownloadProgress: setProgress,
+      });
+      return response.data;
+    },
+    staleTime: 1000 * 60 * 10,
+    enabled: !!user && !!week && !!client_id,
+  });
+};
 
 export const useInsertReport = () => {
   const queryClient = useQueryClient();
