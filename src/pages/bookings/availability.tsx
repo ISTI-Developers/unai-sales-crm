@@ -1,4 +1,3 @@
-import { DataTable } from '@/data/data-table';
 import { columns } from "@/data/bookings.columns";
 import { useBookings } from "@/hooks/useBookings";
 import { useOverridenSiteEndDates, useSiteRentals, useSites } from '@/hooks/useSites';
@@ -8,12 +7,13 @@ import { useAccess } from '@/hooks/useClients';
 import { getEndDate, getLatestBooking } from '@/lib/fetch';
 import { differenceInDays } from 'date-fns';
 import { splitClientName } from '@/lib/format';
+import ResponsiveTable from '@/data/responsive-table';
 const SiteAvailability = () => {
     const { data: sites } = useSites();
     const { data: bookings, isLoading } = useBookings();
     const { data: adjustments } = useOverridenSiteEndDates();
     const { data: rentals } = useSiteRentals();
-    const { access: edit } = useAccess("booking.update");          
+    const { access: edit } = useAccess("booking.update");
 
     const availableSites: SiteAvailabilityType[] = useMemo(() => {
         if (!sites || !bookings || !adjustments || isLoading || !rentals) return [];
@@ -47,7 +47,7 @@ const SiteAvailability = () => {
         return contracts;
     }, [sites, bookings, adjustments, isLoading, rentals]);
     return (
-        <DataTable columns={columns.filter(column => {
+        <ResponsiveTable columns={columns.filter(column => {
             if (!edit) return column.id !== "action";
             return column;
         })} data={availableSites} size={100} />
