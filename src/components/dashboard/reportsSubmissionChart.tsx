@@ -19,6 +19,7 @@ import {
 } from "../ui/select";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { Skeleton } from "../ui/skeleton";
+import { reportsSummaryConfig } from "@/lib/utils";
 
 const ReportsSubmissionChart = () => {
   const { user } = useAuth();
@@ -26,7 +27,6 @@ const ReportsSubmissionChart = () => {
     reportSummaryByMonth: data,
     show,
     setShow,
-    reportsSummaryConfig,
     isLoading,
   } = useReportSummary();
 

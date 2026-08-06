@@ -1,85 +1,61 @@
-
-import useReportSummary from "@/data/reportSummary.data";
-import { addHours, format, isToday } from "date-fns";
+import { format, isToday } from "date-fns";
 import { Skeleton } from "../ui/skeleton";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import { useCurrentWeekReport } from "@/hooks/useDashboard";
+import { ScrollArea } from "../ui/scroll-area";
+import UserAvatar from "../ui/user-avatar";
+import { Badge } from "../ui/badge";
 
 const WeeklyReportsCard = () => {
-  const { thisWeeksReports, reportsSummaryConfig, isWeeklyReportLoading } =
-    useReportSummary();
+  const { data: thisWeeksReports, isLoading: isWeeklyReportLoading } =
+    useCurrentWeekReport();
   return (
     <>
-      <div className="flex flex-col gap-6 pt-2 max-h-[300px] overflow-y-auto">
-        {isWeeklyReportLoading ? (
-          <>{Array(10).fill(0).map(() => {
-            return <Skeleton className="w-full h-32" />
-          })}</>
-        ) : (
-          <>
-            {thisWeeksReports.length > 0 ? thisWeeksReports.map((report) => {
-              const dateSubmitted = addHours(new Date(report.date), Number(import.meta.env.VITE_TIME_ADJUST) + 7);
-              // console.log(dateSubmitted)
-              let timestamp = format(dateSubmitted, "MM/dd");
-              if (isToday(dateSubmitted)) {
-                timestamp = format(dateSubmitted, "p");
-              }
-              const color = report.sales_unit ?
-                reportsSummaryConfig[
-                  report.sales_unit
-                    .split(" ")
-                    .join("_") as keyof typeof reportsSummaryConfig
-                ]?.color : "#d22735";
-              return (
-                <div
-                  key={report.report_id}
-                  className="relative grid grid-cols-[auto,1fr] items-start gap-x-4"
-                >
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Avatar className="border-2 row-[1/3]"
-                        style={{
-                          borderColor: color,
-                          backgroundColor: `${color}30`,
-                          color: color,
-                        }}>
-                        <AvatarImage src={`${import.meta.env.VITE_SERVER}images/${report.image}`} className="object-cover object-top" />
-                        <AvatarFallback className="text-xs font-semibold">{report.code}</AvatarFallback>
-                      </Avatar>
-                    </TooltipTrigger>
-                    <TooltipContent className="capitalize">
-                      {report.ae}
-                    </TooltipContent>
-                  </Tooltip>
-                  {/* <p
-                    className="border rounded-full text-xs tracking-tighter uppercase w-12 h-12 flex items-center justify-center text-center row-[1/3] font-semibold"
-                    style={{
-                      borderColor: color,
-                      backgroundColor: `${color}30`,
-                      color: color,
-                    }}
+      <ScrollArea className="h-[300px]">
+
+        <div className="flex flex-col gap-6 pt-2">
+          {isWeeklyReportLoading ? (
+            <>{Array(10).fill(0).map(() => {
+              return <Skeleton className="w-full h-32" />
+            })}</>
+          ) : (
+            <>
+              {thisWeeksReports ? thisWeeksReports.map((report) => {
+                const dateSubmitted = new Date(report.date);
+                let timestamp = format(dateSubmitted, "MM/dd");
+                if (isToday(dateSubmitted)) {
+                  timestamp = format(dateSubmitted, "p");
+                }
+                return (
+                  <div
+                    key={report.report_id}
+                    className="relative grid grid-cols-[auto,1fr] items-start gap-x-4"
                   >
-                    {report.ae}
-                  </p> */}
-                  <p className="font-semibold uppercase text-sm">
-                    {report.client.substring(0, 30)}
-                    {report.client.length > 30 && "..."}
-                  </p>
-
-                  <p className="col-[2/3] text-xs">
-                    {report.report.substring(0, 60)}
-                    {report.report.length > 60 && "..."}
-                  </p>
-
-                  <p className="absolute top-0 right-0 text-xs text-slate-400/50">
-                    {timestamp}
-                  </p>
-                </div>
-              );
-            }) : <p className="text-center text-zinc-600">No activities found.</p>}
-          </>
-        )}
-      </div>
+                    <UserAvatar fallback={report.code} image={report.image} tooltip={report.ae} sales_unit={report.sales_unit} />
+                    <div className="grid gap-1">
+                      <p className="font-semibold uppercase text-sm max-w-sm line-clamp-1">
+                        {report.client}
+                      </p>
+                      <p className="text-xs max-w-md line-clamp-2">
+                        {report.report}
+                      </p>
+                      {report.tags.length > 0 &&
+                        <div className="flex items-center gap-1 pt-1">
+                          {report.tags.map(tag => <Badge key={`${report.report_id}_${tag}`} className="bg-main-100 rounded-full capitalize text-[0.65rem]">{tag.toLowerCase()}</Badge>)}
+                        </div>
+                      }
+                    </div>
+                    <div className="absolute top-0 right-0 h-full flex gap-4 items-start">
+                      <p className="text-xs text-slate-400/50">
+                        {timestamp}
+                      </p>
+                    </div>
+                  </div>
+                );
+              }) : <p className="text-center text-zinc-600">No activities found.</p>}
+            </>
+          )}
+        </div>
+      </ScrollArea>
     </>
   );
 };

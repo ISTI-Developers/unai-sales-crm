@@ -7,6 +7,7 @@ import useReportSummary from "@/data/reportSummary.data";
 import { useMemo } from "react";
 import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { reportsSummaryConfig } from "@/lib/utils";
 const DashboardChart = ({ widget }: { widget: ChartWidget }) => {
     const config = widget.chartOptions.chartConfig satisfies ChartConfig;
     const data = useData(widget.module, widget.chartOptions.field, config, widget.chartOptions.data);
@@ -99,7 +100,6 @@ const AreaContainer = () => {
         reportSummaryByMonth: data,
         show,
         setShow,
-        reportsSummaryConfig,
     } = useReportSummary();
 
     const isAdmin = useMemo(() => {
