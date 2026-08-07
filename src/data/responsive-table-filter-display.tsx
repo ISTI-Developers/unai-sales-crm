@@ -30,7 +30,7 @@ function ResponsiveTableFilterDisplay<TData>({ columnFilters, setColumnFilters, 
                         setColumnFilters(prev => {
                             return prev.filter(filter => filter.id !== columnFilter.id);
                         })
-                    }} key={columnFilter.id} className='flex items-center gap-0.5 border text-xs leading-tight p-1 px-2 rounded-md bg-blue-50 border-blue-200 text-blue-600'>
+                    }} key={columnFilter.id} className='flex items-center gap-0.5 border text-xs leading-tight p-1 h-7 px-2 rounded-md bg-blue-50 border-blue-200 text-blue-600'>
                     <div className='flex gap-1 items-center'>
                         {column?.meta?.icon && <column.meta.icon size={12} />}
                         <p className='capitalize font-semibold leading-tight'>{label}</p>
