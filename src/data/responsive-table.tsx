@@ -17,9 +17,10 @@ interface ResponsiveTableProps<TData, TValue> {
     getSubRows?: (row: TData) => TData[] | undefined;
     getRowClassName?: (row: TData) => string;
     globalFilterFn?: FilterFn<TData>;
+    toolbarOrientation?: "vertical" | "horizontal"
 }
 
-function ResponsiveTable<TData, TValue>({ data, columns, children, size = 10, getSubRows, getRowClassName, globalFilterFn }: ResponsiveTableProps<TData, TValue>) {
+function ResponsiveTable<TData, TValue>({ data, columns, children, size = 10, getSubRows, getRowClassName, globalFilterFn, toolbarOrientation = "vertical" }: ResponsiveTableProps<TData, TValue>) {
     const location = useLocation();
     const [sorting, setSorting] = useState<SortingState>([]);
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -72,9 +73,9 @@ function ResponsiveTable<TData, TValue>({ data, columns, children, size = 10, ge
     return (
         <div className='flex flex-col gap-2 max-h-[calc(100vh-9rem)]'>
             <header className='flex items-start justify-between gap-2'>
-                <div className='space-y-2'>
+                <div className={cn("flex gap-2", toolbarOrientation === "vertical" ? "flex-col" : "flex-row")}>
                     <Search setValue={setGlobalFilter} className='max-w-[250px]' />
-                    <div className='flex gap-1 flex-wrap items-center'>
+                    <div className='flex gap-2 whitespace-nowrap items-center'>
                         <ResponsiveTableFilterDisplay columnFilters={columnFilters} setEditingFilter={setEditingFilter} setColumnFilters={setColumnFilters} table={table} />
                         <ResponsiveTableFilters table={table} editingFilter={isEditingFilter} setEditingFilter={setEditingFilter} />
                     </div>
@@ -125,9 +126,7 @@ function ResponsiveTable<TData, TValue>({ data, columns, children, size = 10, ge
                             }}>
                                 {row.getVisibleCells().filter(cell => !cell.column.columnDef.meta?.hidden).map((cell) => {
                                     const columnDef = cell.column.columnDef;
-                                    return <TableCell
-                                        key={cell.id}
-                                        className={cn(columnDef.meta?.isCentered ? "flex items-center justify-center" : "")}>
+                                    return <TableCell key={cell.id} valign="top" align={columnDef.meta?.isCentered ? "center" : undefined}>
                                         {columnDef.cell && flexRender(
                                             columnDef.cell,
                                             cell.getContext()

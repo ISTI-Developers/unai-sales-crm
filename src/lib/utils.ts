@@ -17,6 +17,7 @@ import {
   differenceInCalendarWeeks,
   startOfMonth,
 } from "date-fns";
+import { useMemo } from "react";
 import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
@@ -562,3 +563,32 @@ export const reportsSummaryConfig = {
     color: "#f19283",
   },
 } satisfies ChartConfig;
+
+export const useWeeks = (year: number = new Date().getFullYear()) => {
+  const weeks = useMemo(() => generateWeeks(year), [year]);
+
+  const map = (key?: keyof WeekInfo) => {
+    return new Map(
+      weeks.map((week) => {
+        return [[key ? key : week.yearweek], [week]];
+      }),
+    );
+  };
+  const get = (yearweek: number) => {
+    const week = weeks.find((week) => week.yearweek === yearweek);
+    if (!week) {
+      throw new Error("No current week found");
+    }
+    return week;
+  };
+
+  const current = () => {
+    const currentWeek = weeks.find((week) => week.isCurrent);
+    if (!currentWeek) {
+      throw new Error("No current week found");
+    }
+    return currentWeek;
+  };
+
+  return { weeks, map, current, get };
+};

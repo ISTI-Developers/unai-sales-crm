@@ -7,10 +7,11 @@ interface UserAvatarProps {
     image: string | null;
     fallback: string;
     sales_unit?: string
-    className?: string
+    className?: string;
+    fallbackClassName?: string
 }
 
-function UserAvatar({ tooltip, image, fallback, sales_unit, className }: UserAvatarProps) {
+function UserAvatar({ tooltip, image, fallback, sales_unit, className, fallbackClassName }: UserAvatarProps) {
     const color = sales_unit ?
         reportsSummaryConfig[
             sales_unit
@@ -27,7 +28,7 @@ function UserAvatar({ tooltip, image, fallback, sales_unit, className }: UserAva
                         color: color,
                     }}>
                     <AvatarImage src={`${import.meta.env.VITE_SERVER}images/${image}`} className="object-cover object-top" />
-                    <AvatarFallback className="text-xs uppercase font-semibold bg-inherit">
+                    <AvatarFallback className={cn("text-xs uppercase font-semibold bg-inherit", fallbackClassName)}>
                         {fallback}
                     </AvatarFallback>
                 </Avatar>

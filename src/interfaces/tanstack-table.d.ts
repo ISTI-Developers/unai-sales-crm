@@ -3,7 +3,13 @@ import { RowData } from "@tanstack/react-table";
 import { LucideProps } from "lucide-react";
 import { ForwardRefExoticComponent, RefAttributes } from "react";
 
-export type FilterOption = "is" | "is not" | "contains" | "between" | "is empty" | "is not empty";
+export type FilterOption =
+  | "is"
+  | "is not"
+  | "contains"
+  | "between"
+  | "is empty"
+  | "is not empty";
 export type Filter = {
   columnId: string;
   condition: FilterOption;
@@ -23,5 +29,6 @@ declare module "@tanstack/react-table" {
     filterLabel?: string;
     isSticky?: boolean;
     label?: string;
+    valign?: "top" | "middle" | "bottom";
   }
 }
