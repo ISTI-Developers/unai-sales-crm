@@ -17,7 +17,7 @@
     --sidebar-foreground: 240 5.3% 100%;
     --sidebar-primary: 240 5.9% 10%;
     --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent:365 71% 35%;
+    --sidebar-accent: 365 71% 35%;
     --sidebar-accent-foreground: 240 5.9% 100%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
@@ -36,6 +36,12 @@
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
+  em {
+    @apply italic;
+  }
+  .ProseMirror a {
+    @apply text-main-100 underline cursor-pointer;
+  }
 }
 
 @layer components {
@@ -45,4 +51,19 @@
   .mainArea.collapsed {
     @apply lg:w-[calc(100%-5rem)] lg:left-[5rem];
   }
+}
+.ProseMirror {
+  outline: none;
+}
+
+.ProseMirror:focus {
+  outline: none;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: #9ca3af;
+  pointer-events: none;
+  float: left;
+  height: 0;
 }

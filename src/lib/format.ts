@@ -8,6 +8,7 @@ import {
   isSameYear,
   parse,
 } from "date-fns";
+import { Content } from "@tiptap/react";
 export function formatAmount(
   amount: string | number,
   options?: Intl.NumberFormatOptions,
@@ -270,4 +271,32 @@ export function splitClientName(input: string): ClientParts {
   const client = input.replace(match[0], "").trim();
 
   return { client, product };
+}
+/**
+ *
+ * @param value string content to be parsed for Tiptap
+ * @returns Tiptap accepted format
+ */
+export function safeParseTiptap(value: string): Content {
+  try {
+    // Already TipTap JSON
+    return JSON.parse(value);
+  } catch {
+    // Old plain-text value from textarea
+    return {
+      type: "doc",
+      content: value
+        .split(/\\n{2,}/) // split by blank lines into paragraphs
+        .filter(Boolean)
+        .map((paragraph) => ({
+          type: "paragraph",
+          content: [
+            {
+              type: "text",
+              text: paragraph,
+            },
+          ],
+        })),
+    };
+  }
 }

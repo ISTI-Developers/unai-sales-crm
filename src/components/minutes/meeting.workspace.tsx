@@ -5,10 +5,11 @@ import { format } from "date-fns";
 import { useEffect, useMemo, useState } from "react";
 import { RawMinutes } from "@/interfaces/meeting.interface";
 import { Button } from "../ui/button";
-import { InputGroup, InputGroupAddon, InputGroupTextarea } from "../ui/input-group";
 import { toast } from "@/hooks/use-toast";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { useAccess } from "@/hooks/useClients";
+import RichTextEditor from "../rich-text-editor";
+import RichTextViewer from "../rich-text-viewer";
 
 interface MeetingWorkspaceProps {
     selectedWeek: WeekInfo;
@@ -163,7 +164,7 @@ function MeetingWorkspace({ selectedWeek, year }: MeetingWorkspaceProps) {
                     {!minutes && activity && activity.length > 0 && <>
                         < Button onClick={() => {
                             setIsEdit(false);
-                            setActivity("");
+                            setActivity(undefined);
                         }} size="sm" className="px-4 rounded-2xl" variant="ghost">Clear</Button>
                         <Button onClick={onSubmit} size="sm" className="px-4 rounded-2xl bg-emerald-100/70 hover:bg-emerald-100 text-emerald-600 hover:text-emerald-600 border-emerald-600" variant="outline">Save</Button>
                     </>}
@@ -186,21 +187,22 @@ interface MeetingContentProps {
     minutes: RawMinutes;
 }
 const MeetingContent = ({ minutes }: MeetingContentProps) => {
-    return <div className="whitespace-break-spaces p-2 pb-8">
-        {minutes.activity}
-    </div>
+    return <RichTextViewer content={minutes.activity} />
 }
 interface MeetingFormProps {
     activity?: string;
     setActivity: (activity: string) => void;
 }
 const MeetingForm = ({ activity, setActivity }: MeetingFormProps) => {
-    return <InputGroup className=" !h-[69vh]">
-        <InputGroupAddon align="block-start" className="bg-zinc-50">
-            Toolbar coming soon 😉
-        </InputGroupAddon>
-        <InputGroupTextarea value={activity} placeholder="Enter your minutes here..." onChange={(e) => setActivity(e.target.value)} className="h-full outline-none focus:outline-none focus:ring-0 focus-visible:outline-none resize-none scrollbar-none" />
-    </InputGroup>
+    return <>
+        <RichTextEditor value={activity} onChange={setActivity} />
+    </>
+    // return <InputGroup className=" !h-[69vh]">
+    //     <InputGroupAddon align="block-start" className="bg-zinc-50">
+    //         Toolbar coming soon 😉
+    //     </InputGroupAddon>
+    //     <InputGroupTextarea value={activity} placeholder="Enter your minutes here..." onChange={(e) => setActivity(e.target.value)} className="h-full outline-none focus:outline-none focus:ring-0 focus-visible:outline-none resize-none scrollbar-none" />
+    // </InputGroup>
 }
 
 export default MeetingWorkspace
