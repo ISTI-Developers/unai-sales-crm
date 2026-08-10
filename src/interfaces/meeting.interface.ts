@@ -2,6 +2,8 @@ export interface BaseMinutes {
   ID: number;
   activity: string;
   week: number;
+  name?: string;
+  image?: string;
 }
 
 export interface RawMinutes extends BaseMinutes {

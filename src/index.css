@@ -67,3 +67,50 @@
   float: left;
   height: 0;
 }
+.ProseMirror table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.ProseMirror th,
+.ProseMirror td {
+  border-right: 1px solid #d1d5db;
+  border-bottom: 1px solid #d1d5db;
+  padding: 8px 12px;
+  position: relative;
+}
+
+.ProseMirror th {
+  background-color: #f3f4f6;
+  font-weight: 600;
+  text-align: left;
+}
+
+/* Remove duplicate right border */
+.ProseMirror th:last-child,
+.ProseMirror td:last-child {
+  border-right: none;
+}
+
+/* Remove duplicate bottom border */
+.ProseMirror tr:last-child th,
+.ProseMirror tr:last-child td {
+  border-bottom: none;
+}
+.ProseMirror .column-resize-handle {
+  background-color: #a9b6cb;
+  bottom: 0;
+  pointer-events: none;
+  position: absolute;
+  right: -2px;
+  top: 0;
+  width: 4px;
+}
+
+.ProseMirror.resize-cursor {
+  cursor: col-resize;
+}

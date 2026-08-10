@@ -1,40 +1,34 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
-import { EditorContent, useEditor } from "@tiptap/react";
+import { EditorContent, useEditor, } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import UnderlineExtension from "@tiptap/extension-underline";
 import Placeholder from "@tiptap/extension-placeholder";
 import Link from "@tiptap/extension-link";
+import { Table, TableCell, TableRow, TableHeader } from "@tiptap/extension-table"
+import { Heading } from "@tiptap/extension-heading"
 import {
-    Bold,
-    Italic,
-    Underline,
-    Heading1,
-    Heading2,
-    Type,
-    List,
-    ListOrdered,
-    LinkIcon,
-    Unlink,
     File,
     XCircle,
-    TextIcon,
+    CopyIcon,
+    Grid2X2XIcon,
+    BetweenHorizonalStart,
+    BetweenHorizonalEnd,
+    BetweenVerticalEnd,
+    BetweenVerticalStart,
+    XIcon,
 } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AnimatePresence, motion } from "framer-motion";
-import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "./ui/input-group";
 import { safeParseTiptap } from "@/lib/format";
+import { ContextMenu, ContextMenuContent, ContextMenuGroup, ContextMenuItem, ContextMenuSub, ContextMenuSubContent, ContextMenuSubTrigger, ContextMenuTrigger } from "./ui/context-menu";
+import RichTextToolbar from "./rich-text-toolbar";
+import RichTextBubble from "./rich-text-bubble";
 
 export default function RichTextEditor({ value, onChange }: { value?: string; onChange: (content: string) => void }) {
     const [attachments, setAttachments] = useState<File[]>([]);
-    const attachmentInputRef = useRef<HTMLInputElement>(null);
-    const [label, setLabel] = useState("");
-    const [url, setUrl] = useState("");
-    const [openPopover, setOpenPopover] = useState(false)
+    // const attachmentInputRef = useRef<HTMLInputElement>(null);
     const editor = useEditor({
         extensions: [
             StarterKit,
@@ -42,6 +36,15 @@ export default function RichTextEditor({ value, onChange }: { value?: string; on
             Link.configure({
                 openOnClick: false,
                 autolink: true,
+            }),
+            Table.configure({
+                resizable: true
+            }),
+            TableRow,
+            TableHeader,
+            TableCell,
+            Heading.configure({
+                levels: [1, 2, 3, 4]
             }),
             Placeholder.configure({
                 placeholder: "Start writing..."
@@ -77,220 +80,97 @@ export default function RichTextEditor({ value, onChange }: { value?: string; on
         }
     }, [editor, value]);
 
-    const openLinkPopover = () => {
-        const { from, to } = editor.state.selection;
-        const selectedText = editor.state.doc.textBetween(from, to, " ");
-        setLabel(selectedText); // empty if nothing selected 
-        setUrl(editor.getAttributes("link").href ?? "");
-        setOpenPopover(true)
-    };
-
-
     return (
         <div className="relative w-full">
-            <div className="sticky top-0 z-10 flex gap-4 bg-zinc-50 p-2">
-                <ButtonGroup>
-                    <ToggleButton
-                        isActive={editor.isActive("bold")}
-                        onClick={() =>
-                            editor.chain().focus().toggleBold().run()
-                        }
-                    >
-                        <Bold strokeWidth={3} className="!size-3.5" />
-                    </ToggleButton>
-
-                    <ToggleButton
-                        isActive={editor.isActive("italic")}
-                        onClick={() =>
-                            editor.chain().focus().toggleItalic().run()
-                        }
-                    >
-                        <Italic className="!size-3.5" />
-                    </ToggleButton>
-
-                    <ToggleButton
-                        isActive={editor.isActive("underline")}
-                        onClick={() =>
-                            editor.chain().focus().toggleUnderline().run()
-                        }
-                    >
-                        <Underline className="!size-3.5" />
-                    </ToggleButton>
-                </ButtonGroup>
-                <ButtonGroup>
-                    <ToggleButton
-                        isActive={editor.isActive("bulletList")}
-                        onClick={() =>
-                            editor.chain().focus().toggleBulletList().run()
-                        }
-                    >
-                        <List className="!size-3.5" />
-                    </ToggleButton>
-
-                    <ToggleButton
-                        isActive={editor.isActive("orderedList")}
-                        onClick={() =>
-                            editor.chain().focus().toggleOrderedList().run()
-                        }
-                    >
-                        <ListOrdered className="!size-3.5" />
-                    </ToggleButton>
-                </ButtonGroup>
-                <ButtonGroup>
-                    <ToggleButton
-                        isActive={editor.isActive("heading", { level: 1 })}
-                        onClick={() =>
-                            editor
-                                .chain()
-                                .focus()
-                                .toggleHeading({ level: 1 })
-                                .run()
-                        }
-                    >
-                        <Heading1 className="!size-3.5" />
-                    </ToggleButton>
-
-                    <ToggleButton
-                        isActive={editor.isActive("heading", { level: 2 })}
-                        onClick={() =>
-                            editor
-                                .chain()
-                                .focus()
-                                .toggleHeading({ level: 2 })
-                                .run()
-                        }
-                    >
-                        <Heading2 className="!size-3.5" />
-                    </ToggleButton>
-
-                    <ToggleButton
-                        isActive={editor.isActive("paragraph")}
-                        onClick={() =>
-                            editor.chain().focus().setParagraph().run()
-                        }
-                    >
-                        <Type className="!size-3.5" />
-                    </ToggleButton>
-                </ButtonGroup>
-
-                <ButtonGroup>
-                    <Popover open={openPopover} onOpenChange={setOpenPopover}>
-                        <PopoverTrigger>
-                            <ToggleButton
-                                onClick={openLinkPopover}
-                                isActive={editor.isActive("link")}
-                            >
-                                <LinkIcon className="!size-3.5" />
-                            </ToggleButton>
-                        </PopoverTrigger>
-                        <PopoverContent className="p-2 flex flex-col gap-2">
-                            <InputGroup className="h-7">
-                                <InputGroupAddon className="pl-2">
-                                    <TextIcon />
-                                </InputGroupAddon>
-                                <InputGroupInput value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Enter label here" className="text-xs" />
-                            </InputGroup>
-                            <InputGroup className="h-7">
-                                <InputGroupAddon className="pl-2">
-                                    <LinkIcon />
-                                </InputGroupAddon>
-                                <InputGroupInput value={url} type="url" onChange={(e) => setUrl(e.target.value)} placeholder="Enter link here" className="text-xs" />
-                            </InputGroup>
-                            <Button className="text-xs h-7 w-fit ml-auto shadow-none bg-gray-100" variant="outline" onClick={() => {
-                                if (url === "") {
-                                    editor.chain().focus().unsetLink().run();
-                                    return;
-                                }
-                                const { from, to } = editor.state.selection;
-                                const hasSelection = from !== to;
-
-                                if (hasSelection) {
-                                    editor
-                                        .chain()
-                                        .focus()
-                                        .extendMarkRange("link")
-                                        .setLink({ href: url })
-                                        .run();
-                                } else {
-                                    if (label.trim() === "") return;
-
-                                    editor
-                                        .chain()
-                                        .focus()
-                                        .insertContent({
-                                            type: "text",
-                                            text: label,
-                                            marks: [
-                                                {
-                                                    type: "link",
-                                                    attrs: {
-                                                        href: url
-                                                    }
-                                                }
-                                            ]
-                                        })
-                                        .run();
-                                }
-
-                            }}>Save</Button>
-                        </PopoverContent>
-                    </Popover>
-                    {editor.isActive("link") &&
-                        <ToggleButton
-                            onClick={() => {
-                                editor.chain().focus().unsetLink().run();
-                            }}
-                        >
-                            <Unlink className="!size-3.5" />
-                        </ToggleButton>
-                    }
-                </ButtonGroup>
-                {/* <ButtonGroup>
-                    <ToggleButton
-                        onClick={() => attachmentInputRef.current?.click()}
-                    >
-                        <Paperclip className="!size-3.5" />
-                    </ToggleButton>
-                </ButtonGroup> */}
-            </div>
+            <RichTextToolbar editor={editor} />
+            <RichTextBubble editor={editor} />
             <div>
-                <Input
-                    ref={attachmentInputRef}
-                    type="file"
-                    className="hidden"
-                    multiple
-                    onChange={(e) => {
-                        if (e.target.files) {
-                            const files = Object.values(e.target.files).map(file => file);
-                            setAttachments(prev => {
-                                if (!prev) return prev;
-
-                                return [...prev, ...files]
-                            })
-                        }
-                    }}
-                />
-
-                <EditorContent
-                    editor={editor}
-                    className="min-h-25 max-h-75 overflow-y-auto rounded-md px-4
+                <ContextMenu>
+                    <ContextMenuTrigger asChild>
+                        <EditorContent
+                            spellCheck={false}
+                            editor={editor}
+                            className="min-h-25 max-h-75 overflow-y-auto rounded-md px-4 selection:bg-sky-100 selection:text-sky-600
                     [&_.ProseMirror]:outline-none
 
                     [&_.ProseMirror_h1]:text-4xl
                     [&_.ProseMirror_h1]:font-bold
                     [&_.ProseMirror_h1]:my-4
 
-                    [&_.ProseMirror_h2]:text-2xl
+                    [&_.ProseMirror_h2]:text-3xl
                     [&_.ProseMirror_h2]:font-semibold
                     [&_.ProseMirror_h2]:my-3
 
-                    [&_.ProseMirror_p]:my-2
+                    [&_.ProseMirror_h3]:text-2xl
+                    [&_.ProseMirror_h3]:font-medium
+                    [&_.ProseMirror_h3]:my-2
+
+                    [&_.ProseMirror_h4]:text-xl
+                    [&_.ProseMirror_h4]:font-medium
+                    [&_.ProseMirror_h4]:my-1
                     
                     [&_.ProseMirror_ul]:list-disc
-                    [&_.ProseMirror_ul]:pl-6
+                    [&_.ProseMirror_ul]:pl-4
                     [&_.ProseMirror_ol]:list-decimal
-                    [&_.ProseMirror_ol]:pl-6"
-                />
+                    [&_.ProseMirror_ol]:pl-4"
+                        />
+                    </ContextMenuTrigger>
+                    <ContextMenuContent className="bg-white">
+                        <ContextMenuGroup>
+                            <ContextMenuItem className="flex items-center justify-between gap-2 hover:bg-zinc-50" onSelect={() => {
+                                const { from, to } = editor.state.selection
+                                const text = editor.state.doc.textBetween(from, to, " ")
+
+                                navigator.clipboard.writeText(text)
+                            }}>
+                                <span className="text-xs">Copy</span>
+                                <CopyIcon size={16} />
+                            </ContextMenuItem>
+                        </ContextMenuGroup>
+                        {editor.isActive("table") &&
+                            <ContextMenuGroup>
+                                <ContextMenuSub>
+                                    <ContextMenuSubTrigger className="text-xs">Rows</ContextMenuSubTrigger>
+                                    <ContextMenuSubContent className="bg-white">
+                                        <ContextMenuItem className="flex items-center justify-between gap-2 hover:bg-zinc-50" onClick={() => editor.chain().focus().addRowBefore().run()}>
+                                            <span className="text-xs">Add Before</span>
+                                            <BetweenHorizonalStart size={16} />
+                                        </ContextMenuItem>
+                                        <ContextMenuItem className="flex items-center justify-between gap-2 hover:bg-zinc-50" onClick={() => editor.chain().focus().addRowAfter().run()}>
+                                            <span className="text-xs">Add After</span>
+                                            <BetweenHorizonalEnd size={16} />
+                                        </ContextMenuItem>
+                                        <ContextMenuItem className="flex items-center justify-between gap-2 hover:bg-zinc-50" onClick={() => editor.chain().focus().deleteRow().run()}>
+                                            <span className="text-xs">Remove Row</span>
+                                            <XIcon size={16} />
+                                        </ContextMenuItem>
+                                    </ContextMenuSubContent>
+                                </ContextMenuSub>
+                                <ContextMenuSub>
+                                    <ContextMenuSubTrigger className="text-xs"> Columns </ContextMenuSubTrigger>
+                                    <ContextMenuSubContent className="bg-white">
+                                        <ContextMenuItem className="flex items-center justify-between gap-2 hover:bg-zinc-50" onClick={() => editor.chain().focus().addColumnBefore().run()}>
+                                            <span className="text-xs">Add Before</span>
+                                            <BetweenVerticalStart size={16} />
+                                        </ContextMenuItem>
+                                        <ContextMenuItem className="flex items-center justify-between gap-2 hover:bg-zinc-50" onClick={() => editor.chain().focus().addColumnAfter().run()}>
+                                            <span className="text-xs">Add After</span>
+                                            <BetweenVerticalEnd size={16} />
+                                        </ContextMenuItem>
+                                        <ContextMenuItem className="flex items-center justify-between gap-2 hover:bg-zinc-50" onClick={() => editor.chain().focus().deleteColumn().run()}>
+                                            <span className="text-xs">Remove Column</span>
+                                            <XIcon size={16} />
+                                        </ContextMenuItem>
+                                    </ContextMenuSubContent>
+                                </ContextMenuSub>
+                                <ContextMenuItem className="flex items-center justify-between gap-2 text-red-300 hover:bg-zinc-50" onClick={() => editor.chain().focus().deleteTable().run()}>
+                                    <span className="text-xs">Remove Table</span>
+                                    <Grid2X2XIcon size={16} />
+                                </ContextMenuItem>
+                            </ContextMenuGroup>}
+
+                    </ContextMenuContent>
+                </ContextMenu>
                 {
                     attachments.length > 0 &&
                     <ScrollArea orientation="horizontal" className="w-full max-w-6xl whitespace-nowrap rounded-lg">
@@ -337,17 +217,3 @@ export default function RichTextEditor({ value, onChange }: { value?: string; on
         </div >
     );
 }
-
-const ToggleButton = ({
-    onClick,
-    children,
-    isActive = false,
-}: {
-    isActive?: boolean;
-    onClick: () => void;
-    children: ReactNode;
-}) => {
-    return (
-        <Button type="button" variant="outline" data-active={isActive} size="icon" className="size-7 data-[active=true]:bg-gray-200" onClick={onClick} > {children} </Button>
-    );
-};

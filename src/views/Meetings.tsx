@@ -51,10 +51,7 @@ const Main = () => {
         <ScrollArea className="flex-1">
           <div className="space-y-2 p-2">
             {weeks.map((week) => {
-              const header = `Wk ${week.isoWeek} • (${format(
-                week.start,
-                "MMM dd"
-              )} - ${format(week.end, "MMM dd")})`;
+              const header = `Wk ${week.isoWeek} • (${format(week.start, "MMM dd")})`;
 
               return (
                 <Button
