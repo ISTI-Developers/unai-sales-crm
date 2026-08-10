@@ -12,6 +12,7 @@ function PresentationView() {
     const { weeks } = useWeeks();
     const [selectedWeek, setSelectedWeek] = useState(currentWeek.isoWeek)
     const { data, isLoading } = useReportsByWeek([selectedWeek]);
+    const week = useWeeks().getByISO(selectedWeek)
 
     const reports: ReportPreview[] = useMemo(() => {
         if (!data || isLoading) return [];
@@ -22,13 +23,14 @@ function PresentationView() {
             (a, b) => statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status)
         );
 
+        console.log(sortedClients);
         return sortedClients.map(client => {
             return {
                 ...client,
-                activity: client.reports[currentWeek.yearweek]
+                activity: client.reports[week.yearweek]
             }
         });
-    }, [data, isLoading, currentWeek])
+    }, [data, isLoading, week.yearweek])
 
     if (!data && isLoading) return <>Loading reports...</>;
     if (!data) return <>No reports found for this week</>

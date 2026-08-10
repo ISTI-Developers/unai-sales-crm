@@ -53,6 +53,9 @@ export interface Report {
   reports: Record<number, Activity[]>;
 }
 
+export interface ReportPreview extends Report {
+  activity: Activity[];
+}
 export interface ClientReport {
   ID: number;
   activity: string;
