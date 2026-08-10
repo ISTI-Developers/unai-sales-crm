@@ -111,8 +111,10 @@ export type ReportTable = Report & WeekColumns;
 
 export const reportTags = [
   "CLIENT VISIT",
+  "MEET UP",
   "EMAIL",
   "CALL",
+  "VIDEO CALL",
   "VIBER",
   "CHAT",
   "TEXT",
@@ -120,5 +122,8 @@ export const reportTags = [
   "UPDATE",
   "PROPOSAL",
   "INITIAL TRANSACTION",
+  "BREAKFAST",
+  "LUNCH",
+  "DINNER",
 ] as const;
 export type ReportTags = (typeof reportTags)[number];
