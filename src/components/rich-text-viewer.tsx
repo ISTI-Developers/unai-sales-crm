@@ -18,7 +18,7 @@ function RichTextViewer({ content }: { content: string }) {
                 autolink: true,
             }),
             Table.configure({
-                resizable: true
+                resizable: true,
             }),
             TableRow,
             TableHeader,
@@ -38,15 +38,15 @@ function RichTextViewer({ content }: { content: string }) {
 
                 [&_.ProseMirror_h1]:text-4xl
                 [&_.ProseMirror_h1]:font-bold
-                [&_.ProseMirror_h1]:my-4
+                [&_.ProseMirror_h1]:my-2
 
                 [&_.ProseMirror_h2]:text-3xl
                 [&_.ProseMirror_h2]:font-semibold
-                [&_.ProseMirror_h2]:my-3
+                [&_.ProseMirror_h2]:my-2
 
                 [&_.ProseMirror_h3]:text-2xl
                 [&_.ProseMirror_h3]:font-semibold
-                [&_.ProseMirror_h3]:my-2
+                [&_.ProseMirror_h3]:my-1
 
                  [&_.ProseMirror_h4]:text-xl
                 [&_.ProseMirror_h4]:font-medium

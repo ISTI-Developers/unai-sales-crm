@@ -17,6 +17,7 @@ import {
     BetweenVerticalEnd,
     BetweenVerticalStart,
     XIcon,
+    PanelTop,
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -25,6 +26,7 @@ import { safeParseTiptap } from "@/lib/format";
 import { ContextMenu, ContextMenuContent, ContextMenuGroup, ContextMenuItem, ContextMenuSub, ContextMenuSubContent, ContextMenuSubTrigger, ContextMenuTrigger } from "./ui/context-menu";
 import RichTextToolbar from "./rich-text-toolbar";
 import RichTextBubble from "./rich-text-bubble";
+import { cn } from "@/lib/utils";
 
 export default function RichTextEditor({ value, onChange }: { value?: string; onChange: (content: string) => void }) {
     const [attachments, setAttachments] = useState<File[]>([]);
@@ -95,15 +97,15 @@ export default function RichTextEditor({ value, onChange }: { value?: string; on
 
                     [&_.ProseMirror_h1]:text-4xl
                     [&_.ProseMirror_h1]:font-bold
-                    [&_.ProseMirror_h1]:my-4
+                    [&_.ProseMirror_h1]:my-2
 
                     [&_.ProseMirror_h2]:text-3xl
                     [&_.ProseMirror_h2]:font-semibold
-                    [&_.ProseMirror_h2]:my-3
+                    [&_.ProseMirror_h2]:my-2
 
                     [&_.ProseMirror_h3]:text-2xl
                     [&_.ProseMirror_h3]:font-medium
-                    [&_.ProseMirror_h3]:my-2
+                    [&_.ProseMirror_h3]:my-1
 
                     [&_.ProseMirror_h4]:text-xl
                     [&_.ProseMirror_h4]:font-medium
@@ -129,6 +131,10 @@ export default function RichTextEditor({ value, onChange }: { value?: string; on
                         </ContextMenuGroup>
                         {editor.isActive("table") &&
                             <ContextMenuGroup>
+                                <ContextMenuItem className={cn("flex items-center justify-between gap-2 hover:bg-zinc-50", editor.isActive("tableHeader") ? "bg-zinc-100" : "")} onSelect={() => editor.chain().focus().toggleHeaderRow().run()}>
+                                    <span className="text-xs">Toggle Header</span>
+                                    <PanelTop size={16} />
+                                </ContextMenuItem>
                                 <ContextMenuSub>
                                     <ContextMenuSubTrigger className="text-xs">Rows</ContextMenuSubTrigger>
                                     <ContextMenuSubContent className="bg-white">
