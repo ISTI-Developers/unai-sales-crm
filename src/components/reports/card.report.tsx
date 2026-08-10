@@ -47,7 +47,7 @@ function ReportCard({ report, onSelect, onDelete, className }: ReportCardProps) 
                         <div className="text-xs flex flex-col gap-2">
                             <p>Are you sure you want to remove this report?</p>
                             <div className="flex gap-2 justify-end items-center">
-                                <Button type="button" variant="ghost" size="sm">
+                                <Button type="button" variant="ghost" size="sm" onClick={() => onOpenPopoverChange(false)}>
                                     Cancel
                                 </Button>
                                 <Button
