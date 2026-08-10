@@ -13,7 +13,7 @@ import { useUsers } from '@/hooks/useUsers';
 import { formatAmount, formatTermDetails } from '@/lib/format';
 import { Notification, sendNotification } from '@/hooks/useNotifications';
 import { Textarea } from '../ui/textarea';
-import { differenceInDays } from 'date-fns';
+import { differenceInDays, subDays } from 'date-fns';
 import InputNumber from '../ui/number-input';
 import { useAuth } from '@/providers/auth.provider';
 import { v4 } from 'uuid';
@@ -152,147 +152,147 @@ const BookingItem = ({ item, show }: { item: Booking; show: boolean; }) => {
     const [reason, setReason] = useState("");
     const termDetails = formatTermDetails(
         item.date_from,
-        item.date_to,
-        item.monthly_rate
+        item.booking_status === "PRE-TERMINATION" ? subDays(new Date(item.date_to), 1) : item.date_to,
+            item.monthly_rate
     );
-    const status = useMemo(() => {
-        const invalid = ["CANCELLED", "PRE-TERMINATION"];
-        const now = new Date();
+const status = useMemo(() => {
+    const invalid = ["CANCELLED", "PRE-TERMINATION"];
+    const now = new Date();
 
-        const start = new Date(item.date_from);
-        const end = new Date(item.date_to);
+    const start = new Date(item.date_from);
+    const end = new Date(item.date_to);
 
-        const isRunning =
-            start <= now &&
-            end >= now;
+    const isRunning =
+        start <= now &&
+        end >= now;
 
-        const isFuture =
-            start > now;
+    const isFuture =
+        start > now;
 
-        if (item.is_overriden) {
-            return "STOPPED";
-        }
-        // invalid statuses first
-        if (item.booking_status === "PRE-TERMINATION") {
-            return "PRE-TERMINATED";
-        }
-
-        if (item.booking_status === "CANCELLED") {
-            return "CANCELLED";
-        }
-
-        // active booking
-        if (isRunning) {
-            return "RUNNING";
-        }
-
-        // future booking
-        if (isFuture) {
-            return "UPCOMING";
-        }
-
-        // already ended
-        if (end < now && !invalid.includes(item.booking_status)) {
-            return "COMPLETED";
-        }
-
+    if (item.is_overriden) {
         return "STOPPED";
-    }, [item]);
+    }
+    // invalid statuses first
+    if (item.booking_status === "PRE-TERMINATION") {
+        return "PRE-TERMINATED";
+    }
 
-    const onContinue = async () => {
-        onSend(true);
-        cancelBooking({ booking_id: item.ID, reason: reason }, {
-            onSuccess: async (data, variables) => {
-                if (data?.acknowledged) {
+    if (item.booking_status === "CANCELLED") {
+        return "CANCELLED";
+    }
 
-                    setOpen(false);
-                    onSend(false);
+    // active booking
+    if (isRunning) {
+        return "RUNNING";
+    }
 
-                    if (!users) return;
-                    const body = `Site ${item.site_code}'s booking has been cancelled.`;
+    // future booking
+    if (isFuture) {
+        return "UPCOMING";
+    }
 
-                    const notification: Notification = {
-                        title: "Booking Cancellation",
-                        recipients: [...users.filter(user => user.role.role_id in [1, 3, 4, 5, 10, 13]).map(user => Number(user.ID))],
-                        body: body,
-                        tag: "booking-cancellation",
-                        data: {
-                            url: `/booking?t=bookings&b=${variables.booking_id}`,
-                        },
-                    }
-                    await sendNotification(notification);
+    // already ended
+    if (end < now && !invalid.includes(item.booking_status)) {
+        return "COMPLETED";
+    }
 
+    return "STOPPED";
+}, [item]);
+
+const onContinue = async () => {
+    onSend(true);
+    cancelBooking({ booking_id: item.ID, reason: reason }, {
+        onSuccess: async (data, variables) => {
+            if (data?.acknowledged) {
+
+                setOpen(false);
+                onSend(false);
+
+                if (!users) return;
+                const body = `Site ${item.site_code}'s booking has been cancelled.`;
+
+                const notification: Notification = {
+                    title: "Booking Cancellation",
+                    recipients: [...users.filter(user => user.role.role_id in [1, 3, 4, 5, 10, 13]).map(user => Number(user.ID))],
+                    body: body,
+                    tag: "booking-cancellation",
+                    data: {
+                        url: `/booking?t=bookings&b=${variables.booking_id}`,
+                    },
                 }
+                await sendNotification(notification);
 
-            },
-        });
-    };
+            }
 
-    return (
-        <TableRow
-            className={cn(
-                "text-xs h-10",
+        },
+    });
+};
 
-                show && status === "CANCELLED" &&
-                "bg-red-50 text-red-300",
+return (
+    <TableRow
+        className={cn(
+            "text-xs h-10",
 
-                ["COMPLETED", "STOPPED"].includes(status) &&
-                "opacity-50 pointer-events-none",
+            show && status === "CANCELLED" &&
+            "bg-red-50 text-red-300",
 
-                status === "PRE-TERMINATED" &&
-                "bg-amber-50 text-amber-700",
+            ["COMPLETED", "STOPPED"].includes(status) &&
+            "opacity-50 pointer-events-none",
 
-                status === "RUNNING" &&
-                "bg-emerald-100 hover:bg-emerald-200 text-emerald-600",
-            )}
-        >
-            <TableCell className="font-semibold whitespace-nowrap">
-                <div>
-                    <p>{status}</p>
-                    <p className='font-normal italic text-[0.5rem]'>{status !== item.booking_status && item.booking_status}</p>
-                </div>
-            </TableCell>
-            <TableCell className='text-[0.65rem]'>{item.client}</TableCell>
-            <TableCell className='text-[0.65rem]'>{item.account_executive}</TableCell>
-            <TableCell className='text-[0.65rem]'>{formatAmount(item.srp)}</TableCell>
-            <TableCell className='text-[0.65rem]'>{termDetails}</TableCell>
-            <TableCell align="center">
-                {!['CANCELLED', 'PRE-TERMINATED', 'COMPLETED', 'STOPPED'].includes(status) && (
-                    <div className="flex items-center justify-center">
-                        <EditBookingDialog item={item} />
-                        <Dialog open={open} onOpenChange={setOpen}>
-                            <Tooltip delayDuration={100}>
-                                <TooltipTrigger asChild>
-                                    <DialogTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            size="icon"
-                                            className="h-7 w-7 text-red-300 bg-transparent hover:bg-transparent border-none shadow-none"
-                                        >
-                                            <Ban />
-                                        </Button>
-                                    </DialogTrigger>
-                                </TooltipTrigger>
-                                <TooltipContent>Cancel</TooltipContent>
-                            </Tooltip>
-                            <DialogContent aria-describedby={undefined}>
-                                <DialogHeader>
-                                    <DialogTitle>Cancelation Confirmation</DialogTitle>
-                                </DialogHeader>
-                                <p>Reason for cancellation:</p>
-                                <Textarea disabled={send} value={reason} onChange={(e) => setReason(e.target.value)} />
-                                <DialogFooter>
-                                    <Button disabled={send} variant="destructive" onClick={onContinue}>
-                                        {send && <Loader2 className="animate-spin" />} Continue
+            status === "PRE-TERMINATED" &&
+            "bg-amber-50 text-amber-700",
+
+            status === "RUNNING" &&
+            "bg-emerald-100 hover:bg-emerald-200 text-emerald-600",
+        )}
+    >
+        <TableCell className="font-semibold whitespace-nowrap">
+            <div>
+                <p>{status}</p>
+                <p className='font-normal italic text-[0.5rem]'>{status !== item.booking_status && item.booking_status}</p>
+            </div>
+        </TableCell>
+        <TableCell className='text-[0.65rem]'>{item.client}</TableCell>
+        <TableCell className='text-[0.65rem]'>{item.account_executive}</TableCell>
+        <TableCell className='text-[0.65rem]'>{formatAmount(item.srp)}</TableCell>
+        <TableCell className='text-[0.65rem]'>{termDetails}</TableCell>
+        <TableCell align="center">
+            {!['CANCELLED', 'PRE-TERMINATED', 'COMPLETED', 'STOPPED'].includes(status) && (
+                <div className="flex items-center justify-center">
+                    <EditBookingDialog item={item} />
+                    <Dialog open={open} onOpenChange={setOpen}>
+                        <Tooltip delayDuration={100}>
+                            <TooltipTrigger asChild>
+                                <DialogTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        className="h-7 w-7 text-red-300 bg-transparent hover:bg-transparent border-none shadow-none"
+                                    >
+                                        <Ban />
                                     </Button>
-                                </DialogFooter>
-                            </DialogContent>
-                        </Dialog>
-                    </div>
-                )}
-            </TableCell>
-        </TableRow>
-    );
+                                </DialogTrigger>
+                            </TooltipTrigger>
+                            <TooltipContent>Cancel</TooltipContent>
+                        </Tooltip>
+                        <DialogContent aria-describedby={undefined}>
+                            <DialogHeader>
+                                <DialogTitle>Cancelation Confirmation</DialogTitle>
+                            </DialogHeader>
+                            <p>Reason for cancellation:</p>
+                            <Textarea disabled={send} value={reason} onChange={(e) => setReason(e.target.value)} />
+                            <DialogFooter>
+                                <Button disabled={send} variant="destructive" onClick={onContinue}>
+                                    {send && <Loader2 className="animate-spin" />} Continue
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                </div>
+            )}
+        </TableCell>
+    </TableRow>
+);
 };
 export const EditBookingDialog = ({ item }: { item: Booking }) => {
     const { user } = useAuth();
