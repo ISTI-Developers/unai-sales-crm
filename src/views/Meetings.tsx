@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { cn, generateWeeks } from "@/lib/utils";
+import { cn, useWeeks } from "@/lib/utils";
 import Container from "@/misc/Container";
 import { format } from "date-fns";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Helmet } from "react-helmet";
 
 const Meetings = () => {
@@ -23,8 +23,8 @@ const Meetings = () => {
 
 const Main = () => {
   const [year, setYear] = useState(2026);
-  const weeks = useMemo(() => generateWeeks(year), [year]);
-  const [selectedWeek, setSelectedWeek] = useState(weeks.find(wk => wk.isCurrent));
+  const { weeks, current } = useWeeks();
+  const [selectedWeek, setSelectedWeek] = useState(current());
   const selectedWeekRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
@@ -78,7 +78,7 @@ const Main = () => {
       </aside>
 
       {/* Workspace */}
-      <MeetingWorkspace selectedWeek={selectedWeek ?? weeks[0]} year={year} />
+      <MeetingWorkspace selectedWeek={selectedWeek} year={year} />
     </div>
   );
 };
