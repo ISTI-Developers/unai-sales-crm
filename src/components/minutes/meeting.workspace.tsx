@@ -10,6 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { useAccess } from "@/hooks/useClients";
 import RichTextEditor from "../rich-text-editor";
 import RichTextViewer from "../rich-text-viewer";
+import UserAvatar from "../ui/user-avatar";
 
 interface MeetingWorkspaceProps {
     selectedWeek: WeekInfo;
@@ -29,6 +30,7 @@ function MeetingWorkspace({ selectedWeek, year }: MeetingWorkspaceProps) {
         if (!data || isLoading) return;
 
         if (data.length === 0) return;
+        console.log(data)
 
         return data[0];
     }, [data, isLoading])
@@ -109,11 +111,21 @@ function MeetingWorkspace({ selectedWeek, year }: MeetingWorkspaceProps) {
     return (
         <main className="flex-1 overflow-hidden p-4 space-y-4 ">
             <header className="flex justify-between gap-4 items-start">
-                <div>
+                <div className="space-y-2">
                     <h1 className="text-2xl font-bold">
                         {`Sales Meeting Wk${selectedWeek?.isoWeek}`}
                     </h1>
-                    <span className="text-sm">{`${format(selectedWeek.start, "MMM dd")} - ${format(selectedWeek.end, "MMM dd")}, ${format(selectedWeek.end, "yyyy")}`}</span>
+                    {minutes &&
+                        <div className="flex items-center gap-1">
+                            {minutes.image || minutes.name &&
+                                <>
+                                    <UserAvatar image={minutes?.image ?? ""} fallback="N/A" className="size-7" fallbackClassName="text-[0.6rem]" />
+                                    <span className="capitalize text-xs font-semibold">{minutes.name}</span>
+                                    <span className="text-xs">|</span>
+                                </>
+                            }
+                            <span className="text-xs">{`Last updated on ${format(new Date(minutes.modified_at), "dd MMM yyyy")}`}</span>
+                        </div>}
                 </div>
                 <div className="flex items-center gap-2">
                     {access && minutes &&
