@@ -574,7 +574,15 @@ export const useWeeks = (year: number = new Date().getFullYear()) => {
       }),
     );
   };
-  const get = (yearweek: number) => {
+  const getByISO = (iso: number) => {
+    const week = weeks.find((week) => week.isoWeek === iso);
+    if (!week) {
+      throw new Error("No current week found");
+    }
+    return week;
+  };
+
+  const getByYearWeek = (yearweek: number) => {
     const week = weeks.find((week) => week.yearweek === yearweek);
     if (!week) {
       throw new Error("No current week found");
@@ -590,5 +598,5 @@ export const useWeeks = (year: number = new Date().getFullYear()) => {
     return currentWeek;
   };
 
-  return { weeks, map, current, get };
+  return { weeks, map, current, getByISO, getByYearWeek };
 };
