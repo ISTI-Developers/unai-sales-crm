@@ -30,8 +30,8 @@ function MeetingWorkspace({ selectedWeek, year }: MeetingWorkspaceProps) {
         if (!data || isLoading) return;
 
         if (data.length === 0) return;
-        console.log(data)
 
+        console.log(data)
         return data[0];
     }, [data, isLoading])
 
@@ -93,7 +93,7 @@ function MeetingWorkspace({ selectedWeek, year }: MeetingWorkspaceProps) {
         deleteActivity(minutes.ID, {
             onSuccess: () => {
                 setIsEdit(false)
-                setActivity("")
+                setActivity(undefined)
                 setOpen(false);
                 toast({
                     description: `Week ${selectedWeek.isoWeek} minutes has been deleted successfully.`,
@@ -117,9 +117,9 @@ function MeetingWorkspace({ selectedWeek, year }: MeetingWorkspaceProps) {
                     </h1>
                     {minutes &&
                         <div className="flex items-center gap-1">
-                            {minutes.image || minutes.name &&
+                            {(minutes.image || minutes.name) &&
                                 <>
-                                    <UserAvatar image={minutes?.image ?? ""} fallback="N/A" className="size-7" fallbackClassName="text-[0.6rem]" />
+                                <UserAvatar image={minutes.image ?? ""} fallback="N/A" className="size-7" fallbackClassName="text-[0.6rem]" />
                                     <span className="capitalize text-xs font-semibold">{minutes.name}</span>
                                     <span className="text-xs">|</span>
                                 </>
@@ -199,7 +199,7 @@ interface MeetingContentProps {
     minutes: RawMinutes;
 }
 const MeetingContent = ({ minutes }: MeetingContentProps) => {
-    return <RichTextViewer content={minutes.activity} />
+    return <RichTextViewer key={minutes.ID} content={minutes.activity} />
 }
 interface MeetingFormProps {
     activity?: string;

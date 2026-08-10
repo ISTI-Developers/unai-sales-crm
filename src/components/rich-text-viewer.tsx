@@ -33,7 +33,7 @@ function RichTextViewer({ content }: { content: string }) {
     return (
         <EditorContent
             editor={editor}
-            className="min-h-25 max-h-100 overflow-y-auto rounded-md border px-4 font-sans no-scrollbar
+            className="min-h-25 max-h-100 overflow-y-auto rounded-md border p-4 font-sans no-scrollbar
                 [&_.ProseMirror]:outline-none
 
                 [&_.ProseMirror_h1]:text-4xl
