@@ -30,15 +30,18 @@ function ReportSheet() {
         })
     }, [data])
     const handleDeleteReport = (ID: number) => {
-
+        if (!sheetData) return;
         deleteReport({ ID: ID }, {
             onSuccess: () => {
                 toast({
                     variant: "success",
                     description: "report has been deleted successfully"
                 })
+                queryClient.invalidateQueries({
+                    queryKey: ["reports", new Date().getFullYear(), user?.ID, [weekInfo.isoWeek], sheetData?.client.ID],
+                })
                 queryClient.refetchQueries({
-                    queryKey: ["reports", new Date().getFullYear(), user?.ID, selectedWeeks]
+                    queryKey: ["reports", new Date().getFullYear(), user?.ID, selectedWeeks],
                 })
             }
         })

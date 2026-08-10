@@ -67,8 +67,9 @@ function ReportForm({ report, onOpenChange, modal, yearweek, selectedWeeks, clie
     const onSubmit = () => {
         if (!activity) return;
         let dateSubmitted = new Date();
+        let weekSelected = week;
         if (yearweek !== week.yearweek) {
-            const weekSelected = weekMap.get(yearweek)!;
+            weekSelected = weekMap.get(yearweek)!;
             dateSubmitted = getFridayFromISOWeek(new Date().getFullYear(), weekSelected.isoWeek) ?? new Date();
         }
 
@@ -86,13 +87,17 @@ function ReportForm({ report, onOpenChange, modal, yearweek, selectedWeeks, clie
                 onSuccess: () => {
                     onOpenChange(false);
                     setActivity("")
+                    queryClient.refetchQueries({
+                        queryKey: ["reports", new Date().getFullYear(), user?.ID, selectedWeeks]
+                    })
+                    console.log(["reports", new Date().getFullYear(), user?.ID, [weekSelected.isoWeek], clientID])
+                    queryClient.invalidateQueries({
+                        queryKey: ["reports", new Date().getFullYear(), user?.ID, [weekSelected.isoWeek], clientID],
+                    })
                     toast({
                         description: `Your report has been updated!`,
                         variant: "success",
                     });
-                    queryClient.refetchQueries({
-                        queryKey: ["reports", new Date().getFullYear(), user?.ID, selectedWeeks]
-                    })
                 }
             })
         } else {
@@ -112,6 +117,10 @@ function ReportForm({ report, onOpenChange, modal, yearweek, selectedWeeks, clie
                         description: `Your report has been submitted!`,
                         variant: "success",
                     });
+                    console.log(["reports", new Date().getFullYear(), user?.ID, [weekSelected.isoWeek], clientID])
+                    queryClient.invalidateQueries({
+                        queryKey: ["reports", new Date().getFullYear(), user?.ID, [weekSelected.isoWeek], clientID],
+                    })
                     queryClient.refetchQueries({
                         queryKey: ["reports", dateSubmitted.getFullYear(), user?.ID, selectedWeeks],
                     });
@@ -123,7 +132,7 @@ function ReportForm({ report, onOpenChange, modal, yearweek, selectedWeeks, clie
         if (report) {
             setActivity(report.activity);
             setTags(report.tags ?? [])
-        } 
+        }
     }, [report])
     return (
         <InputGroup className='rounded-2xl p-1 pb-1.5 relative'>
