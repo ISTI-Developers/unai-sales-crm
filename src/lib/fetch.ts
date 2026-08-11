@@ -476,94 +476,187 @@ export function useImageUrls(filename: string) {
 
 export const getLatestBooking = (bookings: Booking[]) => {
   const now = new Date();
+
+  if (!bookings.length) return;
+
+  // Ignore cancelled bookings
+  const activeBookings = bookings.filter(
+    (booking) => booking.booking_status !== "CANCELLED",
+  );
+
+  if (!activeBookings.length) return;
+
+  /*
+   * For the same start date, only keep the latest booking.
+   */
   const latestPerStartDate = new Map<string, Booking>();
 
-  for (const booking of bookings) {
+  for (const booking of activeBookings) {
     const key = booking.date_from;
-
     const existing = latestPerStartDate.get(key);
 
-    if (
-      (!existing || booking.ID > existing.ID) &&
-      booking.booking_status !== "CANCELLED"
-    ) {
+    if (!existing || booking.ID > existing.ID) {
       latestPerStartDate.set(key, booking);
     }
   }
 
   const valid = Array.from(latestPerStartDate.values());
 
-  if (!valid.length) return;
+  /*
+   * Sort chronologically.
+   * If two bookings have the same date_from, latest ID wins.
+   */
+  valid.sort((a, b) => {
+    const dateDiff =
+      new Date(a.date_from).getTime() - new Date(b.date_from).getTime();
 
-  let best: Booking | undefined;
-  let bestScore = -1;
-  let bestDistance = Infinity;
+    if (dateDiff !== 0) return dateDiff;
 
-  for (const booking of valid) {
-    const windowPeriod = booking.is_prime ? 60 : 45;
+    return a.ID - b.ID;
+  });
+
+  const isRunning = (booking: Booking) => {
     const from = new Date(booking.date_from);
     const to = new Date(booking.date_to);
 
-    const diff = differenceInCalendarDays(from, now);
+    return from <= now && to >= now;
+  };
 
-    let score = 0;
-    let distance = Infinity;
+  /*
+   * A "new contract ahead" means there is another actual
+   * contract/booking starting after the current booking.
+   */
+  const hasNewContractAhead = (booking: Booking) => {
+    return valid.some((candidate) => {
+      if (candidate.ID === booking.ID) return false;
 
-    if (booking.booking_status === "QUEUEING" && diff >= 0 && diff <= 30) {
-      // QUEUEING within 30 days
-      score = 100;
-      distance = diff;
+      const candidateFrom = new Date(candidate.date_from);
+
+      return (
+        candidateFrom > now &&
+        candidate.booking_status !== "PRE-TERMINATION" &&
+        !candidate.booking_status.includes("CONTRACT")
+      );
+    });
+  };
+
+  /*
+   * ---------------------------------------------------------
+   * 1. CURRENTLY RUNNING BOOKING
+   * ---------------------------------------------------------
+   */
+
+  const running = valid.filter(isRunning);
+
+  if (running.length) {
+    /*
+     * First check for an override of the currently running
+     * contract.
+     *
+     * Examples:
+     * - CONTRACT EXTENSION
+     * - CONTRACT DURATION CHANGE
+     * - PRE-TERMINATION
+     */
+
+    const overrides = running
+      .filter((booking) => {
+        return (
+          booking.booking_status === "PRE-TERMINATION" ||
+          booking.booking_status.includes("CONTRACT")
+        );
+      })
+      .filter((booking) => !hasNewContractAhead(booking))
+      .sort((a, b) => b.ID - a.ID);
+
+    if (overrides.length) {
+      return overrides[0];
     }
 
-    // RENEWAL within 60 days
-    else if (booking.booking_status === "RENEWAL" && diff >= 0 && diff <= 60) {
-      score = 90;
-      distance = diff;
-    }
-
-    // NEW booking within 45 | 60 days
-    else if (
-      booking.booking_status === "NEW" &&
-      diff >= 0 &&
-      diff <= windowPeriod
-    ) {
-      score = 80;
-      distance = diff;
-    } else if (
-      booking.booking_status === "PRE-TERMINATION" &&
-      from <= now &&
-      to >= now
-    ) {
-      score = 70;
-    } else if (booking.booking_status.includes("CONTRACT")) {
-      score = 75;
-      distance = diff;
-    }
-    // CURRENT ACTIVE
-    else if (from <= now && to >= now) {
-      score = 60;
-    }
-
-    // OLD CONTRACT
-    else if (to < now) {
-      score = 50;
-    }
-
-    const isBetter =
-      score > bestScore ||
-      (score === bestScore && distance < bestDistance) ||
-      (score === bestScore &&
-        distance === bestDistance &&
-        booking.ID > (best?.ID ?? 0));
-
-    if (isBetter) {
-      best = booking;
-      bestScore = score;
-      bestDistance = distance;
-    }
+    /*
+     * Otherwise, the currently running booking always wins.
+     */
+    return running.sort((a, b) => b.ID - a.ID)[0];
   }
 
-  return best;
+  /*
+   * ---------------------------------------------------------
+   * 2. NO CURRENTLY RUNNING BOOKING
+   * ---------------------------------------------------------
+   *
+   * Look for upcoming bookings according to the business rules.
+   */
+
+  /*
+   * QUEUEING — within 30 days
+   */
+  const queueing = valid
+    .filter((booking) => {
+      if (booking.booking_status !== "QUEUEING") return false;
+
+      const diff = differenceInCalendarDays(new Date(booking.date_from), now);
+
+      return diff >= 0 && diff <= 30;
+    })
+    .sort(
+      (a, b) =>
+        new Date(a.date_from).getTime() - new Date(b.date_from).getTime(),
+    );
+
+  if (queueing.length) {
+    return queueing[0];
+  }
+
+  /*
+   * RENEWAL — within 60 days
+   */
+  const renewal = valid
+    .filter((booking) => {
+      if (booking.booking_status !== "RENEWAL") return false;
+
+      const diff = differenceInCalendarDays(new Date(booking.date_from), now);
+
+      return diff >= 0 && diff <= 60;
+    })
+    .sort(
+      (a, b) =>
+        new Date(a.date_from).getTime() - new Date(b.date_from).getTime(),
+    );
+
+  if (renewal.length) {
+    return renewal[0];
+  }
+
+  /*
+   * NEW — based on prime/non-prime window
+   */
+  const newBookings = valid
+    .filter((booking) => {
+      if (booking.booking_status !== "NEW") return false;
+
+      const diff = differenceInCalendarDays(new Date(booking.date_from), now);
+
+      const windowPeriod = booking.is_prime ? 60 : 45;
+
+      return diff >= 0 && diff <= windowPeriod;
+    })
+    .sort(
+      (a, b) =>
+        new Date(a.date_from).getTime() - new Date(b.date_from).getTime(),
+    );
+
+  if (newBookings.length) {
+    return newBookings[0];
+  }
+
+  /*
+   * ---------------------------------------------------------
+   * 3. NOTHING CURRENT OR UPCOMING
+   * ---------------------------------------------------------
+   *
+   * Return the latest booking.
+   */
+  return valid.sort((a, b) => b.ID - a.ID)[0];
 };
 export const getEndDate = (
   booking?: Booking,
