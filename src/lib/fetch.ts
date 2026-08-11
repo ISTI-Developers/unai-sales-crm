@@ -476,94 +476,170 @@ export function useImageUrls(filename: string) {
 
 export const getLatestBooking = (bookings: Booking[]) => {
   const now = new Date();
+
+  if (!bookings.length) return;
+
+  // Ignore cancelled bookings first.
+  const validBookings = bookings.filter(
+    (booking) => booking.booking_status !== "CANCELLED",
+  );
+
+  if (!validBookings.length) return;
+
+  /*
+   * For the same date_from, keep only the latest booking.
+   */
   const latestPerStartDate = new Map<string, Booking>();
 
-  for (const booking of bookings) {
+  for (const booking of validBookings) {
     const key = booking.date_from;
-
     const existing = latestPerStartDate.get(key);
 
-    if (
-      (!existing || booking.ID > existing.ID) &&
-      booking.booking_status !== "CANCELLED"
-    ) {
+    if (!existing || booking.ID > existing.ID) {
       latestPerStartDate.set(key, booking);
     }
   }
 
   const valid = Array.from(latestPerStartDate.values());
 
-  if (!valid.length) return;
-
-  let best: Booking | undefined;
-  let bestScore = -1;
-  let bestDistance = Infinity;
-
-  for (const booking of valid) {
-    const windowPeriod = booking.is_prime ? 60 : 45;
+  /*
+   * Check if a booking is currently running.
+   */
+  const isRunning = (booking: Booking) => {
     const from = new Date(booking.date_from);
     const to = new Date(booking.date_to);
 
-    const diff = differenceInCalendarDays(from, now);
+    return from <= now && to >= now;
+  };
 
-    let score = 0;
-    let distance = Infinity;
+  /*
+   * Get the currently running booking.
+   *
+   * If multiple bookings overlap, the latest ID wins.
+   */
+  const currentBookings = valid.filter(isRunning).sort((a, b) => b.ID - a.ID);
 
-    if (booking.booking_status === "QUEUEING" && diff >= 0 && diff <= 30) {
-      // QUEUEING within 30 days
-      score = 100;
-      distance = diff;
-    }
+  const current = currentBookings[0];
 
-    // RENEWAL within 60 days
-    else if (booking.booking_status === "RENEWAL" && diff >= 0 && diff <= 60) {
-      score = 90;
-      distance = diff;
-    }
+  /*
+   * Find the next qualifying future booking.
+   *
+   * This is important because a site can still be BOOKED even
+   * when its current contract has an upcoming end date.
+   *
+   * Example:
+   *
+   * Aug 1  -> Aug 31  CURRENT
+   * Sep 1  -> Dec 31  RENEWAL
+   *
+   * The site is still effectively BOOKED.
+   */
+  const futureBookings = valid
+    .filter((booking) => {
+      const from = new Date(booking.date_from);
 
-    // NEW booking within 45 | 60 days
-    else if (
-      booking.booking_status === "NEW" &&
-      diff >= 0 &&
-      diff <= windowPeriod
-    ) {
-      score = 80;
-      distance = diff;
-    } else if (
-      booking.booking_status === "PRE-TERMINATION" &&
-      from <= now &&
-      to >= now
-    ) {
-      score = 70;
-    } else if (booking.booking_status.includes("CONTRACT")) {
-      score = 75;
-      distance = diff;
-    }
-    // CURRENT ACTIVE
-    else if (from <= now && to >= now) {
-      score = 60;
-    }
+      // Only future bookings.
+      if (from <= now) {
+        return false;
+      }
 
-    // OLD CONTRACT
-    else if (to < now) {
-      score = 50;
-    }
+      const diff = differenceInCalendarDays(from, now);
 
-    const isBetter =
-      score > bestScore ||
-      (score === bestScore && distance < bestDistance) ||
-      (score === bestScore &&
-        distance === bestDistance &&
-        booking.ID > (best?.ID ?? 0));
+      switch (booking.booking_status) {
+        case "QUEUEING":
+          return diff <= 30;
 
-    if (isBetter) {
-      best = booking;
-      bestScore = score;
-      bestDistance = distance;
-    }
+        case "RENEWAL":
+          return diff <= 60;
+
+        case "NEW": {
+          const windowPeriod = booking.is_prime ? 60 : 45;
+
+          return diff <= windowPeriod;
+        }
+
+        default:
+          return false;
+      }
+    })
+    .sort((a, b) => {
+      const dateDiff =
+        new Date(a.date_from).getTime() - new Date(b.date_from).getTime();
+
+      if (dateDiff !== 0) {
+        return dateDiff;
+      }
+
+      return b.ID - a.ID;
+    });
+
+  const nextBooking = futureBookings[0];
+
+  /*
+   * ---------------------------------------------------------
+   * NO CURRENT BOOKING
+   * ---------------------------------------------------------
+   *
+   * Now future reservations become the primary consideration.
+   */
+
+  // QUEUEING / RENEWAL / NEW
+  if (nextBooking) {
+    return nextBooking;
   }
 
-  return best;
+  /*
+   * ---------------------------------------------------------
+   * CURRENT BOOKING
+   * ---------------------------------------------------------
+   *
+   * The currently running booking is the most important one.
+   */
+  if (current) {
+    /*
+     * Check whether there is an override of the current booking.
+     *
+     * CONTRACT entries and PRE-TERMINATION entries are considered
+     * overrides when they are themselves currently running.
+     */
+    const currentOverride = currentBookings
+      .filter((booking) => {
+        if (booking.ID === current.ID) {
+          return false;
+        }
+
+        return (
+          booking.booking_status === "PRE-TERMINATION" ||
+          booking.booking_status.includes("CONTRACT")
+        );
+      })
+      .sort((a, b) => b.ID - a.ID)[0];
+
+    if (currentOverride) {
+      return currentOverride;
+    }
+
+    /*
+     * Even if there is a future booking, return the current
+     * booking because it is still the booking running today.
+     *
+     * The caller can use `nextBooking` to determine that the
+     * site remains booked afterward.
+     */
+    return current;
+  }
+
+  /*
+   * ---------------------------------------------------------
+   * FALLBACK
+   * ---------------------------------------------------------
+   *
+   * Nothing is currently running and there is no qualifying
+   * upcoming booking.
+   *
+   * Return the latest booking.
+   */
+  return valid.sort((a, b) => b.ID - a.ID)[0];
 };
 export const getEndDate = (
   booking?: Booking,
