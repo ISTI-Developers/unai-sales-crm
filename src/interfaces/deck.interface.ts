@@ -67,6 +67,7 @@ export const priceAdjustment: PriceAdjustment = {
   id: v4(),
   operation: "+",
   type: "---",
+  cap: 0,
 };
 export const rateGenerator: RateGenerator = {
   duration: 3,

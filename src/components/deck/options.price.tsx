@@ -33,12 +33,12 @@ const PriceAdjustmentOption = () => {
                 <p>Add Adjustment</p>
             </Button> : <>
                 {rate_adjustment.map(adjustment => {
-                    return <div className='flex flex-col gap-1 bg-zinc-100 p-2 rounded-md relative'>
+                    return <div className='flex flex-col gap-1 bg-zinc-100 p-2 rounded-md relative group'>
                         <PriceAdjustmentField max={max} {...adjustment} />
                     </div>
                 })}
                 <Button
-                    disabled={selectedSites.length === 1 || rate_adjustment.some(adj => adj.apply_to === "ALL")}
+                    disabled={selectedSites.length === 1}
                     className='h-7 w-fit text-[0.65rem] px-2 pl-1.5 float-right'
                     size="sm"
                     variant="outline"
@@ -56,14 +56,14 @@ const PriceAdjustmentOption = () => {
                     <p>Add New</p>
                 </Button>
             </>}
-          
+
         </>
     )
 }
 
-const PriceAdjustmentField = ({ max = 999999, amount, operation, type, apply_to, id }: { max?: number; } & PriceAdjustment) => {
+const PriceAdjustmentField = ({ max = 999999, amount, operation, type, apply_to, id, cap }: { max?: number; } & PriceAdjustment) => {
 
-    const { setOptions, selectedSites, selectedOptions } = useDeck();
+    const { setOptions, selectedSites } = useDeck();
 
     const applyTo = useMemo(() => {
         if (apply_to === "ALL") return apply_to;
@@ -106,7 +106,7 @@ const PriceAdjustmentField = ({ max = 999999, amount, operation, type, apply_to,
     }
 
     return <>
-        <button type='button' className='absolute top-1 right-1 h-5 w-5 bg-red-400 flex items-center justify-center text-white rounded-md' onClick={() => setOptions(prev => {
+        <button type='button' className='absolute top-1 right-1 h-5 w-5 bg-red-400 flex items-center justify-center text-white rounded-md transition-all opacity-0 group-hover:opacity-100' onClick={() => setOptions(prev => {
             if (!prev) return prev;
 
             return {
@@ -117,7 +117,7 @@ const PriceAdjustmentField = ({ max = 999999, amount, operation, type, apply_to,
             <Trash2 size={12} />
         </button>
         <Label className='text-[0.6rem] uppercase font-semibold'>Amount:</Label>
-        <div className='flex items-center bg-white rounded-md shadow'>
+        <div className='flex items-center bg-white rounded-md border'>
             <Select value={operation} onValueChange={(value) => onChange("operation", value)}>
                 <SelectTrigger showIcon={false} className='border-none shadow-none w-fit px-2 pl-3 h-7'>
                     <SelectValue />
@@ -127,7 +127,7 @@ const PriceAdjustmentField = ({ max = 999999, amount, operation, type, apply_to,
                     <SelectItem value='-'>-</SelectItem>
                 </SelectContent>
             </Select>
-            <InputNumber min={0} max={type === "%" ? 100 : max} value={amount} groupClassName='border-none' className='h-7 shadow-none' onChange={(e) => onChange("amount", e.target.value)} />
+            <InputNumber min={0} max={type === "%" ? 100 : max} isMoney={type === "---"} value={amount} groupClassName='border-none h-7' className='shadow-none' onChange={(e) => onChange("amount", e.target.value)} />
             <Select value={type} onValueChange={(value) => onChange("type", value)}>
                 <SelectTrigger showIcon={false} className='border-none shadow-none w-fit px-2 pr-3 h-7'>
                     <SelectValue />
@@ -138,14 +138,30 @@ const PriceAdjustmentField = ({ max = 999999, amount, operation, type, apply_to,
                 </SelectContent>
             </Select>
         </div>
-        <div className='flex items-center gap-1 pt-1'>
+        {(type === "%" && operation === "-") && <div className='flex flex-col items-start gap-1 py-1'>
+            <Label className='text-[0.55rem] uppercase font-semibold'>Discount Cap: (optional)</Label>
+            <InputNumber value={cap} groupClassName='h-7' onChange={(e) => {
+                setOptions(prev => {
+                    if (!prev) return prev;
+
+                    return {
+                        ...prev,
+                        rate_adjustment: prev.rate_adjustment?.map(adj => adj.id === id ? {
+                            ...adj,
+                            cap: Number(e.target.value)
+                        } : adj)
+                    }
+                })
+            }} />
+        </div>}
+        <div className='flex flex-col items-start gap-1 pt-1'>
             <Label className='text-[0.55rem] uppercase font-semibold'>Apply to:</Label>
             <Select value={applyTo} onValueChange={(value) => onChange("apply_to", value)}>
                 <SelectTrigger className='h-7 bg-white text-xs w-fit'>
                     <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value='ALL' disabled={selectedOptions.rate_adjustment?.findIndex(adj => adj.id === id) !== 0}>All</SelectItem>
+                    <SelectItem value='ALL'>All</SelectItem>
                     <SelectItem value='SITES' disabled={selectedSites.length < 2}>Select Sites</SelectItem>
                     <SelectItem value='PRICE_RANGE' disabled={selectedSites.length < 2}>Price Range</SelectItem>
                 </SelectContent>
@@ -169,30 +185,34 @@ const PriceAdjustmentField = ({ max = 999999, amount, operation, type, apply_to,
             }} />
         }
         {apply_to !== "ALL" && apply_to.type === "range" &&
-            <AdjustmentPriceOptions value={apply_to.range} max={max} onValueChange={(value, key) => {
-                setOptions(prev => {
-                    if (!prev) return prev;
+            <>
+                <AdjustmentPriceOptions value={apply_to.range} max={max} onValueChange={(value, key) => {
+                    setOptions(prev => {
+                        if (!prev) return prev;
 
-                    return {
-                        ...prev,
-                        rate_adjustment: prev.rate_adjustment?.map(adj => adj.id === id ? {
-                            ...adj, apply_to: {
-                                type: "range",
-                                range: {
-                                    ...(
-                                        typeof adj.apply_to === "object" &&
-                                            "type" in adj.apply_to &&
-                                            adj.apply_to.type === "range"
-                                            ? adj.apply_to.range
-                                            : { from: 0, to: max }
-                                    ),
-                                    [key]: Number(value)
+                        return {
+                            ...prev,
+                            rate_adjustment: prev.rate_adjustment?.map(adj => adj.id === id ? {
+                                ...adj, apply_to: {
+                                    type: "range",
+                                    range: {
+                                        ...(
+                                            typeof adj.apply_to === "object" &&
+                                                "type" in adj.apply_to &&
+                                                adj.apply_to.type === "range"
+                                                ? adj.apply_to.range
+                                                : { from: 0, to: max }
+                                        ),
+                                        [key]: Number(value)
+                                    }
                                 }
-                            }
-                        } : adj)
-                    }
-                })
-            }} />}
+                            } : adj)
+                        }
+                    })
+                }} />
+
+            </>
+        }
     </>
 }
 
@@ -207,7 +227,7 @@ const AdjustmentSiteOptions = ({ value, onValueChange }: { value: Sites; onValue
     }, [selectedSites]);
 
     // console.log(options);
-    return <div className='flex items-center gap-1 pt-1'>
+    return <div className='flex flex-col gap-1 pt-1'>
         <Label className='text-[0.55rem] uppercase font-semibold'>SELECT:</Label>
         <MultiComboBoxWithAll value={value.list} options={options} onValueChange={onValueChange} />
     </div>
@@ -217,10 +237,11 @@ const AdjustmentPriceOptions = ({ value, onValueChange }: { value: PriceRange; m
 
     return (
         <div>
+            <Label className='text-[0.55rem] uppercase font-semibold'>Range</Label>
             <div className='flex items-center gap-2'>
-                <InputNumber className='focus-visible:ring-0 border-none shadow-none h-7 w-full' value={value.from} onChange={(e) => onValueChange(e.target.value, "from")} />
+                <InputNumber className='focus-visible:ring-0 border-none shadow-none w-full' groupClassName='h-7' value={value.from} onChange={(e) => onValueChange(e.target.value, "from")} />
                 -
-                <InputNumber className='focus-visible:ring-0 border-none shadow-none h-7 w-full' value={value.to} onChange={(e) => onValueChange(e.target.value, "to")} />
+                <InputNumber className='focus-visible:ring-0 border-none shadow-none w-full' groupClassName='h-7' value={value.to} onChange={(e) => onValueChange(e.target.value, "to")} />
             </div>
         </div>
     )

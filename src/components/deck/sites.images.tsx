@@ -8,7 +8,9 @@ const SiteImages = ({ site_code, selectedImage }: { site_code: string; selectedI
     const { data: images, isLoading } = useImage(site_code, selectedImage);
 
     useEffect(() => {
-        if (!images || !images.selectedImage) return;
+        if (!images?.selectedImage) return;
+
+        console.log(images.selectedImage)
 
         setSelectedSites(prev => {
             let changed = false;
@@ -16,7 +18,7 @@ const SiteImages = ({ site_code, selectedImage }: { site_code: string; selectedI
             const next = prev.map(site => {
                 if (site.site_code !== site_code) return site;
 
-                if (site.image === images.selectedImage.upload_id && site.url) return site;
+                if (site.image === images.selectedImage.upload_id) return site;
 
                 changed = true;
 
@@ -29,7 +31,7 @@ const SiteImages = ({ site_code, selectedImage }: { site_code: string; selectedI
 
             return changed ? next : prev;
         });
-    }, [images, site_code, setSelectedSites]);
+    }, [images?.selectedImage, site_code, setSelectedSites]);
 
     return (
         <div className="flex justify-center items-center px-4 w-full min-w-0 pb-4">

@@ -58,7 +58,7 @@ const TitleBar = () => {
     const onSave = (status?: number) => {
         if (!user || !deckID || selectedSites.length === 0) return;
         if (!selectedSites[0].image) return;
-        
+
         const deck: Deck = {
             ID: data?.ID ?? 1,
             user_id: data?.user_id ?? Number(user.ID),
@@ -117,6 +117,13 @@ const TitleBar = () => {
         return !(isSameSites && isSameFilters && isSameOptions && isSameTitle);
     }, [data, selectedFilters, selectedOptions, selectedSites, title]);
 
+
+    useEffect(() => {
+        if (selectedSites.length === 0) return;
+        if (!selectedSites.every(site => site.image)) return;
+        
+        console.log(selectedSites.map(site => site.image))
+    }, [selectedSites])
 
     useEffect(() => {
         let isActive = true;

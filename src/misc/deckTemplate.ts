@@ -34,17 +34,18 @@ export interface PriceAdjustmentBase {
   amount: number;
   type: "---" | "%"; // flat / percent
   operation: "+" | "-"; // add / subtract
+  cap: number;
 }
 
-export interface PriceAdjustmentBySites extends PriceAdjustmentBase {
+export type PriceAdjustmentBySites = PriceAdjustmentBase & {
   apply_to: Sites;
-}
-export interface PriceAdjustmentByPrice extends PriceAdjustmentBase {
+};
+export type PriceAdjustmentByPrice = PriceAdjustmentBase & {
   apply_to: Range;
-}
-export interface PriceAdjustmentAll extends PriceAdjustmentBase {
+};
+export type PriceAdjustmentAll = PriceAdjustmentBase & {
   apply_to: "ALL";
-}
+};
 
 export type PriceAdjustment =
   | PriceAdjustmentBySites
