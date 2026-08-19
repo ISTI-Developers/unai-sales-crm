@@ -1,4 +1,5 @@
 export const changes = {
+  "2.9.7": ["Added discount capping to rate adjustments."],
   "2.9.6": ["New reports and meetings pages."],
   "2.9.5": ["All new deck interface."],
   "2.9.4": ["Added parent-child relationship to clients.", "Adjusted user accesses."],

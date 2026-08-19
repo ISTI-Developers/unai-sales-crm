@@ -265,7 +265,7 @@ export function DeckProvider({ children }: ProviderProps) {
       const mapURL = createMapURL({ latitude: site.latitude, longitude: site.longitude });
 
       queryClient.prefetchQuery({
-        queryKey: ["sites", "image", site.site_code],
+        queryKey: ["sites", "image", site.site_code, site.image],
         queryFn: () => getSiteImage(site.site_code, site.image),
         staleTime: Infinity,
       });

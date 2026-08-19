@@ -26,41 +26,48 @@ export const useGeneratePowerpoint = () => {
     const contentSection = Inches(2.52);
 
     const applyOptions = (site: DeckSite, price: string, baseRate: number) => {
+        let adjustedRate = baseRate;
         if (Object.keys(selectedOptions).length !== 0) {
             const adjustments = selectedOptions.rate_adjustment;
             const exchange = selectedOptions.currency_exchange;
 
             if (adjustments) {
-                const applyAll = adjustments.some(adj => adj.apply_to === "ALL");
-                let adjustment = null;
+                adjustments.forEach(adj => {
+                    const applyTo = adj.apply_to;
+                    let discountCap = 0;
 
-                if (applyAll) {
-                    adjustment = adjustments[0];
-                } else {
-                    adjustment = adjustments.filter(adj => adj.apply_to !== "ALL").find(conf => {
-                        if (conf.apply_to.type === "sites") {
-                            return conf.apply_to.list.includes(site.site_code);
-                        } else {
-                            return Number(price) >= conf.apply_to.range.from && Number(price) <= conf.apply_to.range.to;
+                    if (adj.cap !== 0 && adj.type === "%" && adj.operation === "-") {
+                        discountCap = adj.cap
+                    }
+
+
+                    const isSiteIncluded = applyTo === "ALL" ||
+                        (applyTo.type === "sites" && applyTo.list.includes(site.site_code)) ||
+                        (applyTo.type === "range" && (Number(price) >= applyTo.range.from && Number(price) <= applyTo.range.to));
+
+                    if (isSiteIncluded) {
+                        adjustedRate = applyPriceAdjustment(adjustedRate, {
+                            amount: adj.amount,
+                            type: adj.type,
+                            operation: adj.operation,
+                        })
+                        if (discountCap !== 0) {
+                            const floorRate = Number(price) - discountCap;
+                            if (adjustedRate < floorRate) {
+                                adjustedRate = floorRate;
+                            }
                         }
-                    })
-                }
+                    }
 
-                if (adjustment) {
-                    baseRate = applyPriceAdjustment(baseRate, {
-                        amount: adjustment.amount,
-                        type: adjustment.type,
-                        operation: adjustment.operation,
-                    });
-                }
+                })
             }
 
             if (exchange && exchange.equivalent) {
-                baseRate = baseRate / Number(exchange.equivalent);
+                adjustedRate = adjustedRate / Number(exchange.equivalent);
             }
 
         }
-        return baseRate;
+        return adjustedRate;
     }
 
     const applyExchangeRate = (amount: number, eqv: number) => {
@@ -78,12 +85,11 @@ export const useGeneratePowerpoint = () => {
     }
 
     const print = async () => {
-        if (!selectedSites.length) {
-            toast({ title: "Please select atleast one site.", variant: "warning" })
-            return;
-        }
 
         try {
+            if (!selectedSites.length) {
+                throw new Error("Please select atleast one site.");
+            }
             let progress = 0
             const presentation = new PptxGenJS();
 
@@ -121,6 +127,20 @@ export const useGeneratePowerpoint = () => {
             })
 
             const printingCost = selectedOptions.settings.printing_cost;
+
+            const sitesWithNoImages = selectedSites.filter(site => site.url === undefined);
+            if (sitesWithNoImages.length > 0) {
+                const confirmation = confirm(`Please check your deck, ${sitesWithNoImages.length}/${selectedSites.length} of the decks have no image yet.`)
+
+                if (!confirmation) {
+                    // toast({
+                    //     variant: "warning",
+                    //     description: "Generate deck aborted."
+                    // })
+                    return;
+                }
+
+            }
             for (const [index, site] of selectedSites.entries()) {
                 progress = index / selectedSites.length
 
@@ -605,6 +625,7 @@ export const useGeneratePowerpoint = () => {
                     }
                 }
                 downloadToast.update({
+                    duration: Infinity,
                     id: downloadToast.id,
                     variant: "default",
                     action: (
@@ -618,6 +639,7 @@ export const useGeneratePowerpoint = () => {
 
             try {
                 downloadToast.update({
+                    duration: Infinity,
                     id: downloadToast.id,
                     action: (
                         <div className="space-y-2 w-full">

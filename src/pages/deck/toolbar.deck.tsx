@@ -107,9 +107,9 @@ function DeckToolbar() {
                         <motion.section
                             key="option-panel"
                             data-mobile={isMobile}
-                            className="relative h-full w-[16rem]"
+                            className="relative h-full w-[18vw]"
                             initial={{ width: 0, opacity: 0, x: -20 }}
-                            animate={{ width: "16rem", opacity: 1, x: 0 }}
+                            animate={{ width: "20vw", opacity: 1, x: 0 }}
                             exit={{ width: 0, opacity: 0, x: -20 }}
                             transition={{
                                 duration: 0.25,
