@@ -259,7 +259,7 @@ return (
         <TableCell align="center">
             {!['CANCELLED', 'PRE-TERMINATED', 'COMPLETED', 'STOPPED'].includes(status) && (
                 <div className="flex items-center justify-center">
-                    {/* <EditBookingDialog item={item} /> */}
+                    <EditBookingDialog item={item} />
                     <Dialog open={open} onOpenChange={setOpen}>
                         <Tooltip delayDuration={100}>
                             <TooltipTrigger asChild>

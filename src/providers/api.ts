@@ -188,6 +188,16 @@ export const idb = openDB(
           keyPath: "key",
         });
       }
+      if (!db.objectStoreNames.contains("images")) {
+        db.createObjectStore("images", {
+          keyPath: "key",
+        });
+      }
+      if (!db.objectStoreNames.contains("rentals")) {
+        db.createObjectStore("rentals", {
+          keyPath: "key",
+        });
+      }
     },
   },
 );
