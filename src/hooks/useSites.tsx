@@ -31,6 +31,17 @@ export const useSites = () => {
     staleTime: 60000,
   });
 };
+
+export const useSitesMap = (key?: keyof Site) => {
+  const { data } = useSites();
+
+  if (!data) return;
+
+  return new Map(data.map(item => {
+    const mapKey = key ? item[key] : item.ID;
+    return [mapKey, item]
+  }))
+}
 export const useSiteByID = (ID?: number) => {
   return useQuery({
     queryKey: ["sites", ID],
@@ -260,36 +271,51 @@ export const useSiteRentals = () => {
     queryKey: ["sites", "rentals"],
     queryFn: async () => {
 
+      const cached = await getRecord<SiteRental[]>("rentals", "rental");
+
+      const isFresh = cached && (Date.now() - cached.lastFetched) / 1000 < 86400;
+
+      if (isFresh) {
+        return cached.data;
+      }
+
       const response = await wp.get<WorkplaceRes<SiteRental[]>>("rentals");
 
       if (response.data.success) {
-        return response.data.data.map((site) => {
-          let rental = 0;
-          if (site.net_contract_amount) {
-            switch (Number(site.payment_term_id)) {
-              case 1:
-                rental = site.net_contract_amount;
-                break;
-              case 2:
-              case 5:
-                rental = site.net_contract_amount / 12;
-                break;
-              case 3:
-                rental = site.net_contract_amount / 6;
-                break;
-              case 4:
-                rental = site.net_contract_amount / 3;
-            }
-          }
-          return {
-            ...site,
-            site_rental: rental,
-          };
-        })
+        await saveRecord("rentals", "rental", response.data.data);
+        return response.data.data;
       }
+
+      throw new Error("An error has occured while fetching site rentals.")
     },
     throwOnError: true,
-    staleTime: 360000,
+    select: (data) => {
+      return data.map((site) => {
+        let rental = 0;
+        if (site.net_contract_amount) {
+          switch (Number(site.payment_term_id)) {
+            case 1:
+              rental = site.net_contract_amount;
+              break;
+            case 2:
+            case 5:
+              rental = site.net_contract_amount / 12;
+              break;
+            case 3:
+              rental = site.net_contract_amount / 6;
+              break;
+            case 4:
+              rental = site.net_contract_amount / 3;
+          }
+        }
+        return {
+          ...site,
+          site_rental: rental,
+        };
+      })
+    },
+    staleTime: Infinity,
+    gcTime: Infinity,
     enabled: companyID ? companyID === "5" : false,
   });
 };
@@ -575,8 +601,7 @@ export async function getSiteImage(
     selectedUploadId ??
     Number(localStorage.getItem(`${site_code}_selected`));
 
-  const selected =
-    imageMap.get(uploadId) ?? images[0];
+  const selected = imageMap.get(uploadId) ?? images[0];
 
   const imageData = await fetchImage(selected.upload_path);
 
@@ -595,6 +620,7 @@ export const useImage = (site_code: string, selectedUploadID?: number) => {
     enabled: !!site_code,
     staleTime: Infinity,
     gcTime: Infinity,
+    refetchIntervalInBackground: true,
     retry: 3,
   });
 };

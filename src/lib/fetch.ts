@@ -23,7 +23,7 @@ import {
   Site,
 } from "@/interfaces/sites.interface";
 import { useCurrentWeekReport } from "@/hooks/useDashboard";
-import { wp } from "@/providers/api";
+import { getRecord, saveRecord, wp } from "@/providers/api";
 import { useQuery } from "@tanstack/react-query";
 import { getDownloadURL, ref } from "firebase/storage";
 import { storage } from "@/firebase";
@@ -36,32 +36,42 @@ export async function fetchFromLark(url: string, options: RequestInit) {
   }
   return result;
 }
-export const fetchImage: (
-  imageLink: string,
-) => Promise<
-  { url: string; width: number; height: number } | undefined
-> = async (imageLink: string) => {
+export const fetchImage = async (imageLink: string) => {
   try {
+    const cached = await getRecord<{
+      url: string;
+      width: number;
+      height: number;
+    }>("images", imageLink);
+
+    const isFresh = cached && (Date.now() - cached.lastFetched) / 1000 < 86400;
+    if (isFresh) {
+      return cached.data;
+    }
+
     const response = await wp.get(`files?path=${imageLink}`, {
-      responseType: "arraybuffer", // This ensures binary data is received
+      responseType: "blob",
     });
     const width = response.headers["x-image-width"];
     const height = response.headers["x-image-height"];
-    const bytes = new Uint8Array(response.data);
-    let binary = "";
-    const chunkSize = 0x8000; // prevent call stack overflow
 
-    for (let i = 0; i < bytes.length; i += chunkSize) {
-      binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
-    }
+    const url = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
 
-    const base64 = btoa(binary);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
 
-    return {
-      url: `data:image/jpeg;base64,${base64}`,
+      reader.readAsDataURL(response.data);
+    });
+
+    const image = {
+      url,
       height: Number(height),
       width: Number(width),
     };
+    await saveRecord("images", imageLink, image);
+
+    return image;
   } catch (error) {
     console.error("Error fetching image:", error);
   }
