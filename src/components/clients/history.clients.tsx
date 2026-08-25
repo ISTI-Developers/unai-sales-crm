@@ -1,19 +1,17 @@
-import { logKeyMap } from "@/data/logs.keymap";
 import { HistoryLog, useLog } from "@/providers/log.provider";
 import { useEffect, useState } from "react";
 import HistoryTable from "../logs/HistoryTable";
 
-const ClientHistory = ({ clientIDs }: { clientIDs: number[] }) => {
+const ClientHistory = ({ clientIDs, modules }: { clientIDs: number[]; modules: string[] }) => {
   const { getModuleLogs } = useLog();
   const [history, setHistory] = useState<HistoryLog[] | null>(null);
 
   useEffect(() => {
     const setup = async () => {
-      console.log(clientIDs)
       const response = await getModuleLogs(
         "clients",
         clientIDs,
-        logKeyMap.clients.modules
+        modules
       );
       setHistory(response);
     };
@@ -22,8 +20,10 @@ const ClientHistory = ({ clientIDs }: { clientIDs: number[] }) => {
     const interval = setInterval(setup, 5000); //fetch every 5 seconds
 
     return () => clearInterval(interval);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clientIDs]);
+
+  console.log(history)
   return (
     <>
       <div className="flex flex-col gap-2">

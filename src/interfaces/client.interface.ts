@@ -113,6 +113,7 @@ export interface Client {
 }
 
 export type Account = {
+  client_account_id: number;
   account_id: number;
   account_executive: string;
   account_image: string;
