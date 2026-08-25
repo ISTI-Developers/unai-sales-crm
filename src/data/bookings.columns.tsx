@@ -6,11 +6,12 @@ import { SiteAvailability } from "@/interfaces/sites.interface";
 import { getLatestBooking } from "@/lib/fetch";
 import { formatAmount } from "@/lib/format";
 import { ColumnDef } from "@tanstack/react-table";
-import { BookOpen, BriefcaseBusiness, Building, Calendar, Calendar1, MapPin, Monitor, PhilippinePeso, Quote, User2 } from "lucide-react";
+import { differenceInCalendarDays } from "date-fns";
+import { BookOpen, BriefcaseBusiness, Building, Calendar, Calendar1, MapPin, PhilippinePeso, Quote, User2 } from "lucide-react";
 
 export const columns: ColumnDef<SiteAvailability>[] = [
     {
-        accessorFn: (row) => row.structure_code,
+        accessorFn: (row) => row.site_code,
         accessorKey: "structure",
         cell: Cell,
         enableColumnFilter: false,
@@ -89,7 +90,32 @@ export const columns: ColumnDef<SiteAvailability>[] = [
     },
     {
         id: "availability",
-        accessorFn: (row) => row.remaining_days ? row.remaining_days <= 60 ? "AVAILABLE" : "BOOKED" : "AVAILABLE",
+        accessorFn: (row) => {
+            const latestBooking = getLatestBooking(row.bookings);
+            const remaining = row.remaining_days ?? 0;
+
+            // Queueing has already finished
+            if (remaining <= 0) {
+                return "AVAILABLE";
+            }
+
+            // BOOKED within the 60-minute window
+            if (latestBooking?.booking_status === "QUEUEING") {
+                const difference = differenceInCalendarDays(new Date(), latestBooking.date_from);
+                if (difference >= -30) {
+                    return "BOOKED";
+                }
+                return "QUEUEING";
+
+            }
+
+            // Normal booking
+            if (remaining <= 60) {
+                return "AVAILABLE";
+            }
+
+            return "BOOKED";
+        },
         header: undefined,
         cell: undefined,
         filterFn: (row, columnId, filterValue) => {
@@ -101,22 +127,6 @@ export const columns: ColumnDef<SiteAvailability>[] = [
             filterType: "dropdown",
             allowedOptions: ["is"],
             icon: BookOpen
-        }
-    },
-    {
-        accessorKey: "site_code",
-        header: "site",
-        enableColumnFilter: false,
-        cell: ({ row }) => {
-            const item: string = row.getValue("site_code");
-            return (
-                <p className="text-[0.65rem] whitespace-nowrap font-semibold">
-                    {item}
-                </p>
-            );
-        },
-        meta: {
-            icon: Monitor
         }
     },
     {

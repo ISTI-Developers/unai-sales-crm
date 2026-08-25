@@ -556,12 +556,10 @@ export const getLatestBooking = (bookings: Booking[]) => {
       const diff = differenceInCalendarDays(from, now);
 
       switch (booking.booking_status) {
+        case "RENEWAL":
+          return true;
         case "QUEUEING":
           return diff <= 30;
-
-        case "RENEWAL":
-          return diff <= 60;
-
         case "NEW": {
           const windowPeriod = booking.is_prime ? 60 : 45;
 

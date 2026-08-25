@@ -58,6 +58,9 @@ export function DeckProvider({ children }: ProviderProps) {
       const booking = getLatestBooking(updatedBookings);
       const endDate = getEndDate(booking, adjustment);
 
+      if (site.site_code.includes("NLXVLZ005-2AD01")) {
+        console.log(booking, endDate)
+      }
       const availability = endDate ? format(addDays(new Date(endDate), 1), "MMM d, yyyy") : null;
 
       return {
@@ -248,7 +251,8 @@ export function DeckProvider({ children }: ProviderProps) {
         rate_basis: deckData.options?.settings.rate_basis ?? "SINGLE",
         booking_terms: deckData.options?.settings.booking_terms ?? DEFAULTS.booking_terms,
         printing_cost: deckData.options?.settings.printing_cost ?? DEFAULTS.printing_cost,
-        version: 1
+        version: 1,
+        showVatInc: deckData.options?.settings.showVatInc ?? false
       }
 
     } : DEFAULT_OPTIONS)
