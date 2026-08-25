@@ -132,7 +132,7 @@ const ManageClient = () => {
                 </div>}
             </TabsContent>
             <TabsContent value="logs">
-              <ClientHistory clientIDs={[client.client_id]} />
+              <ClientHistory modules={["clients", "client_contacts", ...client.mediums.map(() => "client_mediums"), ...client.account_executives.map(() => "client_accounts")]} clientIDs={[client.client_id, client.contact_id, ...client.mediums.map(med => med.cm_id), ...client.account_executives.map(ae => ae.client_account_id)]} />
             </TabsContent>
           </Tabs>
         </section>
