@@ -7,16 +7,25 @@ import { getLatestBooking } from "@/lib/fetch";
 import { formatAmount } from "@/lib/format";
 import { ColumnDef } from "@tanstack/react-table";
 import { differenceInCalendarDays } from "date-fns";
-import { BookOpen, BriefcaseBusiness, Building, Calendar, Calendar1, MapPin, PhilippinePeso, Quote, User2 } from "lucide-react";
+import { BookOpen, BriefcaseBusiness, Building, Calendar, Calendar1, MapPin, PhilippinePeso, Quote, RulerIcon, User2 } from "lucide-react";
 
 export const columns: ColumnDef<SiteAvailability>[] = [
     {
         accessorFn: (row) => row.site_code,
-        accessorKey: "structure",
+        accessorKey: "site",
         cell: Cell,
         enableColumnFilter: false,
         meta: {
             icon: Building
+        }
+    },
+    {
+        accessorKey: "size",
+        header: "Size (H x W)",
+        cell: ({ row }) => <p className="text-[0.65rem]">{row.original.size}</p>,
+        enableColumnFilter: false,
+        meta: {
+            icon: RulerIcon
         }
     },
     {
