@@ -1,10 +1,10 @@
 import { createMapURL, syncPackages } from "@/components/deck/helpers.deck";
 import { useBookings } from "@/hooks/useBookings";
 import { useDeck as useOneDeck } from "@/hooks/useDeck";
-import { fetchMap, getSiteImage, useOverridenSiteEndDates, useSitelandmarks, useSites } from "@/hooks/useSites";
+import { fetchMap, getSiteImage, useSitelandmarks, useSites } from "@/hooks/useSites";
 import { ProviderProps } from "@/interfaces";
 import { DeckProvider as DeckProviderType, DeckSite, DEFAULT_OPTIONS, DEFAULTS, displayOptions, optionsBaseContent } from "@/interfaces/deck.interface";
-import { getEndDate, getLatestBooking } from "@/lib/fetch";
+import { getBookingContext, getEndDate, getLatestBooking } from "@/lib/fetch";
 import { haversineDistance } from "@/lib/utils";
 import { DeckFilters, DeckOptions } from "@/misc/deckTemplate";
 import { useQueryClient } from "@tanstack/react-query";
@@ -32,7 +32,6 @@ export function DeckProvider({ children }: ProviderProps) {
   const { data: landmarks } = useSitelandmarks();
   const { data: allSites } = useSites();
   const { data: bookings } = useBookings();
-  const { data: adjustments } = useOverridenSiteEndDates();
   const { data: deckData } = useOneDeck(deckID);
   const [option, setOption] = useState<string | undefined>("site_selection")
   const [selectedSite, setSelectedSite] = useState(0);
@@ -44,7 +43,6 @@ export function DeckProvider({ children }: ProviderProps) {
   const isLoading =
     !allSites ||
     !bookings ||
-    !adjustments ||
     !landmarks;
 
   const sites: DeckSite[] = useMemo(() => {
@@ -52,15 +50,21 @@ export function DeckProvider({ children }: ProviderProps) {
 
     const contracts = allSites.map(site => {
       const siteBookings = bookings.filter(booking => booking.site_code === site.site_code);
-      const adjustment = adjustments.find(adjustment => adjustment.site_code === site.site_code);
       const updatedBookings = siteBookings.map(sb => ({ ...sb, is_prime: site.is_prime }))
 
       const booking = getLatestBooking(updatedBookings);
-      const endDate = getEndDate(booking, adjustment);
+      const { current, previous } = getBookingContext(updatedBookings);
+      let endDate = getEndDate(booking);
 
-      if (site.site_code.includes("NLXVLZ005-2AD01")) {
-        console.log(booking, endDate)
+      if (current?.booking_status === "QUEUEING") {
+        const difference = differenceInCalendarDays(new Date(), current.date_from);
+        if (difference >= -30) {
+          endDate = getEndDate(current)
+        } else {
+          endDate = getEndDate(previous);
+        }
       }
+
       const availability = endDate ? format(addDays(new Date(endDate), 1), "MMM d, yyyy") : null;
 
       return {
@@ -70,7 +74,7 @@ export function DeckProvider({ children }: ProviderProps) {
     })
     return contracts;
 
-  }, [isLoading, allSites, bookings, adjustments])
+  }, [isLoading, allSites, bookings])
 
   const searchedSites: DeckSite[] = useMemo(() => {
     if (!sites) return sites;
@@ -217,49 +221,122 @@ export function DeckProvider({ children }: ProviderProps) {
   useEffect(() => {
     if (!deckData || !deckID || isLoading) return;
 
-    if (hydratedDeckRef.current === deckID) return;
-
     const siteMap = new Map(
-      (deckData.sites).map(s => [s.site_code, s])
+      deckData.sites.map((s) => [s.site_code, s])
     );
 
-    const siteCodes = new Set(deckData.sites.map(s => s.site_code));
+    const siteCodes = new Set(
+      deckData.sites.map((s) => s.site_code)
+    );
 
-    const loadedSites = sites.filter(site =>
+    const loadedSites = sites.filter((site) =>
       siteCodes.has(site.site_code)
     );
 
-    setSelectedSites(prev =>
-      loadedSites.map(site => {
-        const existing = prev.find(s => s.site_code === site.site_code);
+    /*
+     * ---------------------------------------------------------
+     * INITIAL SITE HYDRATION
+     * ---------------------------------------------------------
+     *
+     * Only do this once for this deck.
+     */
+    if (hydratedDeckRef.current !== deckID) {
+      setSelectedSites(prev => {
+        return loadedSites.map((site) => {
+          const existing = prev.find(
+            (s) => s.site_code === site.site_code
+          );
+
+          return {
+            ...existing,
+            ...site,
+            image: siteMap.get(site.site_code)?.image,
+          };
+        })
+      }
+
+      );
+
+      setFilters(deckData.filters ?? {});
+
+      setOptions(
+        !Array.isArray(deckData.options)
+          ? {
+            rate_adjustment:
+              deckData.options.rate_adjustment ?? [],
+
+            currency_exchange:
+              deckData.options.currency_exchange ??
+              DEFAULT_OPTIONS.currency_exchange,
+
+            packages: Array.isArray(deckData.options.packages)
+              ? syncPackages(
+                deckData.options?.settings.booking_terms,
+                deckData.options.packages
+              )
+              : deckData.options.packages ??
+              DEFAULT_OPTIONS.packages,
+
+            add_ons:
+              deckData.options.add_ons ??
+              DEFAULT_OPTIONS.add_ons,
+
+            settings: {
+              rate_basis:
+                deckData.options?.settings.rate_basis ??
+                "SINGLE",
+
+              booking_terms:
+                deckData.options?.settings.booking_terms ??
+                DEFAULTS.booking_terms,
+
+              printing_cost:
+                deckData.options?.settings.printing_cost ??
+                DEFAULTS.printing_cost,
+
+              version: 1,
+
+              showVatInc:
+                deckData.options?.settings.showVatInc ??
+                false,
+            },
+          }
+          : DEFAULT_OPTIONS
+      );
+
+      setTitle(deckData.title ?? "");
+
+      hydratedDeckRef.current = deckID;
+
+      return;
+    }
+
+    /*
+     * ---------------------------------------------------------
+     * AVAILABILITY SYNC
+     * ---------------------------------------------------------
+     *
+     * The deck is already hydrated.
+     *
+     * `sites` has potentially changed because bookings/allSites
+     * changed, so update availability only.
+     */
+    setSelectedSites((prev) =>
+      prev.map((selectedSite) => {
+        const freshSite = sites.find(
+          (site) => site.site_code === selectedSite.site_code
+        );
+
+        if (!freshSite) {
+          return selectedSite;
+        }
 
         return {
-          ...existing, // keep local fields
-          ...site,     // overwrite with fresh backend data
-          image: siteMap.get(site.site_code)?.image,
+          ...selectedSite,
+          availability: freshSite.availability,
         };
       })
     );
-
-    setFilters(deckData.filters ?? {});
-    setOptions(!Array.isArray(deckData.options) ? {
-      rate_adjustment: deckData.options.rate_adjustment ?? [],
-      currency_exchange: deckData.options.currency_exchange ?? DEFAULT_OPTIONS.currency_exchange,
-      packages: Array.isArray(deckData.options.packages) ? syncPackages(deckData.options?.settings.booking_terms, deckData.options.packages) : deckData.options.packages ?? DEFAULT_OPTIONS.packages,
-      add_ons: deckData.options.add_ons ?? DEFAULT_OPTIONS.add_ons,
-      settings: {
-        rate_basis: deckData.options?.settings.rate_basis ?? "SINGLE",
-        booking_terms: deckData.options?.settings.booking_terms ?? DEFAULTS.booking_terms,
-        printing_cost: deckData.options?.settings.printing_cost ?? DEFAULTS.printing_cost,
-        version: 1,
-        showVatInc: deckData.options?.settings.showVatInc ?? false
-      }
-
-    } : DEFAULT_OPTIONS)
-
-    setTitle(deckData.title ?? "");
-    hydratedDeckRef.current = deckID;
-
   }, [deckData, deckID, isLoading, sites]);
 
   useEffect(() => {

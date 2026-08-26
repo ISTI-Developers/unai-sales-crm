@@ -3,7 +3,7 @@ import ActionCell from "@/components/bookings/actions";
 import DateCell from "@/components/bookings/date";
 import Cell from "@/components/bookings/structure";
 import { SiteAvailability } from "@/interfaces/sites.interface";
-import { getLatestBooking } from "@/lib/fetch";
+import { getBookingContext, getLatestBooking } from "@/lib/fetch";
 import { formatAmount } from "@/lib/format";
 import { ColumnDef } from "@tanstack/react-table";
 import { differenceInCalendarDays } from "date-fns";
@@ -100,7 +100,8 @@ export const columns: ColumnDef<SiteAvailability>[] = [
     {
         id: "availability",
         accessorFn: (row) => {
-            const latestBooking = getLatestBooking(row.bookings);
+            const siteBookings = row.bookings.map(sb => ({ ...sb, is_prime: row.is_prime }))
+            const latestBooking = getLatestBooking(siteBookings);
             const remaining = row.remaining_days ?? 0;
 
             // Queueing has already finished
@@ -131,6 +132,7 @@ export const columns: ColumnDef<SiteAvailability>[] = [
             const cellValue = row.getValue<Date>(columnId);
             return cellValue === filterValue.value;
         },
+        enableGlobalFilter: false,
         meta: {
             hidden: true,
             filterType: "dropdown",
@@ -189,15 +191,22 @@ export const columns: ColumnDef<SiteAvailability>[] = [
             let item = row.product ?? "";
 
             // build display label
-            item = `${client} ${item ? `(${item})` : "---"}`;
+            item = `${client} ${item ? `(${item})` : ""}`;
             const siteBookings = bookings.map(sb => ({ ...sb, is_prime: row.is_prime }))
 
-            const booking = getLatestBooking(siteBookings);
+            const { current, previous } = getBookingContext(siteBookings);
 
-            if (booking) {
-                item = booking.client
+            if (current?.booking_status === "QUEUEING") {
+                const difference = differenceInCalendarDays(new Date(), current.date_from);
+                if (difference >= -30) {
+                    item = current.client;
+                }
+                item = previous?.client ?? "---";
+            } else {
+                item = current?.client ?? "---";
             }
-            return item ?? "---";
+
+            return item || "---";
         },
         cell: ({ getValue }) => (
             <p className="text-[.6rem] text-start">{getValue<string>()}</p>
@@ -259,21 +268,38 @@ export const columns: ColumnDef<SiteAvailability>[] = [
         }
     },
     {
-        accessorKey: "remaining_days",
+        id: "remaining_days",
+        accessorFn: (row) => {
+            const bookings = row.bookings;
+            const siteBookings = bookings.map(sb => ({ ...sb, is_prime: row.is_prime }))
+
+            const { current, previous } = getBookingContext(siteBookings);
+
+            let remainingDays = row.remaining_days ?? 0;
+
+            if (current?.booking_status === "QUEUEING") {
+                const difference = differenceInCalendarDays(new Date(), current.date_from);
+                if (difference >= -30) {
+                    remainingDays = differenceInCalendarDays(new Date(current.date_to), new Date());
+                } else {
+                    remainingDays = previous ? differenceInCalendarDays(new Date(previous.date_to), new Date()) : 0;
+                }
+            }
+
+            return Math.max(remainingDays, 0);
+        },
         header: "days left",
         cell: ({ row }) => {
-            const remainingDays: number = row.getValue("remaining_days");
+            const value: string = row.getValue("remaining_days")
             return (
                 <p className="text-[0.65rem]">
-                    {remainingDays
-                        ? formatAmount(remainingDays, { style: "decimal" })
-                        : "---"}
+                    {Number(value) > 0 ? value : "---"}
                 </p>
             );
         },
         enableGlobalFilter: false,
         filterFn: (row, _, filterValue) => {
-            const cellValue = Number(row.original.remaining_days || 0);
+            const cellValue = Number(row.getValue("remaining_days") || 0);
             const value = filterValue.value;
 
             switch (filterValue.condition) {
@@ -308,19 +334,39 @@ export const columns: ColumnDef<SiteAvailability>[] = [
         }
     },
     {
-        accessorKey: "days_vacant",
+        id: "days_vacant",
+        accessorFn: (row) => {
+            const bookings = row.bookings;
+            const siteBookings = bookings.map(sb => ({ ...sb, is_prime: row.is_prime }))
+
+            const { current, previous } = getBookingContext(siteBookings);
+
+            let vacant = row.days_vacant ?? 0;
+
+            if (current?.booking_status === "QUEUEING") {
+                const difference = differenceInCalendarDays(new Date(), current.date_from);
+                if (difference >= -30) {
+                    vacant = differenceInCalendarDays(new Date(), new Date(current.date_to));
+                } else {
+                    vacant = previous ? differenceInCalendarDays(new Date(), new Date(previous.date_to)) : 0;
+                }
+            }
+
+            console.log(vacant)
+            return Math.max(vacant, 0);
+        },
         header: "days vacant",
         cell: ({ row }) => {
-            const daysVacant: number = row.getValue("days_vacant")
+            const value: string = row.getValue("days_vacant")
             return (
                 <p className="text-[0.65rem]">
-                    {daysVacant > 0 ? formatAmount(daysVacant, { style: "decimal" }) : "---"}
+                    {Number(value) > 0 ? value : "---"}
                 </p>
             );
         },
         enableGlobalFilter: false,
         filterFn: (row, _, filterValue) => {
-            const cellValue = Number(row.original.days_vacant || 0);
+            const cellValue = Number(row.getValue("days_vacant") || 0);
             const value = filterValue.value;
 
             switch (filterValue.condition) {
