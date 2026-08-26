@@ -8,7 +8,9 @@ import { differenceInCalendarDays } from 'date-fns';
 function Cell({ row }: CellContext<SiteAvailability, unknown>) {
     const item = row.original;
     const remaining = item.remaining_days ?? 0;
-    const latestBooking = getLatestBooking(item.bookings);
+    const siteBookings = item.bookings.map(sb => ({ ...sb, is_prime: item.is_prime }))
+
+    const latestBooking = getLatestBooking(siteBookings);
 
     const statusMap = {
         "QUEUEING": "bg-yellow-100 border-yellow-500 text-yellow-500",

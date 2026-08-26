@@ -2,6 +2,8 @@ export const changes = {
   "2.9.8.2": [
     "Added queueing status to availability",
     "fix conditions for renewal and queueing bookings.",
+    "Applied the queueing status changes to deck also.",
+    "Additional conditions have been added to bookings availability.",
   ],
   "2.9.8.1": ["Updated the vite version for indexedDB"],
   "2.9.8": ["Optimized site images and rentals."],

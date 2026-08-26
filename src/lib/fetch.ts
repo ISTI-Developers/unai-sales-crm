@@ -484,17 +484,217 @@ export function useImageUrls(filename: string) {
   });
 }
 
-export const getLatestBooking = (bookings: Booking[]) => {
+// export const getLatestBooking = (bookings: Booking[]) => {
+//   const now = new Date();
+
+//   if (!bookings.length) return;
+
+//   // Ignore cancelled bookings first.
+//   const validBookings = bookings.filter(
+//     (booking) => booking.booking_status !== "CANCELLED",
+//   );
+
+//   if (!validBookings.length) return;
+
+//   /*
+//    * For the same date_from, keep only the latest booking.
+//    */
+//   const latestPerStartDate = new Map<string, Booking>();
+
+//   for (const booking of validBookings) {
+//     const key = booking.date_from;
+//     const existing = latestPerStartDate.get(key);
+
+//     if (!existing || booking.ID > existing.ID) {
+//       latestPerStartDate.set(key, booking);
+//     }
+//   }
+
+//   const valid = Array.from(latestPerStartDate.values());
+
+//   /*
+//    * Check if a booking is currently running.
+//    */
+//   const isRunning = (booking: Booking) => {
+//     const from = new Date(booking.date_from);
+//     const to = new Date(booking.date_to);
+
+//     return from <= now && to >= now;
+//   };
+
+//   /*
+//    * Get the currently running booking.
+//    *
+//    * If multiple bookings overlap, the latest ID wins.
+//    */
+//   const currentBookings = valid.filter(isRunning).sort((a, b) => b.ID - a.ID);
+
+//   const current = currentBookings[0];
+
+//   /*
+//    * Find the next qualifying future booking.
+//    *
+//    * This is important because a site can still be BOOKED even
+//    * when its current contract has an upcoming end date.
+//    *
+//    * Example:
+//    *
+//    * Aug 1  -> Aug 31  CURRENT
+//    * Sep 1  -> Dec 31  RENEWAL
+//    *
+//    * The site is still effectively BOOKED.
+//    */
+//   const futureBookings = valid
+//     .filter((booking) => {
+//       const from = new Date(booking.date_from);
+
+//       // Only future bookings.
+//       if (from <= now) {
+//         return false;
+//       }
+
+//       const diff = differenceInCalendarDays(from, now);
+
+//       switch (booking.booking_status) {
+//         case "RENEWAL":
+//           return true;
+//         case "QUEUEING":
+//           return diff <= 30;
+//         case "NEW": {
+//           const windowPeriod = booking.is_prime ? 60 : 45;
+
+//           return diff <= windowPeriod;
+//         }
+
+//         default:
+//           return false;
+//       }
+//     })
+//     .sort((a, b) => {
+//       const dateDiff =
+//         new Date(a.date_from).getTime() - new Date(b.date_from).getTime();
+
+//       if (dateDiff !== 0) {
+//         return dateDiff;
+//       }
+
+//       return b.ID - a.ID;
+//     });
+
+//   const nextBooking = futureBookings[0];
+
+//   /*
+//    * ---------------------------------------------------------
+//    * NO CURRENT BOOKING
+//    * ---------------------------------------------------------
+//    *
+//    * Now future reservations become the primary consideration.
+//    */
+
+//   // QUEUEING / RENEWAL / NEW
+//   if (nextBooking) {
+//     return nextBooking;
+//   }
+
+//   /*
+//    * ---------------------------------------------------------
+//    * CURRENT BOOKING
+//    * ---------------------------------------------------------
+//    *
+//    * The currently running booking is the most important one.
+//    */
+//   if (current) {
+//     /*
+//      * Check whether there is an override of the current booking.
+//      *
+//      * CONTRACT entries and PRE-TERMINATION entries are considered
+//      * overrides when they are themselves currently running.
+//      */
+//     const currentOverride = currentBookings
+//       .filter((booking) => {
+//         if (booking.ID === current.ID) {
+//           return false;
+//         }
+
+//         return (
+//           booking.booking_status === "PRE-TERMINATION" ||
+//           booking.booking_status.includes("CONTRACT")
+//         );
+//       })
+//       .sort((a, b) => b.ID - a.ID)[0];
+
+//     if (currentOverride) {
+//       return currentOverride;
+//     }
+
+//     /*
+//      * Even if there is a future booking, return the current
+//      * booking because it is still the booking running today.
+//      *
+//      * The caller can use `nextBooking` to determine that the
+//      * site remains booked afterward.
+//      */
+//     return current;
+//   }
+
+//   /*
+//    * ---------------------------------------------------------
+//    * FALLBACK
+//    * ---------------------------------------------------------
+//    *
+//    * Nothing is currently running and there is no qualifying
+//    * upcoming booking.
+//    *
+//    * Return the latest booking.
+//    */
+//   return valid.sort((a, b) => b.ID - a.ID)[0];
+// };
+export const getEndDate = (
+  booking?: Booking,
+  adjustment?: ContractOverride,
+) => {
+  if (!booking && !adjustment) return;
+
+  if (booking) {
+    if (adjustment) {
+      if (new Date(booking.date_to) > new Date(adjustment.adjusted_end_date)) {
+        if (booking.booking_status === "PRE-TERMINATION") {
+          return format(subDays(new Date(booking.date_to), 1), "yyyy-MM-dd");
+        }
+        return booking.date_to;
+      }
+      return adjustment.adjusted_end_date;
+    }
+    if (booking.booking_status === "PRE-TERMINATION") {
+      return format(subDays(new Date(booking.date_to), 1), "yyyy-MM-dd");
+    }
+    return booking.date_to;
+  }
+};
+
+export const getBookingContext = (bookings: Booking[]) => {
   const now = new Date();
 
-  if (!bookings.length) return;
+  const emptyContext = {
+    current: undefined,
+    previous: undefined,
+    next: undefined,
+  };
 
-  // Ignore cancelled bookings first.
+  if (!bookings.length) {
+    return emptyContext;
+  }
+
+  /*
+   * Ignore cancelled bookings.
+   */
   const validBookings = bookings.filter(
     (booking) => booking.booking_status !== "CANCELLED",
   );
 
-  if (!validBookings.length) return;
+  if (!validBookings.length) {
+    return emptyContext;
+  }
 
   /*
    * For the same date_from, keep only the latest booking.
@@ -513,42 +713,30 @@ export const getLatestBooking = (bookings: Booking[]) => {
   const valid = Array.from(latestPerStartDate.values());
 
   /*
-   * Check if a booking is currently running.
+   * ---------------------------------------------------------
+   * CURRENT RUNNING BOOKINGS
+   * ---------------------------------------------------------
    */
-  const isRunning = (booking: Booking) => {
-    const from = new Date(booking.date_from);
-    const to = new Date(booking.date_to);
+  const currentBookings = valid
+    .filter((booking) => {
+      const from = new Date(booking.date_from);
+      const to = new Date(booking.date_to);
 
-    return from <= now && to >= now;
-  };
+      return from <= now && to >= now;
+    })
+    .sort((a, b) => b.ID - a.ID);
+
+  const runningBooking = currentBookings[0];
 
   /*
-   * Get the currently running booking.
-   *
-   * If multiple bookings overlap, the latest ID wins.
-   */
-  const currentBookings = valid.filter(isRunning).sort((a, b) => b.ID - a.ID);
-
-  const current = currentBookings[0];
-
-  /*
-   * Find the next qualifying future booking.
-   *
-   * This is important because a site can still be BOOKED even
-   * when its current contract has an upcoming end date.
-   *
-   * Example:
-   *
-   * Aug 1  -> Aug 31  CURRENT
-   * Sep 1  -> Dec 31  RENEWAL
-   *
-   * The site is still effectively BOOKED.
+   * ---------------------------------------------------------
+   * FUTURE BOOKINGS
+   * ---------------------------------------------------------
    */
   const futureBookings = valid
     .filter((booking) => {
       const from = new Date(booking.date_from);
 
-      // Only future bookings.
       if (from <= now) {
         return false;
       }
@@ -558,8 +746,10 @@ export const getLatestBooking = (bookings: Booking[]) => {
       switch (booking.booking_status) {
         case "RENEWAL":
           return true;
+
         case "QUEUEING":
           return diff <= 30;
+
         case "NEW": {
           const windowPeriod = booking.is_prime ? 60 : 45;
 
@@ -585,34 +775,26 @@ export const getLatestBooking = (bookings: Booking[]) => {
 
   /*
    * ---------------------------------------------------------
-   * NO CURRENT BOOKING
+   * DETERMINE CURRENT
    * ---------------------------------------------------------
    *
-   * Now future reservations become the primary consideration.
+   * Preserve the behavior of getLatestBooking():
+   *
+   * 1. Future qualifying booking
+   * 2. Currently running booking
+   * 3. Latest valid booking as fallback
    */
+  let current: Booking | undefined;
 
-  // QUEUEING / RENEWAL / NEW
   if (nextBooking) {
-    return nextBooking;
-  }
-
-  /*
-   * ---------------------------------------------------------
-   * CURRENT BOOKING
-   * ---------------------------------------------------------
-   *
-   * The currently running booking is the most important one.
-   */
-  if (current) {
+    current = nextBooking;
+  } else if (runningBooking) {
     /*
-     * Check whether there is an override of the current booking.
-     *
-     * CONTRACT entries and PRE-TERMINATION entries are considered
-     * overrides when they are themselves currently running.
+     * Check for an override of the running booking.
      */
     const currentOverride = currentBookings
       .filter((booking) => {
-        if (booking.ID === current.ID) {
+        if (booking.ID === runningBooking.ID) {
           return false;
         }
 
@@ -623,51 +805,68 @@ export const getLatestBooking = (bookings: Booking[]) => {
       })
       .sort((a, b) => b.ID - a.ID)[0];
 
-    if (currentOverride) {
-      return currentOverride;
-    }
-
+    current = currentOverride ?? runningBooking;
+  } else {
     /*
-     * Even if there is a future booking, return the current
-     * booking because it is still the booking running today.
+     * Nothing running and nothing upcoming.
      *
-     * The caller can use `nextBooking` to determine that the
-     * site remains booked afterward.
+     * IMPORTANT:
+     * Preserve the original fallback behavior.
+     *
+     * Even if all bookings have ended, return the latest
+     * valid booking.
      */
-    return current;
+    current = [...valid].sort((a, b) => b.ID - a.ID)[0];
   }
 
   /*
    * ---------------------------------------------------------
-   * FALLBACK
+   * PREVIOUS BOOKING
    * ---------------------------------------------------------
    *
-   * Nothing is currently running and there is no qualifying
-   * upcoming booking.
-   *
-   * Return the latest booking.
+   * Find the most recent valid booking that ended before
+   * the current booking started.
    */
-  return valid.sort((a, b) => b.ID - a.ID)[0];
-};
-export const getEndDate = (
-  booking?: Booking,
-  adjustment?: ContractOverride,
-) => {
-  if (!booking && !adjustment) return;
+  let previous: Booking | undefined;
 
-  if (booking) {
-    if (adjustment) {
-      if (new Date(booking.date_to) > new Date(adjustment.adjusted_end_date)) {
-        if (booking.booking_status === "PRE-TERMINATION") {
-          return format(subDays(new Date(booking.date_to), 1), "yyyy-MM-dd");
+  if (current) {
+    const currentStart = new Date(current.date_from);
+
+    previous = valid
+      .filter((booking) => {
+        if (booking.ID === current.ID) {
+          return false;
         }
-        return booking.date_to;
-      }
-      return adjustment.adjusted_end_date;
-    }
-    if (booking.booking_status === "PRE-TERMINATION") {
-      return format(subDays(new Date(booking.date_to), 1), "yyyy-MM-dd");
-    }
-    return booking.date_to;
+
+        const bookingEnd = new Date(booking.date_to);
+
+        return bookingEnd < currentStart;
+      })
+      .sort((a, b) => {
+        const dateDiff =
+          new Date(b.date_to).getTime() - new Date(a.date_to).getTime();
+
+        if (dateDiff !== 0) {
+          return dateDiff;
+        }
+
+        return b.ID - a.ID;
+      })[0];
   }
+
+  return {
+    current,
+    previous,
+    next: nextBooking,
+  };
+};
+
+/*
+ * Backward-compatible helper.
+ *
+ * Anything currently using getLatestBooking() does not need
+ * to change.
+ */
+export const getLatestBooking = (bookings: Booking[]) => {
+  return getBookingContext(bookings).current;
 };
