@@ -110,12 +110,12 @@ export type WeekColumns = Record<number, Activity[] | "">;
 export type ReportTable = Report & WeekColumns;
 
 export const reportTags = [
+  "OCCULAR",
   "CLIENT VISIT",
   "MEETING (ONLINE)",
   "MEETING (F2F)",
   "EMAIL",
   "CALL",
   "CHAT",
-  "INITIAL TRANSACTION",
 ] as const;
 export type ReportTags = (typeof reportTags)[number];
