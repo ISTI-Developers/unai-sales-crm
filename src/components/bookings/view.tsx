@@ -19,9 +19,11 @@ import { useAuth } from '@/providers/auth.provider';
 import { v4 } from 'uuid';
 import { List } from '@/interfaces';
 import { MultiComboBox } from '../multicombobox';
+import { useAccess } from '@/hooks/useClients';
 
 function ViewBooking({ site }: { site: SiteAvailability }) {
     const [openBooking, setOpenBooking] = useState(false);
+    const { access: edit } = useAccess("booking.update");
     const [show, onShow] = useState(true);
     const headers = ["status", "client", "AE", "SRP", "term details", "action"];
     const siteBookings = site.bookings.map(sb => ({ ...sb, is_prime: site.is_prime }))
@@ -115,7 +117,7 @@ function ViewBooking({ site }: { site: SiteAvailability }) {
                             <TableCaption>End of list</TableCaption>
                             <TableHeader>
                                 <TableRow>
-                                    {headers.map((header) => {
+                                    {headers.filter(header => !edit ? header !== "action" : header).map((header) => {
                                         return (
                                             <TableHead
                                                 key={header}
@@ -150,6 +152,7 @@ const BookingItem = ({ item, show }: { item: Booking; show: boolean; }) => {
     const [open, setOpen] = useState(false);
     const [send, onSend] = useState(false);
     const [reason, setReason] = useState("");
+    const { access: edit } = useAccess("booking.update")
     const termDetails = formatTermDetails(
         item.date_from,
         item.booking_status === "PRE-TERMINATION" ? subDays(new Date(item.date_to), 1) : item.date_to,
@@ -256,41 +259,43 @@ const BookingItem = ({ item, show }: { item: Booking; show: boolean; }) => {
             <TableCell className='text-[0.65rem]'>{item.account_executive}</TableCell>
             <TableCell className='text-[0.65rem]'>{formatAmount(item.srp)}</TableCell>
             <TableCell className='text-[0.65rem]'>{termDetails}</TableCell>
-            <TableCell align="center">
-                {!['CANCELLED', 'PRE-TERMINATED', 'COMPLETED', 'STOPPED'].includes(status) && (
-                    <div className="flex items-center justify-center">
-                        <EditBookingDialog item={item} />
-                        <Dialog open={open} onOpenChange={setOpen}>
-                            <Tooltip delayDuration={100}>
-                                <TooltipTrigger asChild>
-                                    <DialogTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            size="icon"
-                                            className="h-7 w-7 text-red-300 bg-transparent hover:bg-transparent border-none shadow-none"
-                                        >
-                                            <Ban />
+            {edit &&
+                <TableCell align="center">
+                    {!['CANCELLED', 'PRE-TERMINATED', 'COMPLETED', 'STOPPED'].includes(status) && (
+                        <div className="flex items-center justify-center">
+                            <EditBookingDialog item={item} />
+                            <Dialog open={open} onOpenChange={setOpen}>
+                                <Tooltip delayDuration={100}>
+                                    <TooltipTrigger asChild>
+                                        <DialogTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                size="icon"
+                                                className="h-7 w-7 text-red-300 bg-transparent hover:bg-transparent border-none shadow-none"
+                                            >
+                                                <Ban />
+                                            </Button>
+                                        </DialogTrigger>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Cancel</TooltipContent>
+                                </Tooltip>
+                                <DialogContent aria-describedby={undefined}>
+                                    <DialogHeader>
+                                        <DialogTitle>Cancelation Confirmation</DialogTitle>
+                                    </DialogHeader>
+                                    <p>Reason for cancellation:</p>
+                                    <Textarea disabled={send} value={reason} onChange={(e) => setReason(e.target.value)} />
+                                    <DialogFooter>
+                                        <Button disabled={send} variant="destructive" onClick={onContinue}>
+                                            {send && <Loader2 className="animate-spin" />} Continue
                                         </Button>
-                                    </DialogTrigger>
-                                </TooltipTrigger>
-                                <TooltipContent>Cancel</TooltipContent>
-                            </Tooltip>
-                            <DialogContent aria-describedby={undefined}>
-                                <DialogHeader>
-                                    <DialogTitle>Cancelation Confirmation</DialogTitle>
-                                </DialogHeader>
-                                <p>Reason for cancellation:</p>
-                                <Textarea disabled={send} value={reason} onChange={(e) => setReason(e.target.value)} />
-                                <DialogFooter>
-                                    <Button disabled={send} variant="destructive" onClick={onContinue}>
-                                        {send && <Loader2 className="animate-spin" />} Continue
-                                    </Button>
-                                </DialogFooter>
-                            </DialogContent>
-                        </Dialog>
-                    </div>
-                )}
-            </TableCell>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+                        </div>
+                    )}
+                </TableCell>
+            }
         </TableRow>
     );
 };

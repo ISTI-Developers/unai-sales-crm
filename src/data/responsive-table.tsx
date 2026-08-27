@@ -1,13 +1,15 @@
 import Search from '@/components/search';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { cn, darkenColor } from '@/lib/utils';
-import { ColumnDef, ColumnFiltersState, FilterFn, flexRender, getCoreRowModel, getExpandedRowModel, getFacetedRowModel, getFacetedUniqueValues, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, PaginationState, SortingState, useReactTable } from '@tanstack/react-table'
+import { ColumnDef, ColumnFiltersState, FilterFn, flexRender, getCoreRowModel, getExpandedRowModel, getFacetedRowModel, getFacetedUniqueValues, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, PaginationState, SortingState, useReactTable, VisibilityState } from '@tanstack/react-table'
 import { ReactNode, useEffect, useState } from 'react'
 import ResponsiveTableFilters from './responsive-table-filters';
 import ResponsiveTableFilterDisplay from './responsive-table-filter-display';
 import { Button } from '@/components/ui/button';
 import { Filter } from '@/interfaces/tanstack-table';
 import { useLocation } from 'react-router-dom';
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Columns3CogIcon } from 'lucide-react';
 
 interface ResponsiveTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
@@ -26,6 +28,11 @@ function ResponsiveTable<TData, TValue>({ data, columns, children, size = 10, ge
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
     const [globalFilter, setGlobalFilter] = useState("");
     const [isEditingFilter, setEditingFilter] = useState<Filter>()
+    const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(() => {
+        const saved = localStorage.getItem(`visibility${location.pathname}`);
+
+        return saved ? JSON.parse(saved) : {};
+    })
     const [paginationState, setPaginationState] = useState<PaginationState>({
         pageIndex: 0,
         pageSize: size,
@@ -37,6 +44,7 @@ function ResponsiveTable<TData, TValue>({ data, columns, children, size = 10, ge
         getPaginationRowModel: getPaginationRowModel(),
         onSortingChange: setSorting,
         onColumnFiltersChange: setColumnFilters,
+        onColumnVisibilityChange: setColumnVisibility,
         onGlobalFilterChange: setGlobalFilter,
         getFilteredRowModel: getFilteredRowModel(),
         getSortedRowModel: getSortedRowModel(),
@@ -49,11 +57,15 @@ function ResponsiveTable<TData, TValue>({ data, columns, children, size = 10, ge
         state: {
             sorting,
             columnFilters,
+            columnVisibility,
             globalFilter,
             pagination: paginationState,
         },
     });
 
+    useEffect(() => {
+        localStorage.setItem(`visibility${location.pathname}`, JSON.stringify(columnVisibility))
+    }, [columnVisibility, location.pathname])
     useEffect(() => {
         const storedFilters = sessionStorage.getItem(`filter${location.pathname}`)
         if (storedFilters) {
@@ -74,7 +86,31 @@ function ResponsiveTable<TData, TValue>({ data, columns, children, size = 10, ge
         <div className='flex flex-col gap-2 max-h-[calc(100vh-9rem)]'>
             <header className='flex items-start justify-between gap-2'>
                 <div className={cn("flex gap-2", toolbarOrientation === "vertical" ? "flex-col" : "flex-row")}>
-                    <Search setValue={setGlobalFilter} className='max-w-[250px]' />
+                    <div className='flex gap-2'>
+                        <Search setValue={setGlobalFilter} className='max-w-[250px]' />
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button size="icon" className='size-7 px-1.5' variant="outline">
+                                    <Columns3CogIcon />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align='end'>
+                                {table.getAllColumns().filter((column) => {
+                                    return column.getCanHide() && !column.columnDef.meta?.hidden
+                                }).map(column => {
+                                    return <DropdownMenuCheckboxItem
+                                        key={column.id}
+                                        className='capitalize'
+                                        checked={column.getIsVisible()}
+                                        onCheckedChange={(value => column.toggleVisibility(!!value))}
+                                        onSelect={(e) => e.preventDefault()}
+                                    >
+                                        {column.columnDef.meta?.label ?? column.id.replace(/_/g, " ")}
+                                    </DropdownMenuCheckboxItem>
+                                })}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
                     <div className='flex gap-2 whitespace-nowrap items-center'>
                         <ResponsiveTableFilterDisplay columnFilters={columnFilters} setEditingFilter={setEditingFilter} setColumnFilters={setColumnFilters} table={table} />
                         <ResponsiveTableFilters table={table} editingFilter={isEditingFilter} setEditingFilter={setEditingFilter} />

@@ -3,7 +3,6 @@ import { useBookings } from "@/hooks/useBookings";
 import { useOverridenSiteEndDates, useSiteRentals, useSites } from '@/hooks/useSites';
 import { SiteAvailability as SiteAvailabilityType } from '@/interfaces/sites.interface';
 import { useMemo } from 'react';
-import { useAccess } from '@/hooks/useClients';
 import { getEndDate, getLatestBooking } from '@/lib/fetch';
 import { differenceInDays } from 'date-fns';
 import { splitClientName } from '@/lib/format';
@@ -13,7 +12,6 @@ const SiteAvailability = () => {
     const { data: bookings, isLoading } = useBookings();
     const { data: adjustments } = useOverridenSiteEndDates();
     const { data: rentals } = useSiteRentals();
-    const { access: edit } = useAccess("booking.update");
 
     const availableSites: SiteAvailabilityType[] = useMemo(() => {
         if (!sites || !bookings || !adjustments || isLoading || !rentals) return [];
@@ -47,10 +45,7 @@ const SiteAvailability = () => {
         return contracts;
     }, [sites, bookings, adjustments, isLoading, rentals]);
     return (
-        <ResponsiveTable columns={columns.filter(column => {
-            if (!edit) return column.id !== "action";
-            return column;
-        })} data={availableSites} size={100} />
+        <ResponsiveTable columns={columns} data={availableSites} size={100} />
     )
 }
 
