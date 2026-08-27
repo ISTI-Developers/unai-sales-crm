@@ -6,19 +6,15 @@ import { Tag } from 'lucide-react';
 const Bookings = () => {
     const { data, isLoading, fetchStatus } = useBookings();
 
-    const count = useMemo(() => {
-        if (!data || isLoading || fetchStatus === "fetching") return undefined;
+    const activeBookings = useMemo(() => {
+        if (!data || isLoading || fetchStatus === "fetching") return;
+        if (!data && !isLoading) return;
 
-        if (!data && !isLoading) return undefined;
-
-        return data.length;
-    }, [data, fetchStatus, isLoading])
-
+        const exclude = ["CANCELLED", "PRE-TERMINATION", "CONTRACT EXTENSION", "CHANGE OF CONTRACT PERIOD/DURATION", "RELOCATION"];
+        return data.filter(item => !exclude.includes(item.booking_status));
+    }, [data, isLoading, fetchStatus])
     const trend: TrendProps | undefined = useMemo(() => {
-        if (!data || isLoading || fetchStatus === "fetching") return undefined;
-
-        const activeBookings = data.filter(item => item.booking_status !== "CANCELLED");
-        if (activeBookings.length === 0) return undefined;
+        if (!activeBookings) return;
 
         // Group by month (based on modified_date)
         const now = new Date();
@@ -58,11 +54,11 @@ const Bookings = () => {
             trend,
             description: `compared from last month`,
         };
-    }, [data, fetchStatus, isLoading]);
+    }, [activeBookings]);
 
 
     return (
-        <MetricCard icon={Tag} title='Total Bookings' link='booking' count={count} style={{ background: "#fef3c7", color: "#b45309" }} trend={trend} />
+        <MetricCard icon={Tag} title='Total Bookings' link='booking' count={activeBookings?.length ?? 0} style={{ background: "#fef3c7", color: "#b45309" }} trend={trend} />
     )
 }
 

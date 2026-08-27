@@ -15,6 +15,7 @@ export const columns: ColumnDef<SiteAvailability>[] = [
         accessorKey: "site",
         cell: Cell,
         enableColumnFilter: false,
+        enableHiding: false,
         meta: {
             icon: Building
         }
@@ -413,6 +414,7 @@ export const columns: ColumnDef<SiteAvailability>[] = [
     {
         id: "action",
         header: "Action",
+        enableHiding: false,
         cell: ActionCell
     }
 ]
