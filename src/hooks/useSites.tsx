@@ -575,8 +575,14 @@ export async function getSiteImage(
   const response = await wp.get<WorkplaceRes<SiteImage[]>>(
     `images/${site_code}`
   );
+  const data = response.data.data;
 
-  const images = response.data.data.sort(
+  if (!data) return {
+    images: [],
+    selectedImage: undefined
+  };
+
+  const images = [...data].sort(
     (a, b) =>
       new Date(b.date_uploaded).getTime() -
       new Date(a.date_uploaded).getTime()
@@ -588,7 +594,6 @@ export async function getSiteImage(
       selectedImage: undefined,
     };
   }
-
   const imageMap = new Map(
     images.map(img => [img.upload_id, img])
   );

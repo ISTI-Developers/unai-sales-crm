@@ -7,7 +7,6 @@ import { capitalize } from "@/lib/utils";
 import { format, isBefore, subDays } from "date-fns";
 import { DeckSite, regions } from "@/interfaces/deck.interface";
 import { getSiteLandmarks } from "./useSites";
-import mockup from "@/assets/mockup.png";
 import { AddOn } from "@/misc/deckTemplate";
 import { useQueryClient } from "@tanstack/react-query";
 import { Progress } from "@/components/ui/progress";
@@ -130,16 +129,8 @@ export const useGeneratePowerpoint = () => {
 
             const sitesWithNoImages = selectedSites.filter(site => site.url === undefined);
             if (sitesWithNoImages.length > 0) {
-                const confirmation = confirm(`Please check your deck, ${sitesWithNoImages.length}/${selectedSites.length} of the decks have no image yet.`)
-
-                if (!confirmation) {
-                    // toast({
-                    //     variant: "warning",
-                    //     description: "Generate deck aborted."
-                    // })
-                    return;
-                }
-
+                const sitesWithoutImage = sitesWithNoImages.map(s => s.site_code);
+                alert(`${sitesWithNoImages.length}/${selectedSites.length} of the sites have no image.\n${sitesWithoutImage.join("\n")}`)
             }
             for (const [index, site] of selectedSites.entries()) {
                 progress = index / selectedSites.length
@@ -180,17 +171,19 @@ export const useGeneratePowerpoint = () => {
                 const IMAGE_HEIGHT = Inches(HEIGHT / DPI * 2.54);
 
 
-                slide.addImage({
-                    data: site.url ?? mockup,
-                    x: Inches(0.8),
-                    // y: ((height - Inches(1.93)) / 4) + Inches(1),
-                    y: headerHeight + ((height - headerHeight) / 2) - ((IMAGE_HEIGHT * 0.91) / 2),
-                    w: IMAGE_WIDTH * 0.91,
-                    h: IMAGE_HEIGHT * 0.91,
-                    // sizing: {
-                    //     type: "contain",
-                    // }
-                });
+                if (site.url) {
+                    slide.addImage({
+                        data: site.url,
+                        x: Inches(0.8),
+                        // y: ((height - Inches(1.93)) / 4) + Inches(1),
+                        y: headerHeight + ((height - headerHeight) / 2) - ((IMAGE_HEIGHT * 0.91) / 2),
+                        w: IMAGE_WIDTH * 0.91,
+                        h: IMAGE_HEIGHT * 0.91,
+                        // sizing: {
+                        //     type: "contain",
+                        // }
+                    });
+                }
 
                 addText(slide, area, {
                     w: Inches(35.78),
@@ -637,6 +630,7 @@ export const useGeneratePowerpoint = () => {
                 });
             }
 
+            console.log("yes");
             try {
                 downloadToast.update({
                     duration: Infinity,

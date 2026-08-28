@@ -123,8 +123,9 @@ const TitleBar = () => {
         if (!selectedSites.every(site => site.image)) return;
         
         console.log(selectedSites.map(site => site.image))
+        console.count("render");
     }, [selectedSites])
-
+    
     useEffect(() => {
         let isActive = true;
         const timeout = setTimeout(() => {
@@ -138,7 +139,7 @@ const TitleBar = () => {
             setProgress(progressMap.STALE)
             isActive = false;
         } // ✅ cancels previous timer
-    }, [shouldSave, selectedSites, selectedFilters, selectedOptions, title]);
+    }, [shouldSave, selectedSites.length, selectedFilters, selectedOptions, title]);
 
 
 
