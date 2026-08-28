@@ -789,23 +789,30 @@ export const getBookingContext = (bookings: Booking[]) => {
   if (nextBooking) {
     current = nextBooking;
   } else if (runningBooking) {
-    /*
-     * Check for an override of the running booking.
-     */
-    const currentOverride = currentBookings
-      .filter((booking) => {
-        if (booking.ID === runningBooking.ID) {
-          return false;
-        }
+    if (
+      runningBooking.booking_status === "PRE-TERMINATION" ||
+      runningBooking.booking_status.includes("CONTRACT")
+    ) {
+      current = runningBooking;
+    } else {
+      /*
+       * Check for an override of the running booking.
+       */
+      const currentOverride = currentBookings
+        .filter((booking) => {
+          if (booking.ID === runningBooking.ID) {
+            return false;
+          }
 
-        return (
-          booking.booking_status === "PRE-TERMINATION" ||
-          booking.booking_status.includes("CONTRACT")
-        );
-      })
-      .sort((a, b) => b.ID - a.ID)[0];
+          return (
+            booking.booking_status === "PRE-TERMINATION" ||
+            booking.booking_status.includes("CONTRACT")
+          );
+        })
+        .sort((a, b) => b.ID - a.ID)[0];
 
-    current = currentOverride ?? runningBooking;
+      current = currentOverride ?? runningBooking;
+    }
   } else {
     /*
      * Nothing running and nothing upcoming.
