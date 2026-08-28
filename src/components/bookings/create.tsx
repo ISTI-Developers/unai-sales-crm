@@ -204,12 +204,21 @@ function CreateBooking({ site }: { site: SiteAvailability }) {
                 }
             })
         } else {
+            const bookings = site.bookings.map(sb => ({ ...sb, is_prime: site.is_prime }))
+            const previousBooking = getLatestBooking(bookings);
+            let dateFrom = site.date_from ?? new Date();
+
+            if (previousBooking?.booking_status.includes("CONTRACT")) {
+
+                dateFrom = previousBooking.date_from;
+            }
             setBooking(prev => {
                 if (!prev) return prev;
 
                 return {
                     ...prev,
-                    start: new Date(site.date_from ?? new Date()),
+                    start: new Date(dateFrom),
+                    end: new Date(site.end_date ?? new Date)
                 }
             })
         }
