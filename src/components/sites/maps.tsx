@@ -82,7 +82,7 @@ const LandmarkMarkers = memo(({ landmarks, zoom }: { landmarks: Landmarks[]; zoo
                 className="flex flex-col items-center gap-2"
             >
                 {zoom >= 18 &&
-                    <p className="bg-white/50 backdrop-blur-[2px] shadow shadow-white border-t border-t-white p-1.5 rounded">{landmark.display_name}</p>
+                    <p className="bg-white/50 backdrop-blur-[2px] shadow shadow-white border-t border-t-white p-1.5 rounded">{landmark.name}</p>
                 }
                 <MapPinIcon fill="#172554" stroke="#1e40af" />
             </AdvancedMarker>
@@ -302,7 +302,7 @@ function SitePreview(site: Site) {
             {isLoading ? <>Loading landmarks</> : landmarks && landmarks.length > 0 ? <ul className="max-h-[200px] overflow-y-auto scrollbar-none">
                 {landmarks.map(landmark => {
                     return <li key={landmark.ID} className="text-[0.65rem] list-disc ml-3">
-                        {landmark.display_name}
+                        {landmark.name}
                     </li>
                 })}
             </ul> : <p className="bg-slate-200 rounded-md p-4 text-center text-xs font-semibold text-slate-400">Landmarks not found</p>}

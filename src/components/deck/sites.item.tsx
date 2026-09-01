@@ -297,7 +297,7 @@ const LandmarkField = ({ site }: { site: DeckSite }) => {
     }, [site.latitude, site.longitude])
 
     return <DeckValue className="text-[clamp(4px,1.2vw,8px)] font-normal w-full max-w-full truncate">
-        {landmarks.map(lm => lm.display_name).slice(0, 5).join(" • ")}
+        {landmarks.map(lm => lm.name).slice(0, 5).join(" • ")}
     </DeckValue>
 }
 

@@ -366,7 +366,7 @@ export const useGeneratePowerpoint = () => {
                     fontSize: 10.7,
                 });
 
-                const mappedLandmarks = landmarks.map(lm => lm.display_name).slice(0, 5).join(" • ").toUpperCase();
+                const mappedLandmarks = landmarks.map(lm => lm.name).slice(0, 5).join(" • ").toUpperCase();
 
                 addText(slide, "LANDMARKS:", {
                     w: Inches(13.2),
