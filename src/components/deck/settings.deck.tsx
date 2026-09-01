@@ -199,7 +199,7 @@ function DeckSettings() {
                     <hr />
                     <section className="flex items-center gap-4 justify-between">
                         <Label>Inlcude VAT</Label>
-                        <Switch checked={selectedOptions.settings.showVatInc ?? false} onCheckedChange={(checked) => {
+                        <Switch disabled checked={selectedOptions.settings.showVatInc ?? false} onCheckedChange={(checked) => {
                             setOptions(prev => ({
                                 ...prev,
                                 settings: {
