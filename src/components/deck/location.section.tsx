@@ -318,7 +318,7 @@ const NearbyLandmarks = ({
                   {checkedLandmarks.includes(landmark) && (
                     <CircleCheck size={14} />
                   )}
-                  <p>{landmark.display_name}</p>
+                  <p>{landmark.name}</p>
                 </Badge>
               </motion.div>
             );

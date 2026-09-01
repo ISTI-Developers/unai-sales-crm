@@ -51,7 +51,7 @@ export interface City {
 
 export interface Landmarks {
   ID: number;
-  display_name: string;
+  name: string;
   // address: string;
   latitude: string;
   longitude: string;
