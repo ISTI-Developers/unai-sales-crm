@@ -6,7 +6,7 @@ import {
 } from "@vis.gl/react-google-maps";
 import { useCallback, useEffect, useState, memo, Dispatch, SetStateAction, useMemo } from "react";
 import Search from "../search";
-import { useSiteImages, useSitelandmarks, useSites } from "@/hooks/useSites";
+import { useSiteImages, useSiteLandmarks, useSites } from "@/hooks/useSites";
 import { cn, haversineDistance } from "@/lib/utils";
 import { Landmarks, Site } from "@/interfaces/sites.interface";
 import { MapPinIcon } from "lucide-react";
@@ -93,7 +93,7 @@ LandmarkMarkers.displayName = "LandmarkMarkers";
 
 const Maps = () => {
     const { data: sites } = useSites();
-    const { data: landmarks } = useSitelandmarks();
+    const { data: landmarks } = useSiteLandmarks();
 
     const [site, setSite] = useState<Site>();
     const [search, setSearch] = useState("");
@@ -254,7 +254,7 @@ const Maps = () => {
 };
 
 function SitePreview(site: Site) {
-    const { data, isLoading } = useSitelandmarks();
+    const { data, isLoading } = useSiteLandmarks();
     const { data: images } = useSiteImages(site.site_code)
 
     const landmarks = useMemo(() => {

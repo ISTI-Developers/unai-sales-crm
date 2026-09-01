@@ -9,7 +9,7 @@ import {
   useState,
 } from "react";
 import { useAuth } from "./auth.provider";
-import { catchError,spAPI } from "./api";
+import { catchError, spAPI } from "./api";
 
 interface Settings {
   weekAccess: WeekAccess[];
@@ -54,12 +54,11 @@ export function SettingsProvider({ children }: ProviderProps) {
 
   const getWeekConfigurations = async () => {
     try {
-      const response = await spAPI.get("settings?access");
+      const response = await spAPI.get<WeekAccess[]>("settings?access");
       return response.data;
     } catch (error) {
       catchError(error);
     }
-    return false;
   };
   const getReportViewingAccess = async (id?: number) => {
     try {
@@ -110,7 +109,9 @@ export function SettingsProvider({ children }: ProviderProps) {
     if (!user) return;
     const setup = async () => {
       const response = await getWeekConfigurations();
-      setWeekAccess(response);
+      if (response) {
+        setWeekAccess(response);
+      }
     };
     setup();
   }, [user, reload]);

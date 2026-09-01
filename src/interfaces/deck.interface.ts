@@ -168,6 +168,7 @@ export const DEFAULT_OPTIONS: DeckOptions = {
     rate_basis: DEFAULTS.rate_basis,
     booking_terms: DEFAULTS.booking_terms,
     printing_cost: DEFAULTS.printing_cost,
+    showVatInc: false,
     version: 1,
   },
 };
