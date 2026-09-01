@@ -35,7 +35,7 @@ function ReportCell({ column, row }: CellContext<ReportTable, unknown>) {
         const currentWeek = weeks.find(week => week.isCurrent)!
         const columnWeek = weeks.find(week => week.yearweek === Number(column.id));
 
-        if (weekAccess.find((wk) => wk.week === column.id)) {
+        if (weekAccess.find((wk) => wk.week.toString() === column.id)) {
             return true;
         }
         if (columnWeek?.isoWeek === currentWeek?.isoWeek) {

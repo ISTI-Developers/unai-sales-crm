@@ -9,9 +9,8 @@ import {
 } from "../ui/dialog";
 import { DropdownMenuItem } from "../ui/dropdown-menu";
 import { Lock, LockOpen } from "lucide-react";
-import { capitalize, generateWeeks } from "@/lib/utils";
+import { useWeeks } from "@/lib/utils";
 import { Button } from "../ui/button";
-import { getISOWeek } from "date-fns";
 import { useSettings } from "@/providers/settings.provider";
 import { useToast } from "@/hooks/use-toast";
 
@@ -20,14 +19,13 @@ function ReportWeekDialog({
 }: {
   access: {
     ID: number | undefined;
-    week: string;
+    week: number;
     access: boolean;
   };
 }) {
   const { unlockWeek, lockWeek, doReload } = useSettings();
   const { toast } = useToast();
-  const currentWeekIndex = getISOWeek(new Date()) - 1;
-  const weeks = generateWeeks();
+  const currentWeek = useWeeks().current();
   const [openDialog, onDialogOpen] = useState(false);
 
   const onContinue = async () => {
@@ -70,7 +68,7 @@ function ReportWeekDialog({
     <Dialog open={openDialog} onOpenChange={onDialogOpen}>
       <DialogTrigger asChild>
         <DropdownMenuItem
-          disabled={`Wk ${weeks[currentWeekIndex - 1].isoWeek}` === access.week}
+          disabled={currentWeek.yearweek === access.week}
           key={access.week}
           className="capitalize flex items-center justify-start gap-3 cursor-pointer"
         >
@@ -85,7 +83,7 @@ function ReportWeekDialog({
             <Lock size={16} stroke="#e2e2e2" strokeWidth={3} />
           )}
           <p className={access.access ? "text-emerald-400" : ""}>
-            {capitalize(access.week, "_")}
+            {access.week}
           </p>
         </DropdownMenuItem>
       </DialogTrigger>

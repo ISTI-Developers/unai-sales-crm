@@ -21,7 +21,7 @@ interface Settings {
     access: string,
     id: number
   ) => Promise<DefaultResponse | false>;
-  unlockWeek: (week: string) => Promise<DefaultResponse | false>;
+  unlockWeek: (week: number) => Promise<DefaultResponse | false>;
   lockWeek: (id: number) => Promise<DefaultResponse | false>;
   doReload: Dispatch<SetStateAction<number>>;
 }
@@ -32,7 +32,7 @@ export interface ReportAccess {
 }
 interface WeekAccess {
   ID: number;
-  week: string;
+  week: number;
   year: number;
 }
 const SettingsProviderContext = createContext<Settings | null>(null);
@@ -84,10 +84,10 @@ export function SettingsProvider({ children }: ProviderProps) {
     }
     return false;
   };
-  const unlockWeek = async (week: string) => {
+  const unlockWeek = async (week: number) => {
     try {
       const formdata = new FormData();
-      formdata.append("week", week);
+      formdata.append("week", String(week));
       const response = await spAPI.post<DefaultResponse>("settings", formdata);
       return response.data;
     } catch (error) {
