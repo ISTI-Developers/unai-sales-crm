@@ -1,7 +1,7 @@
 import { createMapURL, syncPackages } from "@/components/deck/helpers.deck";
 import { useBookings } from "@/hooks/useBookings";
 import { useDeck as useOneDeck } from "@/hooks/useDeck";
-import { fetchMap, getSiteImage, useSitelandmarks, useSites } from "@/hooks/useSites";
+import { fetchMap, getSiteImage, useSiteLandmarks, useSites } from "@/hooks/useSites";
 import { ProviderProps } from "@/interfaces";
 import { DeckProvider as DeckProviderType, DeckSite, DEFAULT_OPTIONS, DEFAULTS, displayOptions, optionsBaseContent } from "@/interfaces/deck.interface";
 import { getBookingContext, getEndDate, getLatestBooking } from "@/lib/fetch";
@@ -29,7 +29,7 @@ export function DeckProvider({ children }: ProviderProps) {
   const queryClient = useQueryClient();
 
   const hydratedDeckRef = useRef<string | null>(null);
-  const { data: landmarks } = useSitelandmarks();
+  const { data: landmarks } = useSiteLandmarks();
   const { data: allSites } = useSites();
   const { data: bookings } = useBookings();
   const { data: deckData } = useOneDeck(deckID);

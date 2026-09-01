@@ -108,6 +108,7 @@ export type Settings = {
   rate_basis: RateBasis;
   booking_terms: BookingTerm[];
   printing_cost: ProductionCost;
+  showVatInc: boolean;
   version: number;
 };
 

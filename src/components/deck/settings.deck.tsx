@@ -11,6 +11,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { DEFAULTS } from "@/interfaces/deck.interface";
 import { ScrollArea } from "../ui/scroll-area";
 import { createAddOn, syncAddOns, syncPackages } from "./helpers.deck";
+import { Switch } from "../ui/switch";
 
 function DeckSettings() {
     const { selectedOptions, setOptions } = useDeck();
@@ -194,6 +195,19 @@ function DeckSettings() {
                                 </div>
                             ))}
                         </div>
+                    </section>
+                    <hr />
+                    <section className="flex items-center gap-4 justify-between">
+                        <Label>Inlcude VAT</Label>
+                        <Switch disabled checked={selectedOptions.settings.showVatInc ?? false} onCheckedChange={(checked) => {
+                            setOptions(prev => ({
+                                ...prev,
+                                settings: {
+                                    ...prev.settings,
+                                    showVatInc: !!checked
+                                },
+                            }))
+                        }} />
                     </section>
                 </div>
             </ScrollArea>

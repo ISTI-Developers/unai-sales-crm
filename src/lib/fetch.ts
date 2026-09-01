@@ -306,22 +306,7 @@ export const getLandmarks = async () => {
   const response: Landmarks[] = await fetch("/landmarks.json").then((res) =>
     res.json(),
   );
-  const modLms = response.map((lm) => {
-    let types = lm.types;
-
-    if (typeof types === "string") {
-      types = types.replace("{", "");
-      types = types.replace("}", "");
-      types = types.split(",");
-    }
-
-    return {
-      ...lm,
-      types: types,
-    };
-  });
-
-  return modLms;
+  return response;
 };
 //helpers
 

@@ -95,7 +95,7 @@ function ReportWeekAccess() {
 
   const weekLock = useMemo(() => {
     return weeks.map((week) => {
-      const hasAccess = week.isCurrent ? true : weekAccess.find(item => item.week === week.yearweek) ? true : false;
+      const hasAccess = week.isCurrent ? true : weekAccess.find(item => Number(item.week) === week.yearweek) ? true : false;
 
       return {
         ID: weekAccess.find((wk) => wk.week === week.yearweek)?.ID,

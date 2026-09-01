@@ -55,7 +55,7 @@ export interface Landmarks {
   // address: string;
   latitude: string;
   longitude: string;
-  types: string[] | string;
+  types: string[];
   // record_at: string;
 }
 

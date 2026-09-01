@@ -1,4 +1,4 @@
-import { useSitelandmarks } from "@/hooks/useSites";
+import { useSiteLandmarks } from "@/hooks/useSites";
 import { List } from "@/interfaces";
 import { useDeck } from "@/providers/deck.provider";
 import { useMemo } from "react";
@@ -7,7 +7,7 @@ import { capitalize } from "@/lib/utils";
 
 const LandmarkFilter = () => {
     const { setFilters, selectedFilters } = useDeck();
-    const { data, isLoading } = useSitelandmarks();
+    const { data, isLoading } = useSiteLandmarks();
 
     const selectedLandmarks: List[] = useMemo(() => {
         if (!selectedFilters) return [];

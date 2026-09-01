@@ -4,7 +4,7 @@ import Field from "../field";
 import { useEffect, useMemo, useState } from "react";
 import { Label } from "../ui/label";
 import { DeckSite, useDeck } from "@/providers/deck.provider";
-import { useSitelandmarks } from "@/hooks/useSites";
+import { useSiteLandmarks } from "@/hooks/useSites";
 import { cn, Coordinate, haversineDistance } from "@/lib/utils";
 import { Badge } from "../ui/badge";
 import { Landmarks } from "@/interfaces/sites.interface";
@@ -219,7 +219,7 @@ const NearbyLandmarks = ({
   site_code: string;
   coordinates: Coordinate;
 }) => {
-  const { data } = useSitelandmarks();
+  const { data } = useSiteLandmarks();
   const { selectedOptions, setSelectedOptions } = useDeck();
 
   const landmarks = useMemo(() => {

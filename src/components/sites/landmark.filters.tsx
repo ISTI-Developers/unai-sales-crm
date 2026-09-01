@@ -1,4 +1,4 @@
-import { useSitelandmarks } from "@/hooks/useSites";
+import { useSiteLandmarks } from "@/hooks/useSites";
 import { List } from "@/interfaces";
 import { useMemo } from "react";
 import { MultiComboBox } from "../multicombobox";
@@ -11,7 +11,7 @@ const LandmarkFilter = ({
     value: List[];
     setValue: (value: List[]) => void;
 }) => {
-    const { data, isLoading } = useSitelandmarks();
+    const { data, isLoading } = useSiteLandmarks();
 
     const list: List[] = useMemo(() => {
         if (isLoading || !data) return [];
