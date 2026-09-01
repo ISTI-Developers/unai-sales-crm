@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { Separator } from "../ui/separator";
-import { getISOWeek } from "date-fns";
 import { useSettings } from "@/providers/settings.provider";
 import { Button } from "../ui/button";
 import { useClientMisc } from "@/hooks/useClientOptions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import { capitalize, generateWeeks } from "@/lib/utils";
+import { capitalize, useWeeks } from "@/lib/utils";
 import { ClientOptions } from "@/interfaces/client.interface";
 
 import {
@@ -91,25 +90,20 @@ function MiscManagement() {
 
 function ReportWeekAccess() {
   const { weekAccess } = useSettings();
-  const currentWeekIndex = getISOWeek(new Date()) - 1;
   const [dropdownVisibility, setDropdownVisibility] = useState(false);
-  const weeks = generateWeeks();
+  const { weeks } = useWeeks();
 
   const weekLock = useMemo(() => {
     return weeks.map((week) => {
-      const hasAccess =
-        weeks[currentWeekIndex] === week
-          ? true
-          : weekAccess.find((access) => access.week === `Wk ${weeks[currentWeekIndex - 1].isoWeek}`)
-            ? true
-            : false;
+      const hasAccess = week.isCurrent ? true : weekAccess.find(item => item.week === week.yearweek) ? true : false;
+
       return {
-        ID: weekAccess.find((wk) => wk.week === `Wk ${weeks[currentWeekIndex - 1].isoWeek}`)?.ID,
-        week: `Wk ${weeks[currentWeekIndex - 1].isoWeek}`,
+        ID: weekAccess.find((wk) => wk.week === week.yearweek)?.ID,
+        week: week.yearweek,
         access: hasAccess,
       };
     });
-  }, [currentWeekIndex, weekAccess, weeks]);
+  }, [weekAccess, weeks]);
   return (
     <div id="report-week-access" className="flex flex-col gap-4 items-start">
       <div className="space-y-2">
