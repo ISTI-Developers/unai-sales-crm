@@ -92,28 +92,12 @@ export const useSiteCities = () => {
   });
 };
 
-export const useSitelandmarks = () => {
+export const useSiteLandmarks = () => {
   return useQuery({
     queryKey: ["landmarks"],
     queryFn: async () => {
       const response: Landmarks[] = await fetch("/landmarks.json").then(res => res.json());
-      const modLms = response.map((lm) => {
-        let types = lm.types;
-
-        if (typeof types === "string") {
-          types = types.replace("{", "");
-          types = types.replace("}", "");
-          types = types.split(",");
-        }
-
-
-        return {
-          ...lm,
-          types: types,
-        };
-      });
-
-      return modLms;
+    return response
     },
     staleTime: 60000,
     gcTime: 1000 * 60 * 30,
@@ -563,7 +547,7 @@ export const getSiteLandmarks = async (coordinates: { latitude: string, longitud
       { lat: parseFloat(latitude), lng: parseFloat(longitude) },
       { lat: parseFloat(lat), lng: parseFloat(lng) }
 
-    ) <= 100;
+    ) <= 750;
   })
 
 }
