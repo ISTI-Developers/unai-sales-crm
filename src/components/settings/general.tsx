@@ -98,7 +98,7 @@ function ReportWeekAccess() {
       const hasAccess = week.isCurrent ? true : weekAccess.find(item => Number(item.week) === week.yearweek) ? true : false;
 
       return {
-        ID: weekAccess.find((wk) => wk.week === week.yearweek)?.ID,
+        ID: weekAccess.find((wk) => Number(wk.week) === week.yearweek)?.ID,
         week: week.yearweek,
         access: hasAccess,
       };
