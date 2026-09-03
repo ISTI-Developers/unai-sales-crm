@@ -18,7 +18,6 @@ import {
 } from "date-fns";
 import {
   AvailableSites,
-  ContractOverride,
   Landmarks,
   Site,
 } from "@/interfaces/sites.interface";
@@ -634,22 +633,10 @@ export function useImageUrls(filename: string) {
 //    */
 //   return valid.sort((a, b) => b.ID - a.ID)[0];
 // };
-export const getEndDate = (
-  booking?: Booking,
-  adjustment?: ContractOverride,
-) => {
-  if (!booking && !adjustment) return;
+export const getEndDate = (booking?: Booking) => {
+  if (!booking) return;
 
   if (booking) {
-    if (adjustment) {
-      if (new Date(booking.date_to) > new Date(adjustment.adjusted_end_date)) {
-        if (booking.booking_status === "PRE-TERMINATION") {
-          return format(subDays(new Date(booking.date_to), 1), "yyyy-MM-dd");
-        }
-        return booking.date_to;
-      }
-      return adjustment.adjusted_end_date;
-    }
     if (booking.booking_status === "PRE-TERMINATION") {
       return format(subDays(new Date(booking.date_to), 1), "yyyy-MM-dd");
     }

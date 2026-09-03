@@ -105,8 +105,8 @@ export const columns: ColumnDef<SiteAvailability>[] = [
             const latestBooking = getLatestBooking(siteBookings);
             const remaining = row.remaining_days ?? 0;
 
-            // Queueing has already finished
-            if (remaining <= 0) {
+            // Normal booking
+            if (remaining <= 60) {
                 return "AVAILABLE";
             }
 
@@ -119,12 +119,6 @@ export const columns: ColumnDef<SiteAvailability>[] = [
                 return "QUEUEING";
 
             }
-
-            // Normal booking
-            if (remaining <= 60) {
-                return "AVAILABLE";
-            }
-
             return "BOOKED";
         },
         header: undefined,
@@ -197,14 +191,16 @@ export const columns: ColumnDef<SiteAvailability>[] = [
 
             const { current, previous } = getBookingContext(siteBookings);
 
+           
             if (current?.booking_status === "QUEUEING") {
                 const difference = differenceInCalendarDays(new Date(), current.date_from);
                 if (difference >= -30) {
-                    item = current.client;
+                    return current.client;
                 }
                 item = previous?.client ?? "---";
             } else {
                 item = current?.client ?? "---";
+
             }
 
             return item || "---";
@@ -352,8 +348,6 @@ export const columns: ColumnDef<SiteAvailability>[] = [
                     vacant = previous ? differenceInCalendarDays(new Date(), new Date(previous.date_to)) : 0;
                 }
             }
-
-            console.log(vacant)
             return Math.max(vacant, 0);
         },
         header: "days vacant",

@@ -20,7 +20,7 @@ function Cell({ row }: CellContext<SiteAvailability, unknown>) {
 
     const status = useMemo(() => {
         // Queueing has already finished
-        if (remaining <= 0) {
+        if (remaining <= 60) {
             return "AVAILABLE";
         }
 
@@ -32,11 +32,6 @@ function Cell({ row }: CellContext<SiteAvailability, unknown>) {
             }
 
             return "QUEUEING";
-        }
-
-        // Normal booking
-        if (remaining <= 60) {
-            return "AVAILABLE";
         }
 
         return "BOOKED";
