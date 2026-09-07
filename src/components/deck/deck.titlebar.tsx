@@ -117,14 +117,6 @@ const TitleBar = () => {
         return !(isSameSites && isSameFilters && isSameOptions && isSameTitle);
     }, [data, selectedFilters, selectedOptions, selectedSites, title]);
 
-
-    useEffect(() => {
-        if (selectedSites.length === 0) return;
-        if (!selectedSites.every(site => site.image)) return;
-        
-        console.log(selectedSites.map(site => site.image))
-        console.count("render");
-    }, [selectedSites])
     
     useEffect(() => {
         let isActive = true;

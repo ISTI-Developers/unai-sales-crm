@@ -218,6 +218,10 @@ export function DeckProvider({ children }: ProviderProps) {
     })
   }
 
+  const imagesToLoadKey = selectedSites
+    .filter((site) => !site.url)
+    .map((site) => `${site.site_code}:${site.image}`)
+    .join("|");
   useEffect(() => {
     if (!deckData || !deckID || isLoading) return;
 
@@ -362,18 +366,29 @@ export function DeckProvider({ children }: ProviderProps) {
   }, [selectedSites, queryClient]);
 
   useEffect(() => {
-    const sitesToLoad = selectedSites.filter(site => !site.url);
+    const sitesToLoad = selectedSites.filter(
+      (site) => !site.url
+    );
 
     if (!sitesToLoad.length) return;
 
     let cancelled = false;
 
-    (async () => {
+    const loadImages = async () => {
       const updates = await Promise.all(
-        sitesToLoad.map(async site => {
+        sitesToLoad.map(async (site) => {
           const data = await queryClient.fetchQuery({
-            queryKey: ["sites", "image", site.site_code],
-            queryFn: () => getSiteImage(site.site_code, site.image),
+            queryKey: [
+              "sites",
+              "image",
+              site.site_code,
+              site.image,
+            ],
+            queryFn: () =>
+              getSiteImage(
+                site.site_code,
+                site.image
+              ),
             staleTime: Infinity,
           });
 
@@ -387,21 +402,29 @@ export function DeckProvider({ children }: ProviderProps) {
       if (cancelled) return;
 
       const updateMap = new Map(
-        updates.map(update => [update.site_code, update])
+        updates.map((update) => [
+          update.site_code,
+          update,
+        ])
       );
 
-      setSelectedSites(prev =>
-        prev.map(site => {
+      setSelectedSites((prev) =>
+        prev.map((site) => {
           const update = updateMap.get(site.site_code);
-          return update ? { ...site, ...update } : site;
+
+          return update
+            ? { ...site, ...update }
+            : site;
         })
       );
-    })();
+    };
+
+    loadImages();
 
     return () => {
       cancelled = true;
     };
-  }, [selectedSites, queryClient, setSelectedSites]);
+  }, [imagesToLoadKey, queryClient]);
 
   return <DeckProviderContext.Provider value={{
     sites: filteredSites,
