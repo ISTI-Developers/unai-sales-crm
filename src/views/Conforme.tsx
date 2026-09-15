@@ -1,7 +1,7 @@
 import Container from '@/misc/Container'
 import Page from '@/misc/Page'
 import CreateConforme from '@/pages/conforme/create'
-import GenerateConforme from '@/pages/conforme/generate'
+// import GenerateConforme from '@/pages/conforme/generate'
 import Main from '@/pages/conforme/main'
 import ViewConforme from '@/pages/conforme/view'
 import { Helmet } from 'react-helmet'
@@ -17,7 +17,7 @@ const Conforme = () => {
                 <Routes>
                     <Route index element={<Main />} />
                     <Route path=":request_no" element={<ViewConforme />} />
-                    <Route path=":request_no/generate" element={<GenerateConforme />} />
+                    {/* <Route path=":request_no/generate" element={<GenerateConforme />} /> */}
                     <Route path="create" element={<CreateConforme />} />
                 </Routes>
             </Page>
