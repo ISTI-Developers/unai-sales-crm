@@ -1,16 +1,15 @@
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
-import { LEDBoardConfigured } from '@/data/LEDBoards';
 import { useClients } from '@/hooks/useClients';
 import { useInsertRequest, useSingleRequest } from '@/hooks/useRequests';
 import { useSites } from '@/hooks/useSites';
 import { Cart, CartDetails, NewCart } from '@/interfaces/requests.interface';
-import { formatAmount, formatDateRange } from '@/lib/format';
+import { formatAmount } from '@/lib/format';
 import { cn, getAddOnTotal, getTotalDaily, getTotalGivenRate, getTotalSiteSRP } from '@/lib/utils';
 import { useAuth } from '@/providers/auth.provider';
-import { addDays, differenceInCalendarDays, differenceInCalendarMonths, format } from 'date-fns';
-import { ChevronLeft, Hourglass, PlusIcon, TrendingDown, TrendingUp } from 'lucide-react'
+import { addDays, differenceInCalendarMonths, format } from 'date-fns';
+import { ChevronLeft, PlusIcon, TrendingDown, TrendingUp } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { v4 } from 'uuid';
@@ -405,16 +404,6 @@ function CreateConforme() {
                   )}
                 </div>
               </section>
-              {/* 
-              <Label className='whitespace-nowrap'>Material Cost</Label>
-              <InputNumber value={cart.material_cost} groupClassName='w-fit' onChange={(e) => setCart(prev => {
-                return {
-                  ...prev,
-                  material_cost: Number(e.target.value)
-                }
-              })} />
-
-             */}
               <footer className='flex flex-col items-end gap-4'>
                 <TotalRates cart={cart} />
                 <Button disabled={isIncomplete} onClick={onSubmit} variant="outline" className='bg-main-100 text-white hover:bg-main-400 hover:text-white'>Submit Request</Button>
@@ -426,7 +415,7 @@ function CreateConforme() {
   )
 }
 
-export const TotalRates = ({ cart }: { cart: Cart }) => {
+const TotalRates = ({ cart }: { cart: Cart }) => {
 
   const selectedSites = useMemo(() => {
     return [...cart.sites.map(item => {
@@ -548,25 +537,5 @@ export const TotalRates = ({ cart }: { cart: Cart }) => {
   );
 }
 
-
-export const LEDContainer = ({ site }: { site: LEDBoardConfigured }) => {
-  const days = differenceInCalendarDays(site.to, site.from)
-  const spotRate = site.spots_price * site.spots_count * days;
-  return <>
-    <div>
-      <p className='text-xs font-semibold'>{site.site_code} (LED)</p>
-      <p className='text-[0.5rem]'>{site.address}</p>
-    </div>
-    <div className='flex items-center gap-x-1 justify-between'>
-      <Hourglass size={14} />
-      <p className='text-xs'>{site.spots_count} spots</p>
-      <p className='text-xs ml-auto'>{formatAmount(spotRate)}</p>
-    </div>
-    <div>
-      <p className='text-xs font-semibold'>Term Duration</p>
-      <p className='text-[0.65rem]'>{formatDateRange(site.from, site.to)} <span className='italic'>({days} days)</span></p>
-    </div>
-  </>
-}
 
 export default CreateConforme
