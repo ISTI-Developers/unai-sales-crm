@@ -562,7 +562,7 @@ export const useGeneratePowerpoint = () => {
                         });
                         addText(slide, formatAmount(updatedCost, {
                             currency: currency
-                        }), {
+                        }) + " + VAT", {
                             w: Inches(6.63),
                             h: labelHeight,
                             x: details2ndColumnSection,

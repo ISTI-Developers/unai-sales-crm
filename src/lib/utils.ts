@@ -1,9 +1,9 @@
 import { ChartConfig } from "@/components/ui/chart";
 import { Request, SiteRow } from "@/interfaces/requests.interface";
+import { Site } from "@/interfaces/sites.interface";
 import { clsx, type ClassValue } from "clsx";
 import {
   addDays,
-  differenceInCalendarDays,
   differenceInCalendarMonths,
   differenceInHours,
   differenceInMinutes,
@@ -16,6 +16,7 @@ import {
   addWeeks,
   differenceInCalendarWeeks,
   startOfMonth,
+  differenceInCalendarDays,
 } from "date-fns";
 import { useMemo } from "react";
 import { twMerge } from "tailwind-merge";
@@ -172,10 +173,26 @@ export const getSiteInstallationCost = (size: string, region: string) => {
 
   return 0;
 };
+export const getCost = (site_code: string) => {
+  const region = Number(site_code.charAt(0));
+
+  if (site_code.match(/NLX|SLX/)) {
+    return 25;
+  }
+  switch (region) {
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+      return 25;
+    default:
+      return 23;
+  }
+};
 export const getSiteMaterial = (
   size: string,
   site_code: string,
-  region: string,
+  customRate?: number,
 ) => {
   if (!size) return 0;
   const matches = size.match(/\d+(?:\.\d+)?/g);
@@ -185,24 +202,10 @@ export const getSiteMaterial = (
     const H = Number(height);
     const W = Number(width);
 
-    let materialCost = 23;
-
-    if (site_code.includes("NLX") || site_code.includes("SLX")) {
-      materialCost = 25;
+    let materialCost = getCost(site_code);
+    if (customRate) {
+      materialCost = customRate;
     }
-
-    switch (region) {
-      case "VISAYAS":
-      case "MINDANAO":
-      case "NORTH LUZON":
-      case "SOUTH LUZON":
-        materialCost = 25;
-        break;
-      default:
-        materialCost = 23;
-        break;
-    }
-
     return H * W * materialCost;
   }
 
@@ -212,32 +215,105 @@ export const getSiteMaterial = (
 export const getTotalMonthly = (amount: number, to: Date, from: Date) => {
   return amount * differenceInCalendarMonths(addDays(to, 1), from);
 };
+export const getTotalDaily = (amount: number, to: Date, from: Date) => {
+  return amount * differenceInCalendarDays(addDays(to, 1), from);
+};
 export const getAddOnTotal = (item: SiteRow) => {
-  if (!item.site) return 0;
-  if (!item.site.ID) return 0;
-
-  const { installation, material } = item.add_ons;
+  const { installation, material } = item;
 
   const installationAmt =
-    getSiteInstallationCost(item.site.size, item.site.region) * installation;
+    getSiteInstallationCost(item.site.size, item.site.region) *
+    installation.free;
   const materialAmt =
-    getSiteMaterial(item.site.size, item.site.site_code, item.site.region) *
-    material;
-  let tempTotal = installationAmt + materialAmt;
+    getSiteMaterial(item.site.size, item.site.site_code) * material.free;
+  return installationAmt + materialAmt;
+};
 
-  if (!item.add_ons.site) return tempTotal;
+export type Inclusion = {
+  free: number;
+  paid: number;
+  cost: number;
+};
+export const getTotalSiteSRPBySite = (
+  site: Site,
+  installation: Inclusion,
+  material: Inclusion,
+  duration: number,
+) => {
+  if (!site) return 0;
+  const siteSRP = Number(site.price) * duration;
+  const installationSRP = getSiteInstallationCost(site.size, site.region);
+  const materialSRP = getSiteMaterial(site.size, site.site_code);
+  let tempSRP = siteSRP;
 
-  const { site } = item.add_ons;
+  if (installation.paid > 0) {
+    tempSRP += installationSRP * installation.paid;
+  }
+  if (material.paid) {
+    tempSRP += materialSRP * material.paid;
+  }
+  return tempSRP;
+};
 
-  const { spots_count, spots_price, from, to } = site;
+export const getTotalSiteSRP = (item: SiteRow, duration: number) => {
+  const siteSRP = Number(item.srp) * duration;
+  const installationSRP = getSiteInstallationCost(
+    item.site.size,
+    item.site.region,
+  );
+  const materialSRP = getSiteMaterial(item.site.size, item.site.site_code);
 
-  const days = differenceInCalendarDays(to, from);
+  let tempSRP = siteSRP;
+  if (item.installation.paid > 0) {
+    tempSRP += installationSRP * item.installation.paid;
+  }
 
-  const spotAmount = days * spots_price * spots_count;
+  if (item.material.paid > 0) {
+    tempSRP += materialSRP * item.material.paid;
+  }
 
-  tempTotal += spotAmount;
+  return tempSRP;
+};
 
-  return tempTotal;
+export const getTotalGivenRateBySite = (
+  contract_rate: number,
+  item: Site,
+  installation: Inclusion,
+  material: Inclusion,
+) => {
+  if (!item) return 0;
+
+  let tempRate = contract_rate;
+  const materialSRP = getSiteMaterial(item.size, item.site_code, material.cost);
+
+  if (installation.paid > 0) {
+    tempRate += installation.cost * installation.paid;
+  }
+
+  if (material.paid > 0) {
+    tempRate += materialSRP * material.paid;
+  }
+
+  return tempRate;
+};
+
+export const getTotalGivenRate = (contract_rate: number, item: SiteRow) => {
+  let tempRate = contract_rate;
+  const materialSRP = getSiteMaterial(
+    item.site.size,
+    item.site.site_code,
+    item.material.cost,
+  );
+
+  if (item.installation.paid > 0) {
+    tempRate += item.installation.cost * item.installation.paid;
+  }
+
+  if (item.material.paid > 0) {
+    tempRate += materialSRP * item.material.paid;
+  }
+
+  return tempRate;
 };
 export function getCurrentApprovers(request: Request) {
   const sorted = [...request.approvers].sort((a, b) => a.level - b.level);
@@ -599,4 +675,23 @@ export const useWeeks = (year: number = new Date().getFullYear()) => {
   };
 
   return { weeks, map, current, getByISO, getByYearWeek };
+};
+
+export const ordinal = (n: number) => {
+  const mod100 = n % 100;
+
+  if (mod100 >= 11 && mod100 <= 13) {
+    return `${n}th`;
+  }
+
+  switch (n % 10) {
+    case 1:
+      return `${n}st`;
+    case 2:
+      return `${n}nd`;
+    case 3:
+      return `${n}rd`;
+    default:
+      return `${n}th`;
+  }
 };

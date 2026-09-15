@@ -18,7 +18,7 @@ const Changelog = () => {
           size="sm"
           className="fixed bottom-0 right-0 z-[2] hover:bg-transparent"
         >
-          {`v${Object.keys(changes)[0]}`}
+          {`${Object.keys(changes)[0]}`}
         </Button>
       </DialogTrigger>
       <DialogContent>

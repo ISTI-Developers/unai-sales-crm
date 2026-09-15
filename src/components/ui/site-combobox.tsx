@@ -1,5 +1,5 @@
 import { useSites } from '@/hooks/useSites'
-import { Site } from '@/interfaces/sites.interface';
+import { SitePreview } from '@/interfaces/sites.interface';
 import Fuse from 'fuse.js';
 import { useMemo, useState } from 'react'
 import { Popover, PopoverContent, PopoverTrigger } from './popover'
@@ -10,9 +10,9 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { cn } from '@/lib/utils';
 
 interface Props {
-    value: Site;
-    selectedSites: Site[];
-    onValueChange: (site: Site) => void
+    value: SitePreview;
+    selectedSites: SitePreview[];
+    onValueChange: (site: SitePreview) => void
     className?: string;
 }
 
@@ -20,7 +20,7 @@ function SiteCombobox({ value, selectedSites, onValueChange, className }: Props)
     const { data: sites, isLoading } = useSites();
     const [open, setOpen] = useState(false)
     const [inputValue, setInputValue] = useState("")
-    const [site, setSite] = useState<Site>()
+    const [site, setSite] = useState<SitePreview>()
 
     const filteredSites = useMemo(() => {
         if (!sites || isLoading) return [];
@@ -63,7 +63,7 @@ function SiteCombobox({ value, selectedSites, onValueChange, className }: Props)
                         onValueChange={setInputValue}
                     />
                     <CommandList>
-                        <CommandEmpty>Site not found.</CommandEmpty>
+                        <CommandEmpty>SitePreview not found.</CommandEmpty>
                         <CommandGroup>
                             {filteredSites.map((item) => {
                                 return <CommandItem
