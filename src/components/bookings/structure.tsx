@@ -2,7 +2,7 @@ import { SiteAvailability } from '@/interfaces/sites.interface'
 import { CellContext } from '@tanstack/react-table'
 import { Badge } from '../ui/badge';
 import { cn } from '@/lib/utils';
-import { getLatestBooking } from '@/lib/fetch';
+import { getBookingContext } from '@/lib/fetch';
 import { useMemo } from 'react';
 import { differenceInCalendarDays } from 'date-fns';
 function Cell({ row }: CellContext<SiteAvailability, unknown>) {
@@ -10,7 +10,7 @@ function Cell({ row }: CellContext<SiteAvailability, unknown>) {
     const remaining = item.remaining_days ?? 0;
     const siteBookings = item.bookings.map(sb => ({ ...sb, is_prime: item.is_prime }))
 
-    const latestBooking = getLatestBooking(siteBookings);
+    const { current, next } = getBookingContext(siteBookings);
 
     const statusMap = {
         "QUEUEING": "bg-yellow-100 border-yellow-500 text-yellow-500",
@@ -20,13 +20,20 @@ function Cell({ row }: CellContext<SiteAvailability, unknown>) {
 
     const status = useMemo(() => {
         // Queueing has already finished
+
+        if (next?.booking_status === "QUEUEING") {
+            const difference = differenceInCalendarDays(new Date(), next.date_from);
+            if (!(difference >= -30)) {
+                return "QUEUEING";
+            }
+        }
         if (remaining <= 60) {
             return "AVAILABLE";
         }
 
         // Still queueing, within the 60-minute window
-        if (latestBooking?.booking_status === "QUEUEING") {
-            const difference = differenceInCalendarDays(new Date(), latestBooking.date_from);
+        if (current?.booking_status === "QUEUEING") {
+            const difference = differenceInCalendarDays(new Date(), current.date_from);
             if (difference >= -30) {
                 return "BOOKED";
             }
@@ -35,7 +42,7 @@ function Cell({ row }: CellContext<SiteAvailability, unknown>) {
         }
 
         return "BOOKED";
-    }, [remaining, latestBooking]);
+    }, [remaining, current, next]);
     return (
         <div>
             <div className='flex items-center gap-1 pb-1'>

@@ -27,6 +27,11 @@ export interface Site {
   vicinity_population: number;
 }
 
+export type SitePreview = Pick<
+  Site,
+  "ID" | "site_code" | "address" | "size" | "price" | "board_facing" | "region"
+> & { spots_count?: number };
+
 export interface SiteDetailswithMapping extends Site {
   [key: string]: string | number | null | undefined | Landmarks[];
 }

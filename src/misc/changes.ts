@@ -1,21 +1,9 @@
 export const changes = {
-  "2.9.8.2": [
-    "Added queueing status to availability",
-    "fix conditions for renewal and queueing bookings.",
-    "Applied the queueing status changes to deck also.",
-    "Additional conditions have been added to bookings availability.",
+  changelog: [
+    "Implemented ConformeLEDDetails component to display LED details including pricing and variance.",
+    "Created ConformeSiteDetails component for site details, including negotiated rates and add-ons breakdown.",
+    "Added ConformeRatesTotal component to summarize total rates, package values, and margins.",
+    "Refactored ViewConforme to integrate new components and improve layout.",
+    "Updated routes in Conforme view to include generation of conforme documents.",
   ],
-  "2.9.8.1": ["Updated the vite version for indexedDB"],
-  "2.9.8": ["Optimized site images and rentals."],
-  "2.9.7": ["Added discount capping to rate adjustments."],
-  "2.9.6": ["New reports and meetings pages."],
-  "2.9.5": ["All new deck interface."],
-  "2.9.4": [
-    "Added parent-child relationship to clients.",
-    "Adjusted user accesses.",
-  ],
-  "2.9.3": ["Booking module changes."],
-  "2.9.2": ["fixed missing clients for reports page"],
-  "2.9.1": ["Added under construction status"],
-  "2.9": ["Added batch transfer of ownership."],
 };

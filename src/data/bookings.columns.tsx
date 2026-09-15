@@ -3,7 +3,7 @@ import ActionCell from "@/components/bookings/actions";
 import DateCell from "@/components/bookings/date";
 import Cell from "@/components/bookings/structure";
 import { SiteAvailability } from "@/interfaces/sites.interface";
-import { getBookingContext, getLatestBooking } from "@/lib/fetch";
+import { getBookingContext } from "@/lib/fetch";
 import { formatAmount } from "@/lib/format";
 import { ColumnDef } from "@tanstack/react-table";
 import { differenceInCalendarDays } from "date-fns";
@@ -102,17 +102,23 @@ export const columns: ColumnDef<SiteAvailability>[] = [
         id: "availability",
         accessorFn: (row) => {
             const siteBookings = row.bookings.map(sb => ({ ...sb, is_prime: row.is_prime }))
-            const latestBooking = getLatestBooking(siteBookings);
+            const { current, next } = getBookingContext(siteBookings);
             const remaining = row.remaining_days ?? 0;
 
+            if (next?.booking_status === "QUEUEING") {
+                const difference = differenceInCalendarDays(new Date(), next.date_from);
+                if (!(difference >= -30)) {
+                    return "QUEUEING";
+                }
+            }
             // Normal booking
             if (remaining <= 60) {
                 return "AVAILABLE";
             }
 
             // BOOKED within the 60-minute window
-            if (latestBooking?.booking_status === "QUEUEING") {
-                const difference = differenceInCalendarDays(new Date(), latestBooking.date_from);
+            if (current?.booking_status === "QUEUEING") {
+                const difference = differenceInCalendarDays(new Date(), current.date_from);
                 if (difference >= -30) {
                     return "BOOKED";
                 }
@@ -191,7 +197,7 @@ export const columns: ColumnDef<SiteAvailability>[] = [
 
             const { current, previous } = getBookingContext(siteBookings);
 
-           
+
             if (current?.booking_status === "QUEUEING") {
                 const difference = differenceInCalendarDays(new Date(), current.date_from);
                 if (difference >= -30) {

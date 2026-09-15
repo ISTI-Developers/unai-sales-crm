@@ -1,15 +1,14 @@
 import Search from '@/components/search';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { cn, darkenColor } from '@/lib/utils';
-import { ColumnDef, ColumnFiltersState, FilterFn, flexRender, getCoreRowModel, getExpandedRowModel, getFacetedRowModel, getFacetedUniqueValues, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, PaginationState, SortingState, useReactTable, VisibilityState } from '@tanstack/react-table'
-import { ReactNode, useEffect, useState } from 'react'
+import { ColumnDef, FilterFn, flexRender } from '@tanstack/react-table'
+import { ReactNode } from 'react'
 import ResponsiveTableFilters from './responsive-table-filters';
 import ResponsiveTableFilterDisplay from './responsive-table-filter-display';
 import { Button } from '@/components/ui/button';
-import { Filter } from '@/interfaces/tanstack-table';
-import { useLocation } from 'react-router-dom';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Columns3CogIcon } from 'lucide-react';
+import { useResponsiveTable } from '@/hooks/use-responsive-table';
 
 interface ResponsiveTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[];
@@ -23,65 +22,20 @@ interface ResponsiveTableProps<TData, TValue> {
 }
 
 function ResponsiveTable<TData, TValue>({ data, columns, children, size = 10, getSubRows, getRowClassName, globalFilterFn, toolbarOrientation = "vertical" }: ResponsiveTableProps<TData, TValue>) {
-    const location = useLocation();
-    const [sorting, setSorting] = useState<SortingState>([]);
-    const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-    const [globalFilter, setGlobalFilter] = useState("");
-    const [isEditingFilter, setEditingFilter] = useState<Filter>()
-    const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(() => {
-        const saved = localStorage.getItem(`visibility${location.pathname}`);
-
-        return saved ? JSON.parse(saved) : {};
-    })
-    const [paginationState, setPaginationState] = useState<PaginationState>({
-        pageIndex: 0,
-        pageSize: size,
-    });
-    const table = useReactTable({
+    const {
+        table,
+        columnFilters,
+        isEditingFilter,
+        setColumnFilters,
+        setGlobalFilter,
+        setEditingFilter,
+    } = useResponsiveTable({
         data,
         columns,
-        getCoreRowModel: getCoreRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
-        onSortingChange: setSorting,
-        onColumnFiltersChange: setColumnFilters,
-        onColumnVisibilityChange: setColumnVisibility,
-        onGlobalFilterChange: setGlobalFilter,
-        getFilteredRowModel: getFilteredRowModel(),
-        getSortedRowModel: getSortedRowModel(),
-        getExpandedRowModel: getExpandedRowModel(),
-        onPaginationChange: setPaginationState,
-        getFacetedRowModel: getFacetedRowModel(),
-        getFacetedUniqueValues: getFacetedUniqueValues(),
+        size,
         getSubRows,
-        globalFilterFn: globalFilterFn ?? "auto",
-        state: {
-            sorting,
-            columnFilters,
-            columnVisibility,
-            globalFilter,
-            pagination: paginationState,
-        },
+        globalFilterFn,
     });
-
-    useEffect(() => {
-        localStorage.setItem(`visibility${location.pathname}`, JSON.stringify(columnVisibility))
-    }, [columnVisibility, location.pathname])
-    useEffect(() => {
-        const storedFilters = sessionStorage.getItem(`filter${location.pathname}`)
-        if (storedFilters) {
-            try {
-                setColumnFilters(JSON.parse(storedFilters));
-            } catch {
-                // Ignore parse errors
-            }
-        }
-    }, [location])
-    // Persist column filters to localStorage when they change
-    useEffect(() => {
-        if (columnFilters.length > 0) {
-            sessionStorage.setItem(`filter${location.pathname}`, JSON.stringify(columnFilters));
-        }
-    }, [columnFilters, location]);
     return (
         <div className='flex flex-col gap-2 max-h-[calc(100vh-9rem)]'>
             <header className='flex items-start justify-between gap-2'>

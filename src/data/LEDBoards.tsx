@@ -9,6 +9,7 @@ export interface LEDBoard {
     size: string;
     spots_count: number;
     spots_price: number;
+    discounted_rate: number;
     remarks?: string;
 }
 export type LEDBoardOption = Omit<LEDBoard, "city" | "region" | "site_owner" | "remarks">
@@ -26,9 +27,10 @@ export const LEDBoards: LEDBoard[] = [
         "region": "METRO MANILA",
         "board_facing": "FACING QUEZON CITY",
         "site_owner": "United Neon Advertising, Inc.",
-        "size": "59.05 FT x 39.37 FT",
+        "size": "59.05ft x 39.37ft",
         "spots_count": 6120,
         "spots_price": 39,
+        "discounted_rate": 30
     },
     {
         "ID": 2,
@@ -38,9 +40,10 @@ export const LEDBoards: LEDBoard[] = [
         "region": "METRO MANILA",
         "board_facing": "FACING QUEZON CITY",
         "site_owner": "United Neon Advertising, Inc.",
-        "size": "31.60 FT x 23.70 FT",
+        "size": "31.60ft x 23.70ft",
         "spots_count": 6120,
         "spots_price": 34,
+        "discounted_rate": 27
     },
     {
         "ID": 3,
@@ -50,9 +53,10 @@ export const LEDBoards: LEDBoard[] = [
         "region": "METRO MANILA",
         "board_facing": "FACING MAKATI",
         "site_owner": "Joint Venture",
-        "size": "43.30 FT x 23.60 FT",
+        "size": "43.30ft x 23.60ft",
         "spots_count": 6120,
         "spots_price": 27,
+        "discounted_rate": 15
     },
     {
         "ID": 4,
@@ -62,9 +66,10 @@ export const LEDBoards: LEDBoard[] = [
         "region": "METRO MANILA",
         "board_facing": "FACING ORTIGAS",
         "site_owner": "United Neon Advertising, Inc.",
-        "size": "59.66 FT x 47.30 FT",
+        "size": "59.66ft x 47.30ft",
         "spots_count": 6120,
         "spots_price": 45,
+        "discounted_rate": 39
     },
     {
         "ID": 5,
@@ -74,9 +79,10 @@ export const LEDBoards: LEDBoard[] = [
         "region": "METRO MANILA",
         "board_facing": "FACING MAKATI",
         "site_owner": "United Neon Advertising, Inc.",
-        "size": "60.00 FT x 40.00 FT",
+        "size": "60.00ft x 40.00ft",
         "spots_count": 6120,
         "spots_price": 45,
+        "discounted_rate": 39
     },
     {
         "ID": 6,
@@ -86,9 +92,10 @@ export const LEDBoards: LEDBoard[] = [
         "region": "METRO MANILA",
         "board_facing": "FACING GATE 3",
         "site_owner": "Joint Venture",
-        "size": "20.14 FT x 13.43 FT",
+        "size": "20.14ft x 13.43ft",
         "spots_count": 5760,
         "spots_price": 30,
+        "discounted_rate": 30
     },
     {
         "ID": 7,
@@ -98,9 +105,10 @@ export const LEDBoards: LEDBoard[] = [
         "region": "METRO MANILA",
         "board_facing": "FACING MANILA CITY HALL",
         "site_owner": "Joint Venture",
-        "size": "31.50 FT x 18.90 FT",
+        "size": "31.50ft x 18.90ft",
         "spots_count": 5760,
         "spots_price": 35,
+        "discounted_rate": 35
     },
     {
         "ID": 8,
@@ -110,9 +118,10 @@ export const LEDBoards: LEDBoard[] = [
         "region": "VISAYAS",
         "board_facing": "FACING CEBU PROVINCIAL CAPITOL",
         "site_owner": "Joint Venture",
-        "size": "31.60 FT x 19.68 FT",
+        "size": "31.60ft x 19.68ft",
         "spots_count": 5760,
         "spots_price": 20,
+        "discounted_rate": 10
     },
     {
         "ID": 9,
@@ -122,8 +131,282 @@ export const LEDBoards: LEDBoard[] = [
         "region": "MINDANAO",
         "board_facing": "FACING ABREEZA MALL AND NEW SM LANANG",
         "site_owner": "United Neon Advertising, Inc.",
-        "size": "36.09 FT x 45.93 FT",
+        "size": "36.09ft x 45.93ft",
         "spots_count": 5760,
         "spots_price": 25,
-    }
+        "discounted_rate": 10
+    },
+    {
+        "ID": 10,
+        "site_code": "A1LSPLSP001-1AA01",
+        "address": "INVESTMENT DRIVE CORNER COMMERCE AVENUE, LAS PINAS CITY",
+        "city": "LAS PINAS",
+        "region": "METRO MANILA",
+        "board_facing": "PARALLEL TO MCX",
+        "site_owner": "Joint Venture",
+        "size": "23.60ft x 31.50ft",
+        "spots_count": 5400,
+        "spots_price": 16,
+        "discounted_rate": 16
+    },
+    {
+        "ID": 11,
+        "site_code": "A4NOCBCL001-1AA01",
+        "address": "BACOLOD CITY, NEGROS OCCIDENTAL",
+        "city": "NEGROS OCCIDENTAL",
+        "region": "VISAYAS",
+        "board_facing": "FACING N/A",
+        "site_owner": "Joint Venture",
+        "size": "23.60ft x 31.50ft",
+        "spots_count": 6120,
+        "spots_price": 30,
+        "discounted_rate": 30
+    },
+    {
+        "ID": 11,
+        "site_code": "A1EDSPSY003-1AA01",
+        "address": "EDSA CORNER M. DELA CRUZ, MALIBAY, BARANGAY 152 ZONE 16, PASAY CITY (LED)",
+        "city": "EDSA",
+        "region": "METRO MANILA",
+        "board_facing": "FACING PASAY TAFT",
+        "site_owner": "Joint Venture",
+        "size": "30.00ft x 40.00ft",
+        "spots_count": 6120,
+        "spots_price": 30,
+        "discounted_rate": 30
+    },
+    {
+        ID: 12,
+        site_code: "OAGT002 - Ear",
+        address: "EDSA Buendia NB",
+        city: "EDSA",
+        region: "METRO MANILA",
+        board_facing: "GANTRY",
+        site_owner: "United Neon Advertising, Inc.",
+        size: "200px x 300px",
+        spots_count: 640,
+        spots_price: 5.16,
+        discounted_rate: 5.16
+    },
+    {
+        ID: 13,
+        site_code: "OAGT002 - Whole",
+        address: "EDSA Buendia NB",
+        city: "EDSA",
+        region: "METRO MANILA",
+        board_facing: "GANTRY",
+        site_owner: "United Neon Advertising, Inc.",
+        size: "200px x 1200px",
+        spots_count: 640,
+        spots_price: 15,
+        discounted_rate: 15
+    },
+    {
+        ID: 14,
+        site_code: "OAGT003 - Ear",
+        address: "EDSA Buendia SB",
+        city: "EDSA",
+        region: "METRO MANILA",
+        board_facing: "GANTRY",
+        site_owner: "United Neon Advertising, Inc.",
+        size: "200px x 300px",
+        spots_count: 640,
+        spots_price: 5.16,
+        discounted_rate: 5.16
+    },
+    {
+        ID: 15,
+        site_code: "OAGT003 - Whole",
+        address: "EDSA Buendia SB",
+        city: "EDSA",
+        region: "METRO MANILA",
+        board_facing: "GANTRY",
+        site_owner: "United Neon Advertising, Inc.",
+        size: "200px x 1200px",
+        spots_count: 640,
+        spots_price: 15,
+        discounted_rate: 15
+    },
+    {
+        ID: 16,
+        site_code: "OAGT004 - Ear",
+        address: "EDSA Guadix NB",
+        city: "EDSA",
+        region: "METRO MANILA",
+        board_facing: "GANTRY",
+        site_owner: "United Neon Advertising, Inc.",
+        size: "270px x 300px",
+        spots_count: 640,
+        spots_price: 5.16,
+        discounted_rate: 5.16
+    },
+    {
+        ID: 17,
+        site_code: "OAGT004 - Whole",
+        address: "EDSA Guadix NB",
+        city: "EDSA",
+        region: "METRO MANILA",
+        board_facing: "GANTRY",
+        site_owner: "United Neon Advertising, Inc.",
+        size: "270px x 1200px",
+        spots_count: 640,
+        spots_price: 15,
+        discounted_rate: 15
+    },
+    {
+        ID: 18,
+        site_code: "OAGT006 - Ear",
+        address: "EDSA Megamall SB (Formerly Hi-way 54)",
+        city: "EDSA",
+        region: "METRO MANILA",
+        board_facing: "GANTRY",
+        site_owner: "United Neon Advertising, Inc.",
+        size: "270px x 300px",
+        spots_count: 640,
+        spots_price: 5.16,
+        discounted_rate: 5.16
+    },
+    {
+        ID: 19,
+        site_code: "OAGT006 - Whole",
+        address: "EDSA Megamall SB (Formerly Hi-way 54)",
+        city: "EDSA",
+        region: "METRO MANILA",
+        board_facing: "GANTRY",
+        site_owner: "United Neon Advertising, Inc.",
+        size: "270px x 1200px",
+        spots_count: 640,
+        spots_price: 15,
+        discounted_rate: 15
+    },
+    {
+        ID: 18,
+        site_code: "OAGT007 - Ear",
+        address: "EDSA Main Ave NB",
+        city: "EDSA",
+        region: "METRO MANILA",
+        board_facing: "GANTRY",
+        site_owner: "United Neon Advertising, Inc.",
+        size: "200px x 300px",
+        spots_count: 960,
+        spots_price: 3.44,
+        discounted_rate: 3.44
+    },
+    {
+        ID: 19,
+        site_code: "OAGT007 - Whole",
+        address: "EDSA Main Ave NB",
+        city: "EDSA",
+        region: "METRO MANILA",
+        board_facing: "GANTRY",
+        site_owner: "United Neon Advertising, Inc.",
+        size: "200px x 1200px",
+        spots_count: 960,
+        spots_price: 12,
+        discounted_rate: 12
+    },
+    {
+        ID: 20,
+        site_code: "OAGT008 - Ear",
+        address: "EDSA Main Ave SB",
+        city: "EDSA",
+        region: "METRO MANILA",
+        board_facing: "GANTRY",
+        site_owner: "United Neon Advertising, Inc.",
+        size: "270px x 300px",
+        spots_count: 960,
+        spots_price: 3.44,
+        discounted_rate: 3.44
+    },
+    {
+        ID: 21,
+        site_code: "OAGT008 - Whole",
+        address: "EDSA Main Ave SB",
+        city: "EDSA",
+        region: "METRO MANILA",
+        board_facing: "GANTRY",
+        site_owner: "United Neon Advertising, Inc.",
+        size: "270px x 1200px",
+        spots_count: 960,
+        spots_price: 12,
+        discounted_rate: 12
+    },
+    {
+        ID: 22,
+        site_code: "OAGT009 - Ear",
+        address: "EDSA Munoz SB",
+        city: "EDSA",
+        region: "METRO MANILA",
+        board_facing: "GANTRY",
+        site_owner: "United Neon Advertising, Inc.",
+        size: "270px x 300px",
+        spots_count: 960,
+        spots_price: 3.44,
+        discounted_rate: 3.44
+    },
+    {
+        ID: 23,
+        site_code: "OAGT009 - Whole",
+        address: "EDSA Munoz SB",
+        city: "EDSA",
+        region: "METRO MANILA",
+        board_facing: "GANTRY",
+        site_owner: "United Neon Advertising, Inc.",
+        size: "270px x 1200px",
+        spots_count: 960,
+        spots_price: 12,
+        discounted_rate: 12
+    },
+    {
+        ID: 24,
+        site_code: "OAGT010 - Ear",
+        address: "EDSA Quezon Ave. NB",
+        city: "EDSA",
+        region: "METRO MANILA",
+        board_facing: "GANTRY",
+        site_owner: "United Neon Advertising, Inc.",
+        size: "270px x 300px",
+        spots_count: 960,
+        spots_price: 3.44,
+        discounted_rate: 3.44
+    },
+    {
+        ID: 25,
+        site_code: "OAGT010 - Whole",
+        address: "EDSA Quezon Ave NB",
+        city: "EDSA",
+        region: "METRO MANILA",
+        board_facing: "GANTRY",
+        site_owner: "United Neon Advertising, Inc.",
+        size: "270px x 1200px",
+        spots_count: 960,
+        spots_price: 12,
+        discounted_rate: 12
+    },
+    {
+        ID: 26,
+        site_code: "OAGT011 - Ear",
+        address: "EDSA Quezon Ave. SB",
+        city: "EDSA",
+        region: "METRO MANILA",
+        board_facing: "GANTRY",
+        site_owner: "United Neon Advertising, Inc.",
+        size: "270px x 300px",
+        spots_count: 960,
+        spots_price: 3.44,
+        discounted_rate: 3.44
+    },
+    {
+        ID: 27,
+        site_code: "OAGT011 - Whole",
+        address: "EDSA Quezon Ave SB",
+        city: "EDSA",
+        region: "METRO MANILA",
+        board_facing: "GANTRY",
+        site_owner: "United Neon Advertising, Inc.",
+        size: "270px x 1200px",
+        spots_count: 960,
+        spots_price: 12,
+        discounted_rate: 12
+    },
 ]

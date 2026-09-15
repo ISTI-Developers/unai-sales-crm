@@ -2,20 +2,17 @@ import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/datepicker';
 import { Label } from '@/components/ui/label';
 import InputNumber from '@/components/ui/number-input';
-import { Separator } from '@/components/ui/separator';
-import SiteCombobox from '@/components/ui/site-combobox';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Cart, SiteRow } from '@/interfaces/requests.interface';
-import { Site } from '@/interfaces/sites.interface';
+
 import { formatAmount } from '@/lib/format';
-import { cn, getAddOnTotal, getSiteInstallationCost, getSiteMaterial } from '@/lib/utils';
-import { ChevronsDownUp, ChevronsUpDown, RotateCcw, Trash2Icon } from 'lucide-react';
+import { cn, getAddOnTotal, getCost, getSiteInstallationCost, getSiteMaterial, getTotalGivenRate, getTotalSiteSRP } from '@/lib/utils';
+import { Trash2Icon, TrendingDown, TrendingUp, ChevronsUp } from 'lucide-react';
 import { Dispatch, SetStateAction, useMemo, useState } from 'react'
-import { LEDContainer } from './create';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import LEDSelector from '@/components/conforme/led-selector';
-import { addDays, differenceInMonths } from 'date-fns';
+import { addDays, differenceInCalendarMonths } from 'date-fns';
+import { AnimatePresence, motion } from "framer-motion";
+import { Badge } from '@/components/ui/badge';
+import { InputGroup, InputGroupAddon } from '@/components/ui/input-group';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface SiteItemProps {
     item: SiteRow;
@@ -23,12 +20,8 @@ interface SiteItemProps {
     cart: Cart;
     setCart: Dispatch<SetStateAction<Cart>>;
 }
-function SiteItem({ item, cart, setCart, index }: SiteItemProps) {
-    const [open, setOpen] = useState(false);
-    const [expand, setExpand] = useState(false);
-    const isSiteEmpty = !item.site || Object.keys(item.site).length === 0;
-    const hasAddOns = item.add_ons.installation !== 0 || item.add_ons.material !== 0 || item.add_ons.site;
-
+function SiteItem({ item, setCart, index }: SiteItemProps) {
+    const [showBreakdown, setShowBreakdown] = useState(true)
     const removeSite = (index: number) => {
         setCart(prev => ({
             ...prev,
@@ -36,290 +29,456 @@ function SiteItem({ item, cart, setCart, index }: SiteItemProps) {
         }));
     };
 
-    const addOnTotal = getAddOnTotal(item);
-    const monthDifference = useMemo(() => differenceInMonths(addDays(item.date.to, 2), item.date.from), [item.date]);
+    const applyToAll = () => {
+        const dates = item.date;
 
-    return <div className='border rounded-lg p-4 flex flex-col gap-4'>
-        <header className='relative'>
-            {item.site &&
-                <>
-                    {item.site.ID ?
-                        <div className='flex gap-4 items-center'>
-                            <div>
-                                <p className='font-semibold'>{`${item.site.site_code} (${item.site.size})`}</p>
-                                <p className='text-[0.65rem] leading-tight'>{item.site.address}</p>
-                                <p className='text-[0.65rem] leading-tight'>{item.site.board_facing}</p>
-                            </div>
-                            <Button type='button' className='' variant="outline" size="sm" onClick={() => setCart((prev) => ({
-                                ...prev,
-                                sites: prev.sites.map((row, i) =>
-                                    i === index
-                                        ? {
-                                            ...row,
-                                            site: {} as Site,
-                                        }
-                                        : row
-                                ),
-                            }))}>
-                                <RotateCcw />
-                                <p>Change Site</p>
-                            </Button>
-                        </div> :
-                        <SiteCombobox
-                            value={item.site}
-                            selectedSites={cart.sites
-                                .filter((_, i) => i !== index)
-                                .map(row => row.site)}
-                            onValueChange={(site) => {
+        setCart(prev => ({
+            ...prev,
+            sites: prev.sites.map(site => ({
+                ...site,
+                date: dates,
+            })),
+            leds: prev.leds.map(led => ({
+                ...led,
+                date: dates
+            }))
+        }))
+    }
+
+    const addOnTotal = getAddOnTotal(item);
+    const monthDifference = useMemo(() => differenceInCalendarMonths(addDays(item.date.to, 1), item.date.from), [item.date]);
+
+    const totalNetAmount = getTotalGivenRate(Number(item.package_rate) * monthDifference, item) - addOnTotal;
+    const srpTotal = getTotalSiteSRP(item, monthDifference);
+    const margin = totalNetAmount - srpTotal;
+
+    return <div className='relative flex flex-col gap-2 group bg-zinc-100'>
+        <header className='border-b p-3 bg-zinc-200'>
+            <div
+                className='flex gap-8 items-start rounded-md justify-between w-full sm:max-w-fit'>
+                <div>
+                    <p className='font-semibold text-sm space-x-2'><span>{item.site.site_code}</span><span className='text-xs'>{item.site.size}</span></p>
+                    <p className='text-[0.6rem] leading-tight'>{item.site.address}</p>
+                    <p className='text-[0.65rem] leading-tight'>{item.site.board_facing}</p>
+                </div>
+            </div>
+            <div className='absolute top-2 right-2'>
+                <Button variant="ghost" size="icon" onClick={() => removeSite(index)} ><Trash2Icon /></Button>
+            </div>
+        </header>
+        <main
+            className=" grid items-start gap-4 p-3 pt-0 grid-cols-1"
+        >
+            <div className="space-y-2">
+                <div className='flex gap-4 items-center'>
+                    <Label className="text-xs font-medium ">
+                        Campaign Period
+                    </Label>
+                    <Button type='button' onClick={applyToAll} className='h-7 text-[0.65rem]' variant="outline" size="sm">Apply to All</Button>
+                </div>
+                <div className="flex items-center gap-2">
+                    <div className="min-w-0 flex-1">
+                        <DatePicker
+                            date={item.date.from}
+                            min={new Date()}
+                            className="w-full text-xs"
+                            withIcon={false}
+                            onDateChange={(value) => {
+                                if (!value) value = new Date();
+
                                 setCart((prev) => ({
                                     ...prev,
                                     sites: prev.sites.map((row, i) =>
                                         i === index
                                             ? {
                                                 ...row,
-                                                site: site,
-                                                srp: site.price,
-                                                package_rate: "0"
+                                                date: {
+                                                    from: value,
+                                                    to:
+                                                        row.date.to > value
+                                                            ? row.date.to
+                                                            : value,
+                                                },
                                             }
                                             : row
                                     ),
                                 }));
                             }}
-                        />}
-                </>
-            }
-            <div className='absolute top-0 right-0 flex gap-1'>
-                <Button variant="ghost" size="icon" className='text-red-600' onClick={() => removeSite(index)} ><Trash2Icon /></Button>
-            </div>
-        </header>
-        <main
-            data-disabled={isSiteEmpty}
-            className="grid grid-cols-[1fr_1fr_1fr_1fr_2fr_1fr] gap-4 items-start data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 data-[disabled=true]:select-none"
-        >
-            <div>
-                <Label>From</Label>
-                <DatePicker
-                    date={item.date.from}
-                    disabled={isSiteEmpty}
-                    min={new Date()}
-                    className='text-xs'
-                    withIcon={false}
-                    onDateChange={(value) => {
-                        if (!value) {
-                            value = new Date()
-                        };
+                        />
+                    </div>
+                    <span className='text-xs'>to</span>
+                    <div className="min-w-0 flex-1">
+                        <DatePicker
+                            date={item.date.to}
+                            min={item.date.from}
+                            className="w-full text-xs"
+                            withIcon={false}
+                            onDateChange={(value) => {
+                                if (!value) value = new Date();
 
-                        setCart((prev) => ({
-                            ...prev,
-                            sites: prev.sites.map((row, i) =>
-                                i === index
-                                    ? {
-                                        ...row,
-                                        date: {
-                                            from: value,
-                                            to: row.date.to > value ? row.date.to : value
-                                        },
-                                    }
-                                    : row
-                            ),
-                        }))
-                    }} />
-                <div className='flex items-center gap-1 pt-2 text-xs'>
-                    <Label className='text-xs'>Duration: </Label>
-                    <p>{`${monthDifference} month/s`}</p>
+                                setCart((prev) => ({
+                                    ...prev,
+                                    sites: prev.sites.map((row, i) =>
+                                        i === index
+                                            ? {
+                                                ...row,
+                                                date: {
+                                                    ...row.date,
+                                                    to: value,
+                                                },
+                                            }
+                                            : row
+                                    ),
+                                }));
+                            }}
+                        />
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-1 text-[11px]">
+                    <span className="">
+                        Duration
+                    </span>
+
+                    <span className="font-medium">
+                        {monthDifference} month/s
+                    </span>
                 </div>
             </div>
-            <div>
-                <Label>To</Label>
-                <DatePicker date={item.date.to}
-                    disabled={isSiteEmpty}
-                    className='text-xs'
-                    min={item.date.from}
-                    withIcon={false}
-                    onDateChange={(value) => {
-                        if (!value) {
-                            value = new Date()
-                        };
+            <div className='w-full flex gap-4'>
+                <div className="space-y-2 w-full">
+                    <Label className="text-xs font-medium ">
+                        Negotiated Monthly Rate (Final)
+                    </Label>
 
-                        setCart((prev) => ({
-                            ...prev,
-                            sites: prev.sites.map((row, i) =>
-                                i === index
-                                    ? {
-                                        ...row,
-                                        date: {
-                                            ...row.date,
-                                            to: value
-                                        },
-                                    }
-                                    : row
-                            ),
-                        }))
-                    }} />
-            </div>
-            <div>
-                <Label>Monthly SRP</Label>
-                <InputNumber
-                    value={item.srp}
-                    disabled
-                />
-            </div>
-            <div>
-                <Label>Monthly Rate</Label>
-                <InputNumber
-                    value={item.package_rate}
-                    disabled={isSiteEmpty}
-                    onChange={(e) => {
-                        setCart((prev) => ({
-                            ...prev,
-                            sites: prev.sites.map((row, i) =>
-                                i === index
-                                    ? {
-                                        ...row,
-                                        package_rate: e.target.value,
-                                    }
-                                    : row
-                            ),
-                        }));
-                    }}
-                />
+                    <InputNumber
+                        value={item.package_rate}
+                        groupClassName="w-full"
+                        onChange={(e) => {
+                            setCart((prev) => ({
+                                ...prev,
+                                sites: prev.sites.map((row, i) =>
+                                    i === index
+                                        ? {
+                                            ...row,
+                                            package_rate: e.target.value,
+                                        }
+                                        : row
+                                ),
+                            }));
+                        }}
+                    />
+
+                    <div className="flex items-center gap-1 text-[11px]">
+                        <span className="">
+                            SRP:
+                        </span>
+
+                        <span className="font-medium ">
+                            {formatAmount(item.srp)}
+                        </span>
+                    </div>
+                </div>
+                <div className="space-y-2 w-full">
+                    <Label className="text-xs font-medium ">
+                        Offered Monthly Rate (for rate card display only)
+                    </Label>
+
+                    <InputNumber
+                        value={item.offered_rate}
+                        groupClassName="w-full"
+                        onChange={(e) => {
+                            setCart((prev) => ({
+                                ...prev,
+                                sites: prev.sites.map((row, i) =>
+                                    i === index
+                                        ? {
+                                            ...row,
+                                            offered_rate: e.target.value,
+                                        }
+                                        : row
+                                ),
+                            }));
+                        }}
+                    />
+                </div>
             </div>
 
-            <div className='flex flex-col gap-1'>
-                <Label className='leading-1'>Free Add Ons (optional)</Label>
-                <div className={cn("transition-all p-[9px] px-3 flex gap-2 border rounded-md overflow-hidden",
-                    hasAddOns ? "flex-col" : "border-white p-0",
-                    expand ? "max-h-[1000px]" : "max-h-[80px] flex-row items-center justify-between"
-                )}>
-                    {(!expand && hasAddOns) ?
-                        <>
-                            <p className='text-xs'>{formatAmount(addOnTotal)} <span className='text-[0.65rem] text-zinc-400'> expand to view add ons</span></p>
+            <div className='leading-tight space-y-2'>
+                <Label className='text-xs'>Installation and Dismantling</Label>
+                <section className='grid grid-cols-2 gap-4'>
+                    <div className='grid grid-cols-[auto_1fr] gap-4'>
+                        <div>
+                            <InputGroup className='overflow-hidden bg-white max-w-[150px]'>
+                                <InputGroupAddon align="inline-start" className='bg-zinc-100 px-2 h-full whitespace-nowrap'>
+                                    CTC Qty:
+                                </InputGroupAddon>
+                                <InputNumber groupClassName='border-none' isMoney={false} min={0} value={item.installation.paid} onChange={(e) => {
+                                    setCart((prev) => ({
+                                        ...prev,
+                                        sites: prev.sites.map((row, idx) =>
+                                            idx === index
+                                                ? {
+                                                    ...row,
+                                                    installation: {
+                                                        ...row.installation,
+                                                        paid: Number(e.target.value)
+                                                    }
+                                                }
+                                                : row
+                                        ),
+                                    }));
+                                }} />
+                            </InputGroup>
+                        </div>
+                        <div>
+                            <InputGroup className='overflow-hidden bg-white'>
+                                <InputGroupAddon align="inline-start" className='bg-zinc-100 px-2 h-full whitespace-nowrap'>
+                                    Rate:
+                                </InputGroupAddon>
+                                <InputNumber groupClassName='border-none' min={0} disabled={item.installation.paid === 0} value={item.installation.cost} onChange={(e) => {
+                                    setCart((prev) => ({
+                                        ...prev,
+                                        sites: prev.sites.map((row, idx) =>
+                                            idx === index
+                                                ? {
+                                                    ...row,
+                                                    installation: {
+                                                        ...row.installation,
+                                                        cost: Number(e.target.value)
+                                                    }
+                                                }
+                                                : row
+                                        ),
+                                    }));
+                                }} />
+                                <InputGroupAddon align="inline-end" className='bg-zinc-100 pl-2 h-full'>
+                                    <span>Value:</span>
+                                    <span>{formatAmount(item.installation.cost * item.installation.paid)}</span>
+                                </InputGroupAddon>
+                            </InputGroup>
+                            <div className="flex items-center gap-1 text-[11px] pt-1">
+                                <span className="">
+                                    SRP:
+                                </span>
 
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <button type='button' onClick={() => setExpand(true)}>
-                                        <ChevronsUpDown size={15} />
-                                    </button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    Expand
-                                </TooltipContent>
-                            </Tooltip>
-                        </> :
-                        <>
-                            {hasAddOns && <>
-                                {item.add_ons.installation > 0 &&
-                                    <div className='flex justify-between items-center gap-4'>
-                                        <p className='text-[0.65rem]'>{item.add_ons.installation}x Installation/Dismantling</p>
-                                        <p className='text-xs'>{formatAmount(getSiteInstallationCost(item.site.size, item.site.region) * item.add_ons.installation)}</p>
-                                    </div>
-                                }
-                                {item.add_ons.material > 0 &&
-                                    <div className='flex justify-between items-center'>
-                                        <p className='text-[0.65rem]'>{item.add_ons.material}x Material Printing</p>
-                                        <p className='text-xs'>{formatAmount(getSiteMaterial(item.site.size, item.site.site_code, item.site.region) * item.add_ons.material)}</p>
-                                    </div>
-                                }
-                                {item.add_ons.site &&
-                                    <>
-                                        <Separator />
-                                        <LEDContainer site={item.add_ons.site} />
-                                    </>}
-                                <Separator />
-                                <div className='flex justify-between items-center gap-4'>
-                                    <p className='text-[0.65rem]'>Grand Total</p>
-                                    <p className='text-xs'>{formatAmount(getAddOnTotal(item))}</p>
-                                </div>
-                            </>}
-                            <div className='flex gap-4'>
-                                <Button type='button' onClick={() => setOpen(prev => !prev)} variant="outline" size="sm" className="w-full" disabled={isSiteEmpty}>
-                                    {hasAddOns ?
-                                        <p>Edit</p>
-                                        :
-                                        <p>Configure</p>}
-                                </Button>
-                                {hasAddOns &&
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <button type='button' onClick={() => setExpand(false)}>
-                                                <ChevronsDownUp size={15} />
-                                            </button>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            Collapse
-                                        </TooltipContent>
-                                    </Tooltip>
-                                }
+                                <span className="font-medium ">
+                                    {formatAmount(getSiteInstallationCost(item.site.size, item.site.region))}
+                                </span>
                             </div>
-                        </>}
-                    <Dialog modal={false} open={open} onOpenChange={setOpen}>
-                        {open &&
-                            <div className='fixed top-0 left-0 bg-[#000]/10 w-full h-full z-[11]' onClick={() => setOpen(false)} />
-                        }
-                        <DialogContent aria-describedby={undefined} className='sm:max-w-2xl' onInteractOutside={(e) => {
-                            e.preventDefault();
-                        }}>
-                            <DialogHeader>
-                                <DialogTitle>Configure Add Ons</DialogTitle>
-                            </DialogHeader>
-                            <main className='space-y-2'>
-                                <section className='grid grid-cols-2 gap-2'>
-                                    <div>
-                                        <Label className='text-xs'>Installation/Dismantling (qty)</Label>
-                                        <Input type='number' className='w-fit' min={0} value={item.add_ons.installation} onChange={(e) => {
-                                            setCart((prev) => ({
-                                                ...prev,
-                                                sites: prev.sites.map((row, idx) =>
-                                                    idx === index
-                                                        ? {
-                                                            ...row,
-                                                            add_ons: {
-                                                                ...row.add_ons,
-                                                                installation: e.target.valueAsNumber,
-                                                            },
-                                                        }
-                                                        : row
-                                                ),
-                                            }));
-                                        }} />
-                                    </div>
-                                    <div>
-                                        <Label className='text-xs'>Material Printing (qty)</Label>
-                                        <Input type='number' className='w-fit' min={0} value={item.add_ons.material} onChange={(e) => {
-                                            setCart((prev) => ({
-                                                ...prev,
-                                                sites: prev.sites.map((row, idx) =>
-                                                    idx === index
-                                                        ? {
-                                                            ...row,
-                                                            add_ons: {
-                                                                ...row.add_ons,
-                                                                material: e.target.valueAsNumber,
-                                                            },
-                                                        }
-                                                        : row
-                                                ),
-                                            }));
-                                        }} />
-                                    </div>
-                                </section>
-                                <Separator />
-                                <LEDSelector item={item} index={index} setCart={setCart} />
-                            </main>
-                            <DialogFooter>
-                                <Button type='button' onClick={() => setOpen(false)}>Save Changes</Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
-                </div>
+                        </div>
+                    </div>
+                    <div className='space-y-2'>
+                        <InputGroup className='overflow-hidden bg-white'>
+                            <InputGroupAddon align="inline-start" className='bg-zinc-100 px-2 h-full whitespace-nowrap'>
+                                Free Qty:
+                            </InputGroupAddon>
+                            <InputNumber groupClassName='border-none' isMoney={false} min={0} value={item.installation.free} onChange={(e) => {
+                                setCart((prev) => ({
+                                    ...prev,
+                                    sites: prev.sites.map((row, idx) =>
+                                        idx === index
+                                            ? {
+                                                ...row,
+                                                installation: {
+                                                    ...row.installation,
+                                                    free: Number(e.target.value)
+                                                }
+                                            }
+                                            : row
+                                    ),
+                                }));
+                            }} />
+                            <InputGroupAddon align="inline-end" className='bg-zinc-100 pl-2 h-full'>
+                                <span>Value:</span>
+                                <span>{formatAmount(getSiteInstallationCost(item.site.size, item.site.region) * item.installation.free)}</span>
+                            </InputGroupAddon>
+                        </InputGroup>
+                        <span className='text-[0.6rem] italic'>*on top of the standard free installation and dismantling</span>
+                    </div>
+                </section>
             </div>
-            <div>
-                <Label>Net Amount</Label>
-                <InputNumber
-                    value={(Number(item.package_rate) * monthDifference) - addOnTotal}
-                    disabled
-                />
-                <p className='text-[0.55rem] italic pt-2'>Monthly Rate x Term Duration - Add Ons</p>
+            <div className='leading-tight space-y-2'>
+                <Label className='text-xs'>Printing</Label>
+                <section className='grid grid-cols-2 gap-4'>
+                    <div className='grid grid-cols-[auto_1fr] gap-4'>
+                        <div>
+                            <InputGroup className='overflow-hidden bg-white max-w-[150px]'>
+                                <InputGroupAddon align="inline-start" className='bg-zinc-100 px-2 h-full whitespace-nowrap'>
+                                    CTC Qty:
+                                </InputGroupAddon>
+                                <InputNumber groupClassName='border-none' isMoney={false} min={0} value={item.material.paid} onChange={(e) => {
+                                    setCart((prev) => ({
+                                        ...prev,
+                                        sites: prev.sites.map((row, idx) =>
+                                            idx === index
+                                                ? {
+                                                    ...row,
+                                                    material: {
+                                                        ...row.material,
+                                                        paid: Number(e.target.value)
+                                                    }
+                                                }
+                                                : row
+                                        ),
+                                    }));
+                                }} />
+                            </InputGroup>
+                        </div>
+                        <div>
+                            <InputGroup className='overflow-hidden bg-white'>
+                                <InputGroupAddon align="inline-start" className='bg-zinc-100 px-2 h-full whitespace-nowrap'>
+                                    Rate/sqft:
+                                </InputGroupAddon>
+                                <InputNumber groupClassName='border-none' min={0} disabled={item.material.paid === 0} value={item.material.cost} onChange={(e) => {
+                                    setCart((prev) => ({
+                                        ...prev,
+                                        sites: prev.sites.map((row, idx) =>
+                                            idx === index
+                                                ? {
+                                                    ...row,
+                                                    material: {
+                                                        ...row.material,
+                                                        cost: Number(e.target.value)
+                                                    }
+                                                }
+                                                : row
+                                        ),
+                                    }));
+                                }} />
+                                <InputGroupAddon align="inline-end" className='bg-zinc-100 pl-2 h-full'>
+                                    <span>Value:</span>
+                                    <span>{formatAmount(getSiteMaterial(item.site.size, item.site.site_code, item.material.cost) * item.material.paid)}</span>
+                                </InputGroupAddon>
+                            </InputGroup>
+                            <div className="flex items-center gap-1 text-[11px] pt-1">
+                                <span className="">
+                                    SRP/sqft:
+                                </span>
+
+                                <span className="font-medium ">
+                                    {formatAmount(getCost(item.site.site_code))}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className='space-y-2'>
+                        <InputGroup className='overflow-hidden bg-white'>
+                            <InputGroupAddon align="inline-start" className='bg-zinc-100 px-2 h-full whitespace-nowrap'>
+                                Free Qty:
+                            </InputGroupAddon>
+                            <InputNumber groupClassName='border-none' isMoney={false} min={0} value={item.material.free} onChange={(e) => {
+                                setCart((prev) => ({
+                                    ...prev,
+                                    sites: prev.sites.map((row, idx) =>
+                                        idx === index
+                                            ? {
+                                                ...row,
+                                                material: {
+                                                    ...row.material,
+                                                    free: Number(e.target.value)
+                                                }
+                                            }
+                                            : row
+                                    ),
+                                }));
+                            }} />
+                            <InputGroupAddon align="inline-end" className='bg-zinc-100 pl-2 h-full'>
+                                <span>Value:</span>
+                                <span>{formatAmount(getSiteMaterial(item.site.size, item.site.site_code) * item.material.free)}</span>
+                            </InputGroupAddon>
+                        </InputGroup>
+                    </div>
+                </section>
+            </div>
+            <div className="rounded-lg border p-3 relative bg-white">
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button type="button" onClick={() => setShowBreakdown(prev => !prev)} className="absolute h-5 -top-3 left-1/2 -translate-x-1/2" variant="outline" size="icon">
+                            <ChevronsUp className={cn("transition-all ", showBreakdown ? "rotate-180" : "rotate-0")} />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>{!showBreakdown ? "Show" : "Hide"} Breakdown</TooltipContent>
+                </Tooltip>
+                <AnimatePresence initial={false}>
+                    {showBreakdown && (
+                        <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{
+                                duration: 0.2,
+                                ease: "easeInOut",
+                            }}
+                            className="overflow-hidden"
+                        >
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between text-xs">
+                                    <span className="">
+                                        SRP Total
+                                        <span className="ml-1">({monthDifference} mo.)</span>
+                                    </span>
+                                    <span>{formatAmount(srpTotal)}</span>
+                                </div>
+
+                                <div className="flex items-center justify-between text-xs">
+                                    <span className="">
+                                        Negotiated Rate Total
+                                        <span className="ml-1">({monthDifference} mo.)</span>
+                                    </span>
+                                    <span>
+                                        {formatAmount(
+                                            Number(item.package_rate) * monthDifference
+                                        )}
+                                    </span>
+                                </div>
+
+                                <div className="flex items-center justify-between text-xs">
+                                    <span className="">
+                                        Add-ons Total
+                                    </span>
+                                    <span>
+                                        {formatAmount(addOnTotal)}
+                                    </span>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+
+                <div className={cn("transition-all", showBreakdown ? "my-3 border-t" : "")} />
+                <div className='flex justify-between items-center'>
+                    <p className="text-xs ">
+                        Site Package Value
+                    </p>
+                    <p className="text-xl font-semibold tracking-tight">
+                        {formatAmount(totalNetAmount)}
+                    </p>
+                </div>
+
+                <div className='flex justify-between items-center'>
+                    <p className="text-xs ">
+                        Margin
+                    </p>
+
+                    <Badge
+                        variant="secondary"
+                        className={cn(
+                            "mt-1 gap-1 font-medium",
+                            margin >= 0
+                                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                                : "bg-red-200 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                        )}
+                    >
+                        {margin >= 0 ? (
+                            <TrendingUp size={13} />
+                        ) : (
+                            <TrendingDown size={13} />
+                        )}
+                        {formatAmount(margin)}
+                    </Badge>
+                </div>
             </div>
         </main>
     </div>

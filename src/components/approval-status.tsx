@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import { Badge } from "./ui/badge";
 import { Request } from "@/interfaces/requests.interface";
 
-const approvalStatus = {
+export const approvalStatus = {
     1: {
         value: 1,
         label: "Approved",
@@ -28,7 +28,7 @@ function ApprovalStatus({ status, className }: { status: number; className?: str
 export const getApprovalStatus = (request: Request) => {
     const statusObj = Number(request.status) as keyof typeof approvalStatus;
     const statusDetails = approvalStatus[statusObj];
-    return statusDetails.label;
+    return statusDetails;
 }
 
 export default ApprovalStatus

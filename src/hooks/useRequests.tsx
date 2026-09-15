@@ -37,11 +37,11 @@ export const useSingleRequest = (request_no?: string) => {
             return response.data;
         },
         enabled: !!user || !!request_no,
-        
+
     })
 }
 export const useInsertRequest = () => {
-    // const queryClient = useQueryClient();
+    const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (data: NewCart) => {
             const formdata = new FormData();
@@ -55,6 +55,7 @@ export const useInsertRequest = () => {
                 variant: "success",
                 description: "Your request has been saved."
             })
+            queryClient.refetchQueries({ queryKey: ['requests', 1] })
 
         },
         onError: catchError,

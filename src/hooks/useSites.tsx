@@ -97,7 +97,7 @@ export const useSiteLandmarks = () => {
     queryKey: ["landmarks"],
     queryFn: async () => {
       const response: Landmarks[] = await fetch("/landmarks.json").then(res => res.json());
-    return response
+      return response
     },
     staleTime: 60000,
     gcTime: 1000 * 60 * 30,
@@ -602,11 +602,11 @@ export async function getSiteImage(
     },
   };
 }
-export const useImage = (site_code: string, selectedUploadID?: number) => {
+export const useImage = (site_code: string, selectedUploadID?: number, enabled?: boolean) => {
   return useQuery({
     queryKey: ["sites", "image", site_code, selectedUploadID],
     queryFn: () => getSiteImage(site_code, selectedUploadID),
-    enabled: !!site_code,
+    enabled: enabled ?? !!site_code,
     staleTime: Infinity,
     gcTime: Infinity,
     refetchIntervalInBackground: true,

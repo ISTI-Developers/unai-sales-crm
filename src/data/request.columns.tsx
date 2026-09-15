@@ -64,7 +64,7 @@ export const columns: ColumnDef<RequestTable>[] = [
     },
     {
         id: "status",
-        accessorFn: getApprovalStatus,
+        accessorFn: (req) => getApprovalStatus(req).label,
         header: "Status",
         cell: ({ row }) => {
             return <ApprovalStatus status={row.original.status} className="uppercase" />
@@ -124,7 +124,7 @@ export const columns: ColumnDef<RequestTable>[] = [
         header: "Submitted On",
         cell: ({ row }) => {
             const date = row.getValue<Date>("submitted_on");
-            return <p className="text-xs">{format(addHours(date,Number(import.meta.env.VITE_TIME_ADJUST) + 7), "yyyy-MM-dd HH:mm:ss")}</p>
+            return <p className="text-xs">{format(addHours(date, Number(import.meta.env.VITE_TIME_ADJUST) + 7), "yyyy-MM-dd HH:mm:ss")}</p>
         },
         filterFn: (row, columnId, filterValue) => {
             const cellValue = row.getValue<Date>(columnId)

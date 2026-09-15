@@ -17,10 +17,10 @@ const Container = ({ children, title = "", className }: ContainerProps) => {
   return (
     <div
       className={cn(
-        "flex flex-col lg:gap-2 text-black h-full"
+        "flex flex-col lg:gap-2 text-black h-full "
       )}
     >
-      <header className="bg-red-500 w-full lg:rounded-b-lg flex items-center justify-between p-2 text-white sticky top-0 lg:relative z-[2]">
+      <header className="bg-red-500 w-full lg:rounded-b-lg flex items-center justify-between p-2 text-white sticky top-0 lg:relative z-[2] print:hidden">
 
         <Suspense fallback={<>Loading...</>}>
           <PageTitle title={title} />

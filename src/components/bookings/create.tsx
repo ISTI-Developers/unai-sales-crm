@@ -116,8 +116,7 @@ function CreateBooking({ site }: { site: SiteAvailability }) {
             site_rental: String(site.site_rental ?? 0),
             old_client: site.product ? `${site.client} (${site.product})` : site.client,
         }
-        // console.log(booking);
-        // return
+ 
         createBooking(
             newBooking,
             {
@@ -374,6 +373,10 @@ function CreateBooking({ site }: { site: SiteAvailability }) {
                             />
                         </div>
                     }
+                    <div>
+                        <Label className='text-xs'>Select Booking</Label>
+                        {}
+                    </div>
                     <div>
                         <Label className="mr-auto text-xs">{booking.booking_status === "PRE-TERMINATION" ? "Effectivity Date" : "Duration"}</Label>
                         <div className="flex justify-evenly items-center gap-4">
