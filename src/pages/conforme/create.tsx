@@ -6,10 +6,10 @@ import { useInsertRequest, useSingleRequest } from '@/hooks/useRequests';
 import { useSites } from '@/hooks/useSites';
 import { Cart, CartDetails, NewCart } from '@/interfaces/requests.interface';
 import { formatAmount } from '@/lib/format';
-import { cn, getAddOnTotal, getTotalDaily, getTotalGivenRate, getTotalSiteSRP } from '@/lib/utils';
+import { cn, getAddOnTotal, getTotalChargeables, getTotalDaily, getTotalGivenRate, getTotalSiteSRP } from '@/lib/utils';
 import { useAuth } from '@/providers/auth.provider';
-import { addDays, differenceInCalendarMonths, format } from 'date-fns';
-import { ChevronLeft, PlusIcon, TrendingDown, TrendingUp } from 'lucide-react'
+import { addDays, differenceInCalendarDays, differenceInCalendarMonths, format } from 'date-fns';
+import { ChevronLeft, PlusIcon } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { v4 } from 'uuid';
@@ -74,9 +74,49 @@ function CreateConforme() {
     const totalSRP = selectedSites.reduce((acc, item) => {
       if (item.type === "static") {
         const difference = differenceInCalendarMonths(addDays(item.date.to, 1), item.date.from);
-        acc += getTotalSiteSRP(item, difference);
+        const addOnsTotal = getAddOnTotal(item);
+        acc += getTotalSiteSRP(item, difference) + addOnsTotal;
       } else {
-        acc += getTotalDaily(item.is_free ? Number(item.spots_rate) > 0 ? Number(item.spots_rate) : Number(item.srp) : Number(item.srp), item.date.to, item.date.from) * item.spots_count
+        const days = Math.round(Math.max(differenceInCalendarDays(addDays(item.date.to, 1), item.date.from), 0) / 30) * 30;
+        const srp = Number(item.srp);
+        const spotsRate = Number(item.spots_rate);
+        const packageRate = Number(item.package_rate);
+
+        const hasPackageRate = packageRate > 0;
+        const isFree = item.is_free;
+
+        let spotsCount = Number(item.spots_count);
+        if (hasPackageRate) {
+          spotsCount = Math.floor(
+            packageRate / days / spotsRate
+          );
+        }
+        acc += isFree ? hasPackageRate ? packageRate : spotsCount * days * srp : spotsCount * days * srp;
+      }
+      return acc;
+    }, 0)
+    const totalBillableAddOns = selectedSites.reduce((acc, item) => {
+      if (item.type === "static") {
+        acc += getTotalChargeables(item);
+      }
+      return acc;
+    }, 0)
+    const totalPackageRental = selectedSites.reduce((acc, item) => {
+      const packageRate = Number(item.package_rate);
+      if (item.type === "static") {
+        const difference = differenceInCalendarMonths(addDays(item.date.to, 1), item.date.from);
+        acc += packageRate * difference;
+      } else {
+        if (item.is_free) {
+          acc += 0;
+        } else {
+          if (packageRate > 0) {
+            acc += packageRate;
+          } else {
+            const contractRate = item.spots_count * Number(item.spots_rate)
+            acc += getTotalDaily(contractRate, item.date.to, item.date.from)
+          }
+        }
       }
       return acc;
     }, 0)
@@ -139,8 +179,11 @@ function CreateConforme() {
     const totals = {
       package_rate_total: totalPackageRateWithPaidAddOns,
       srp_total: totalSRP,
-      net_total: totalNetAmount,
+      rental_total: totalPackageRental,
+      billable_total: totalBillableAddOns,
       add_ons_total: totalAddOns,
+      net_total: totalNetAmount,
+      margin: totalNetAmount - totalSRP,
     }
     const newCart: NewCart = {
       form_id: 1,
@@ -428,9 +471,49 @@ const TotalRates = ({ cart }: { cart: Cart }) => {
   const totalSRP = selectedSites.reduce((acc, item) => {
     if (item.type === "static") {
       const difference = differenceInCalendarMonths(addDays(item.date.to, 1), item.date.from);
-      acc += getTotalSiteSRP(item, difference);
+      const addOnsTotal = getAddOnTotal(item);
+      acc += getTotalSiteSRP(item, difference) + addOnsTotal;
     } else {
-      acc += getTotalDaily(item.is_free ? Number(item.spots_rate) > 0 ? Number(item.spots_rate) : Number(item.srp) : Number(item.srp), item.date.to, item.date.from) * item.spots_count
+      const days = Math.round(Math.max(differenceInCalendarDays(addDays(item.date.to, 1), item.date.from), 0) / 30) * 30;
+      const srp = Number(item.srp);
+      const spotsRate = Number(item.spots_rate);
+      const packageRate = Number(item.package_rate);
+
+      const hasPackageRate = packageRate > 0;
+      const isFree = item.is_free;
+
+      let spotsCount = Number(item.spots_count);
+      if (hasPackageRate) {
+        spotsCount = Math.floor(
+          packageRate / days / spotsRate
+        );
+      }
+      acc += isFree ? hasPackageRate ? packageRate : spotsCount * days * srp : spotsCount * days * srp;
+    }
+    return acc;
+  }, 0)
+  const totalBillableAddOns = selectedSites.reduce((acc, item) => {
+    if (item.type === "static") {
+      acc += getTotalChargeables(item);
+    }
+    return acc;
+  }, 0)
+  const totalPackageRental = selectedSites.reduce((acc, item) => {
+    const packageRate = Number(item.package_rate);
+    if (item.type === "static") {
+      const difference = differenceInCalendarMonths(addDays(item.date.to, 1), item.date.from);
+      acc += packageRate * difference;
+    } else {
+      if (item.is_free) {
+        acc += 0;
+      } else {
+        if (packageRate > 0) {
+          acc += packageRate;
+        } else {
+          const contractRate = item.spots_count * Number(item.spots_rate)
+          acc += getTotalDaily(contractRate, item.date.to, item.date.from)
+        }
+      }
     }
     return acc;
   }, 0)
@@ -499,27 +582,33 @@ const TotalRates = ({ cart }: { cart: Cart }) => {
 
       <div className="space-y-2 text-sm">
         <div className="flex justify-between items-center">
-          <span className="text-zinc-500 text-xs">Total SRP</span>
+          <span className="text-zinc-500 text-xs">SRP</span>
           <span>{formatAmount(totalSRP)}</span>
         </div>
-
+        <hr />
         <div className="flex justify-between items-center">
-          <span className="text-zinc-500 text-xs">Total Package Rate</span>
-          <span>{formatAmount(totalPackageRateWithPaidAddOns)}</span>
+          <span className="text-zinc-500 text-xs">Total Rental</span>
+          <span>{formatAmount(totalPackageRental)}</span>
         </div>
 
         <div className="flex justify-between items-center">
-          <span className="text-zinc-500 text-xs">Total Add-ons & Free Sites/LEDs Value</span>
+          <span className="text-zinc-500 text-xs">Billable Add-ons</span>
           <span className="font-medium">
-            -{formatAmount(totalAddOns)}
+            {formatAmount(totalBillableAddOns + globalPaidAddOns)}
+          </span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-zinc-500 text-xs">Free Add-ons Value</span>
+          <span className="font-medium text-red-400">
+            {formatAmount(totalAddOns)}
           </span>
         </div>
       </div>
 
       <div className="border-t pt-4">
-        <div className="flex items-center justify-between">
-          <span className="font-semibold">Grand Total</span>
-          <span className="text-xl font-bold">
+        <div className="flex justify-between items-center">
+          <span className="text-zinc-500 text-xs">Internal Contract Value</span>
+          <span className="font-medium">
             {formatAmount(totalNetAmount)}
           </span>
         </div>
@@ -529,11 +618,18 @@ const TotalRates = ({ cart }: { cart: Cart }) => {
         <Badge className={cn("flex items-center gap-1 px-3 pl-2", margin >= 0
           ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 hover:bg-emerald-100"
           : "bg-red-200 text-red-600 dark:bg-red-900/30 dark:text-red-400 hover:bg-red-200")}>
-          {margin >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+          {margin >= 0 ? "+" : ""}
           {formatAmount(margin)}
         </Badge>
       </div>
-    </div >
+      <hr />
+      <div className="flex items-center justify-between">
+        <span className="font-semibold">Contract Amount</span>
+        <span className="text-xl font-bold">
+          {formatAmount(totalPackageRateWithPaidAddOns)}
+        </span>
+      </div>
+    </div>
   );
 }
 

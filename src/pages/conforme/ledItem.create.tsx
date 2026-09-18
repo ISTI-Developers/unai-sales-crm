@@ -27,35 +27,57 @@ function LEDItem({ item, setCart, index }: SiteItemProps) {
             leds: prev.leds.filter((_, i) => i !== index),
         }));
     };
-    const daysDifference = useMemo(() => differenceInCalendarDays(addDays(item.date.to, 1), item.date.from), [item.date]);
+
+
+    const applyToAll = () => {
+        const dates = item.date;
+
+        setCart(prev => ({
+            ...prev,
+            sites: prev.sites.map(site => ({
+                ...site,
+                date: dates,
+            })),
+            leds: prev.leds.map(led => ({
+                ...led,
+                date: dates
+            }))
+        }))
+    }
+
+    const daysDifference = useMemo(() => Math.round(Math.max(differenceInCalendarDays(addDays(item.date.to, 1), item.date.from), 0) / 30) * 30, [item.date]);
+    const days = daysDifference;
+
+    const srp = Number(item.srp);
+    const spotsRate = Number(item.spots_rate);
     const packageRate = Number(item.package_rate);
 
-    const spotsRate = Number(item.spots_rate);
-    let spotsCount = item.spots_count;
+    const hasPackageRate = packageRate > 0;
+    const isFree = item.is_free;
 
-    if (packageRate > 0) {
-        spotsCount = packageRate / daysDifference / (spotsRate > 0 ? spotsRate : Number(item.srp));
+    let spotsCount = Number(item.spots_count);
+
+    // Package rate determines the actual number of spots
+    if (hasPackageRate) {
+        spotsCount = Math.floor(
+            packageRate / days / spotsRate
+        );
     }
 
-    spotsCount = Math.floor(spotsCount)
-    let srpTotal = Number(item.srp) * daysDifference * spotsCount;
+    // SRP is always based on the actual number of spots
+    const srpTotal = isFree ? hasPackageRate ? packageRate : spotsCount * days * srp : spotsCount * days * srp;
 
-    let contractAmount = spotsCount * spotsRate * daysDifference;
-    // srpTotal = packageRate > 0 && item.is_free ? packageRate : (!item.is_free ? Number(item.srp) : spotsRate) * daysDifference * spotsCount;
+    // Contract amount
+    const contractAmount = isFree
+        ? 0
+        : hasPackageRate
+            ? packageRate
+            : spotsCount * days * spotsRate;
 
-    if (item.is_free) {
-        contractAmount = 0;
-        srpTotal = spotsRate * daysDifference * spotsCount
-
-    }
-
-    // const totalNetAmount = item.package_rate === "0" ? Number(item.package_rate) * daysDifference * item.spots_count : Number(item.package_rate);
-    const margin = contractAmount - srpTotal;
-
-
+    const srpVariance = contractAmount - srpTotal;
     return (
         <div className="flex flex-col gap-2 group">
-            <header className='relative border-b p-3'>
+            <header className='relative border-b p-3 bg-zinc-500 text-white'>
                 <div
                     className='flex gap-8 items-start rounded-md justify-between w-full sm:max-w-fit'>
                     <div>
@@ -72,9 +94,12 @@ function LEDItem({ item, setCart, index }: SiteItemProps) {
                 className=" grid items-start gap-4 p-3 pt-0 grid-cols-1 "
             >
                 <div className="space-y-2">
-                    <Label className="text-xs font-medium ">
-                        Campaign Period
-                    </Label>
+                    <div className='flex gap-4 items-center'>
+                        <Label className="text-xs font-medium ">
+                            Campaign Period
+                        </Label>
+                        <Button type='button' onClick={applyToAll} className='h-7 text-[0.65rem]' variant="outline" size="sm">Apply to All</Button>
+                    </div>
                     <div className="flex items-center gap-2">
                         <div className="min-w-0 flex-1">
                             <DatePicker
@@ -147,7 +172,7 @@ function LEDItem({ item, setCart, index }: SiteItemProps) {
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <Label className="text-xs font-medium ">
-                            Offered Monthly Spots
+                            Offered Daily Spots
                         </Label>
 
                         <InputNumber
@@ -361,24 +386,24 @@ function LEDItem({ item, setCart, index }: SiteItemProps) {
 
                     <div className='flex justify-between items-center'>
                         <p className="text-xs ">
-                            Margin
+                            SRP Variance
                         </p>
 
                         <Badge
                             variant="secondary"
                             className={cn(
                                 "mt-1 gap-1 font-medium",
-                                margin >= 0
+                                srpVariance >= 0
                                     ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
                                     : "bg-red-200 text-red-700 dark:bg-red-900/30 dark:text-red-400"
                             )}
                         >
-                            {margin >= 0 ? (
+                            {srpVariance >= 0 ? (
                                 <TrendingUp size={13} />
                             ) : (
                                 <TrendingDown size={13} />
                             )}
-                            {formatAmount(margin)}
+                            {formatAmount(srpVariance)}
                         </Badge>
                     </div>
                 </div>
