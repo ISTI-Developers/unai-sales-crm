@@ -94,7 +94,7 @@ const PasswordReset = () => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        <button type="button" className="text-blue-300 hover:underline">
+        <button type="button" className="text-xs text-blue-300 hover:underline">
           Forgot Password?
         </button>
       </DialogTrigger>
