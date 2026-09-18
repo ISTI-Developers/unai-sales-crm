@@ -10,7 +10,7 @@ export const ConformeLEDDetails = ({ cartLED }: { cartLED: LEDSite }) => {
     if (!led) {
         return <>Loading...</>
     }
-    const duration = differenceInCalendarDays(addDays(new Date(cartLED.to), 1), new Date(cartLED.from));
+    const duration = Math.round(Math.max(differenceInCalendarDays(addDays(cartLED.to, 1), cartLED.from), 0) / 30) * 30;
 
     const spotsRate = cartLED.srp
     const srp = led.spots_price;

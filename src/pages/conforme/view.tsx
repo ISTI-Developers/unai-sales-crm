@@ -212,31 +212,33 @@ const ConformeDetails = ({ data }: { data: Request }) => {
             </div>
         </div>
         <hr className="hidden lg:block" />
-        <div className="w-full flex flex-col gap-4 lg:gap-2">
+        <div className="w-full flex flex-col gap-2">
             {details.sites.map(site => {
                 return <ConformeSiteDetails cartSite={site} key={site.ID} />
             })}
             {details.leds.map(led => {
                 return <ConformeLEDDetails cartLED={led} key={led.ID} />
             })}
-            <div className='flex flex-col gap-4'>
+            <div className='flex flex-col gap-2 pt-1'>
                 {details.add_ons?.length > 0 &&
                     <>
                         <div className="px-1">
                             <h3 className="font-semibold">Add Ons</h3>
                         </div>
-                        {details.add_ons.map((item, index) => {
-                            return <div key={index} className="border p-4 rounded-lg flex sm:max-w-sm justify-between">
-                                <div>
-                                    <div className="flex items-center gap-1 font-semibold">
-                                        <p>{item.qty}x</p>
-                                        <p>{item.name}</p>
+                        <div className="flex flex-wrap gap-4">
+                            {details.add_ons.map((item, index) => {
+                                return <div key={index} className="border p-4 rounded-lg flex gap-8 text-sm sm:max-w-sm justify-between">
+                                    <div>
+                                        <div className="flex items-center gap-1 font-semibold">
+                                            <p>{item.qty}x</p>
+                                            <p>{item.name}</p>
+                                        </div>
+                                        <p className="pl-4 text-xs">{formatAmount(item.value)}</p>
                                     </div>
-                                    <p className="pl-4 text-sm">{formatAmount(item.value)}</p>
+                                    <p className="font-semibold">{formatAmount(item.total)}</p>
                                 </div>
-                                <p className="font-semibold">{formatAmount(item.total)}</p>
-                            </div>
-                        })}
+                            })}
+                        </div>
                     </>
                 }
             </div>

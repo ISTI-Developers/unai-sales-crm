@@ -5,8 +5,8 @@ import InputNumber from '@/components/ui/number-input';
 import { Cart, SiteRow } from '@/interfaces/requests.interface';
 
 import { formatAmount } from '@/lib/format';
-import { cn, getAddOnTotal, getCost, getSiteInstallationCost, getSiteMaterial, getTotalGivenRate, getTotalSiteSRP } from '@/lib/utils';
-import { Trash2Icon, TrendingDown, TrendingUp, ChevronsUp } from 'lucide-react';
+import { cn, getAddOnTotal, getCost, getSiteInstallationCost, getSiteMaterial, getTotalChargeables, getTotalGivenRate, getTotalSiteSRP } from '@/lib/utils';
+import { Trash2Icon, ChevronsUp, CircleQuestionMarkIcon } from 'lucide-react';
 import { Dispatch, SetStateAction, useMemo, useState } from 'react'
 import { addDays, differenceInCalendarMonths } from 'date-fns';
 import { AnimatePresence, motion } from "framer-motion";
@@ -48,12 +48,15 @@ function SiteItem({ item, setCart, index }: SiteItemProps) {
     const addOnTotal = getAddOnTotal(item);
     const monthDifference = useMemo(() => differenceInCalendarMonths(addDays(item.date.to, 1), item.date.from), [item.date]);
 
-    const totalNetAmount = getTotalGivenRate(Number(item.package_rate) * monthDifference, item) - addOnTotal;
-    const srpTotal = getTotalSiteSRP(item, monthDifference);
-    const margin = totalNetAmount - srpTotal;
+    const monthlyPackageRate = Number(item.package_rate) // getTotalGivenRate(Number(item.package_rate), item);
+    const totalChargeables = getTotalChargeables(item);
+    const totalPackageRate = getTotalGivenRate(monthlyPackageRate * monthDifference, item);
+    const totalNetAmount = totalPackageRate - addOnTotal;
+    const srpTotal = getTotalSiteSRP(item, monthDifference) + addOnTotal;
+    const margin = totalPackageRate - srpTotal;
 
     return <div className='relative flex flex-col gap-2 group bg-zinc-100'>
-        <header className='border-b p-3 bg-zinc-200'>
+        <header className='border-b p-3 bg-zinc-600 text-white'>
             <div
                 className='flex gap-8 items-start rounded-md justify-between w-full sm:max-w-fit'>
                 <div>
@@ -294,7 +297,7 @@ function SiteItem({ item, setCart, index }: SiteItemProps) {
                                 <span>{formatAmount(getSiteInstallationCost(item.site.size, item.site.region) * item.installation.free)}</span>
                             </InputGroupAddon>
                         </InputGroup>
-                        <span className='text-[0.6rem] italic'>*on top of the standard free installation and dismantling</span>
+                        <span className='text-xs'>*on top of the standard free installation and dismantling</span>
                     </div>
                 </section>
             </div>
@@ -391,7 +394,8 @@ function SiteItem({ item, setCart, index }: SiteItemProps) {
                     </div>
                 </section>
             </div>
-            <div className="rounded-lg border p-3 relative bg-white">
+            <div className="rounded-lg border p-3 relative bg-white flex flex-col gap-2">
+                <Label>Package Total</Label>
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <Button type="button" onClick={() => setShowBreakdown(prev => !prev)} className="absolute h-5 -top-3 left-1/2 -translate-x-1/2" variant="outline" size="icon">
@@ -412,32 +416,35 @@ function SiteItem({ item, setCart, index }: SiteItemProps) {
                             }}
                             className="overflow-hidden"
                         >
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between text-xs">
+                            <div className="flex flex-col gap-2">
+                                <div className="flex justify-between items-center text-xs">
                                     <span className="">
-                                        SRP Total
-                                        <span className="ml-1">({monthDifference} mo.)</span>
+                                        SRP
                                     </span>
                                     <span>{formatAmount(srpTotal)}</span>
                                 </div>
-
-                                <div className="flex items-center justify-between text-xs">
+                                <hr />
+                                <div className="flex justify-between items-center text-xs">
                                     <span className="">
-                                        Negotiated Rate Total
-                                        <span className="ml-1">({monthDifference} mo.)</span>
+                                        Rental
                                     </span>
                                     <span>
-                                        {formatAmount(
-                                            Number(item.package_rate) * monthDifference
-                                        )}
+                                        {formatAmount(monthlyPackageRate * monthDifference)}
                                     </span>
                                 </div>
-
-                                <div className="flex items-center justify-between text-xs">
+                                <div className="flex justify-between items-center text-xs">
                                     <span className="">
-                                        Add-ons Total
+                                        Billable Add-ons
                                     </span>
                                     <span>
+                                        {formatAmount(totalChargeables)}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between items-center text-xs">
+                                    <span className="">
+                                        Included Add-ons
+                                    </span>
+                                    <span className='text-red-400'>
                                         {formatAmount(addOnTotal)}
                                     </span>
                                 </div>
@@ -445,39 +452,52 @@ function SiteItem({ item, setCart, index }: SiteItemProps) {
                         </motion.div>
                     )}
                 </AnimatePresence>
+                <div className='flex flex-col gap-1'>
+                    <div className={cn("transition-all", showBreakdown ? "my-1 border-t" : "")} />
+                    <div className="flex justify-between items-center text-xs">
+                        <div className="flex items-center gap-1">
+                            <span>Internal Contract Value</span>
+                            <Tooltip>
+                                <TooltipTrigger>
+                                    <CircleQuestionMarkIcon size={12} />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    Total Contract Rate - Included Add-ons
+                                </TooltipContent>
+                            </Tooltip>
+                        </div>
+                        <span className='text-sm'>
+                            {formatAmount(totalNetAmount)}
+                        </span>
+                    </div>
+                    <div className='flex justify-between items-center'>
+                        <p className="text-xs ">
+                            SRP Variance
+                        </p>
 
+                        <Badge
+                            variant="secondary"
+                            className={cn(
+                                "mt-1 gap-1 font-medium",
+                                margin >= 0
+                                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                                    : "bg-red-200 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                            )}
+                        >
+                            {margin >= 0 ? ("+") : ("")}
+                            {formatAmount(margin)}
+                        </Badge>
+                    </div>
+                    <div className={cn("transition-all", showBreakdown ? "my-2 border-t" : "")} />
+                    <div className='flex justify-between items-center'>
+                        <p className="text-xs ">
+                            Contract Amount
+                        </p>
+                        <p className="text-xl font-semibold tracking-tight">
+                            {formatAmount(totalPackageRate)}
+                        </p>
+                    </div>
 
-                <div className={cn("transition-all", showBreakdown ? "my-3 border-t" : "")} />
-                <div className='flex justify-between items-center'>
-                    <p className="text-xs ">
-                        Site Package Value
-                    </p>
-                    <p className="text-xl font-semibold tracking-tight">
-                        {formatAmount(totalNetAmount)}
-                    </p>
-                </div>
-
-                <div className='flex justify-between items-center'>
-                    <p className="text-xs ">
-                        Margin
-                    </p>
-
-                    <Badge
-                        variant="secondary"
-                        className={cn(
-                            "mt-1 gap-1 font-medium",
-                            margin >= 0
-                                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                                : "bg-red-200 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                        )}
-                    >
-                        {margin >= 0 ? (
-                            <TrendingUp size={13} />
-                        ) : (
-                            <TrendingDown size={13} />
-                        )}
-                        {formatAmount(margin)}
-                    </Badge>
                 </div>
             </div>
         </main>

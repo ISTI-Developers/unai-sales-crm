@@ -22,7 +22,12 @@ const Login = () => {
   const [isEyeVisible, setIsEyeVisible] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
 
-  const remembermeRef = useRef<HTMLButtonElement | null>(null);
+  const [rememberMe, setRememberMe] = useState(() => {
+
+    if (!localStorage.getItem("saveLogin")) return false;
+
+    return localStorage.getItem("saveLogin") === "true"
+  })
   const usernameRef = useRef<HTMLInputElement | null>(null);
   const passwordRef = useRef<HTMLInputElement | null>(null);
 
@@ -50,12 +55,8 @@ const Login = () => {
       setHasSubmitted(false);
       return;
     }
-    let saveLogin: string | null = String(false);
     const username = usernameRef.current.value.trim().toLowerCase();
     const password = passwordRef.current.value.trim();
-    if (remembermeRef.current) {
-      saveLogin = remembermeRef.current.ariaChecked;
-    }
 
     if (username.length === 0 || password.length === 0) {
       toast({
@@ -68,11 +69,11 @@ const Login = () => {
     }
 
     login(
-      { username: username, password: password },
+      { username: username, password: password, rememberMe: rememberMe },
       {
         onSettled: () => {
           setHasSubmitted(false);
-          localStorage.setItem("saveLogin", String(saveLogin));
+
         },
         onError: () => {
           if (usernameRef.current && passwordRef.current) {
@@ -157,9 +158,12 @@ const Login = () => {
               {/* EXTRAS SECTION */}
               <section className="flex justify-between items-center px-1">
                 <div className="flex gap-1.5 items-center text-slate-600">
-                  <Checkbox id="remember-me" ref={remembermeRef} />
-                  <label htmlFor="remember-me" className="text-sm">
-                    Remember Me
+                  <Checkbox id="remember-me" checked={rememberMe} onCheckedChange={(checked) => {
+                    setRememberMe(!!checked)
+                    localStorage.setItem("saveLogin", String(!!checked));
+                  }} />
+                  <label htmlFor="remember-me" className="text-xs">
+                    Remember me for 30 days
                   </label>
                 </div>
                 <PasswordReset />

@@ -10,9 +10,9 @@ export const ConformeSiteDetails = ({ cartSite }: { cartSite: CartSite }) => {
     const { data: site, isLoading } = useSiteByID(cartSite.ID);
 
     const paidAddOnsTotal = useMemo(() => {
-        if (!site || cartSite.material.paid === 0 || cartSite.installation.paid === 0) return 0;
+        if (!site || (cartSite.material.paid === 0 && cartSite.installation.paid === 0)) return 0;
         const materialCost = cartSite.material.paid * getSiteMaterial(site.size, site.site_code, cartSite.material.cost);
-        const installationCost = cartSite.installation.paid * cartSite.installation.cost > 0 ? cartSite.installation.cost : getSiteInstallationCost(site.size, site.region)
+        const installationCost = cartSite.installation.paid * (cartSite.installation.cost > 0 ? cartSite.installation.cost : getSiteInstallationCost(site.size, site.region))
 
         return materialCost + installationCost;
     }, [site, cartSite.material, cartSite.installation])
@@ -23,14 +23,14 @@ export const ConformeSiteDetails = ({ cartSite }: { cartSite: CartSite }) => {
     const duration = differenceInCalendarMonths(addDays(new Date(cartSite.to), 1), new Date(cartSite.from));
     const isFree = cartSite.package_rate === 0;
 
-    const totalSRP = getTotalSiteSRPBySite(site, cartSite.installation, cartSite.material, duration);
+    const totalSRP = getTotalSiteSRPBySite(site, cartSite.installation, cartSite.material, duration) + cartSite.add_on_total;
     const totalPackage = getTotalGivenRateBySite(cartSite.package_rate * duration, site, cartSite.installation, cartSite.material)
     const grandTotal = totalPackage - cartSite.add_on_total;
     const margin = grandTotal - totalSRP;
 
 
     console.log(site, cartSite)
-    return <div className="grid gap-3 p-4 border rounded-xl">
+    return <div className="grid gap-2 p-4 border rounded-xl">
         <header className="grid grid-cols-2 gap-2">
             <div>
                 <div className="flex gap-1 items-center">
@@ -39,106 +39,122 @@ export const ConformeSiteDetails = ({ cartSite }: { cartSite: CartSite }) => {
                 </div>
                 <p className="text-xs text-zinc-500 leading-tight">{site.address}</p>
                 <p className="text-[0.65rem] italic text-zinc-400 leading-tight">{site.board_facing}</p>
-                <div className="flex items-center gap-1 text-sm font-semibold pt-1">
-                    <span>SRP: </span>
-                    <span className="leading-tight">{formatAmount(cartSite.srp)}/mo</span>
-                </div>
             </div>
             <div className="flex flex-col items-end text-sm self-start justify-end">
                 <span className="leading-tight font-semibold">{duration} month{duration > 1 ? "s" : ""}</span>
                 <span className="leading-tight">{formatDateRange(new Date(cartSite.from), new Date(cartSite.to))}</span>
             </div>
         </header>
-        <hr />
         <div className="flex flex-col gap-1 text-sm">
+            <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-gray-500">
+                    Rental SRP
+                </span>
+                <span>
+                    {formatAmount(cartSite.srp)}/mo
+                </span>
+            </div>
             {/* Base Rate */}
             <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-gray-500">
-                    Negotiated Monthly Rate
+                    Rental Rate
                 </span>
 
                 <span>
-                    {formatAmount(cartSite.package_rate)}
+                    {formatAmount(cartSite.package_rate)}/mo
+                </span>
+            </div>
+        </div>
+        <hr />
+        <div className="flex flex-col gap-1 text-sm">
+            <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-gray-500">
+                    Total SRP
+                </span>
+                <span>
+                    {formatAmount(totalSRP)}
+                </span>
+            </div>
+            {/* Base Rate */}
+            <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-gray-500">
+                    Total Rental
+                </span>
+
+                <span>
+                    {formatAmount(cartSite.package_rate * duration)}
                 </span>
             </div>
 
             {/* Add-ons */}
-            {cartSite.add_on_total > 0 && (
-                <div className="flex flex-col gap-2">
-                    <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold text-gray-500">
-                            Add-ons
+            <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-gray-500">
+                        Add-ons
+                    </span>
+                </div>
+
+                <div className="pl-3 flex flex-col gap-1.5">
+                    <div className="flex justify-between">
+                        <span className="text-xs text-gray-700">
+                            Billable Add-ons
+                        </span>
+                        <span>
+                            {formatAmount(paidAddOnsTotal)}
                         </span>
                     </div>
-
-                    <div className="pl-3 flex flex-col gap-1.5">
-                        <div className="flex justify-between">
-                            <span className="text-xs text-gray-700">
-                                Chargeable Add-ons
-                            </span>
-                            <span>
-                                {formatAmount(paidAddOnsTotal)}
-                            </span>
-                        </div>
-                        {paidAddOnsTotal > 0 && <>
-                            <div className="grid gap-1.5">
-                                <AddOnBreakdown
-                                    label="Installation"
-                                    free={0}
-                                    paid={cartSite.installation.paid}
-                                    cost={cartSite.installation.cost}
-                                    srp={getSiteInstallationCost(site.size, site.region)}
-                                />
-                                <AddOnBreakdown
-                                    label="Printing"
-                                    free={0}
-                                    paid={cartSite.material.paid}
-                                    cost={getSiteMaterial(site.size, site.site_code, cartSite.material.cost)}
-                                    srp={getSiteMaterial(site.size, site.site_code)}
-                                />
-                            </div>
-                        </>}
-                        <div className="flex justify-between">
-                            <span className="text-xs text-gray-700">
-                                Waived Add-ons
-                            </span>
-                            <span className="text-red-400">
-                                {formatAmount(cartSite.add_on_total)}
-                            </span>
-                        </div>
-                        <div className="grid gap-1.5 text-red-400/60">
+                    {paidAddOnsTotal > 0 && <>
+                        <div className="grid gap-1.5">
                             <AddOnBreakdown
                                 label="Installation"
-                                free={cartSite.installation.free}
-                                paid={0}
+                                free={0}
+                                paid={cartSite.installation.paid}
+                                cost={cartSite.installation.cost}
                                 srp={getSiteInstallationCost(site.size, site.region)}
                             />
                             <AddOnBreakdown
                                 label="Printing"
-                                free={cartSite.material.free}
-                                paid={0}
+                                free={0}
+                                paid={cartSite.material.paid}
+                                cost={getSiteMaterial(site.size, site.site_code, cartSite.material.cost)}
                                 srp={getSiteMaterial(site.size, site.site_code)}
                             />
                         </div>
+                    </>}
+                    <div className="flex justify-between">
+                        <span className="text-xs text-gray-700">
+                            Free Add-ons
+                        </span>
+                        <span className="text-red-400">
+                            {formatAmount(cartSite.add_on_total)}
+                        </span>
+                    </div>
+                    <div className="grid gap-1.5 text-red-400/60">
+                        <AddOnBreakdown
+                            label="Installation"
+                            free={cartSite.installation.free}
+                            paid={0}
+                            srp={getSiteInstallationCost(site.size, site.region)}
+                        />
+                        <AddOnBreakdown
+                            label="Printing"
+                            free={cartSite.material.free}
+                            paid={0}
+                            srp={getSiteMaterial(site.size, site.site_code)}
+                        />
                     </div>
                 </div>
-            )}
+            </div>
 
-            <hr  className="mt-1"/>
+            <hr className="my-1" />
 
             {/* Total */}
-            <div className="flex items-end justify-between">
-                <div>
-                    <span className="text-xs font-semibold">
-                        Total Package Value
-                    </span>
+            <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-gray-500">
+                    Internal Contract Value
+                </span>
 
-                    <p className="text-[11px] text-gray-500">
-                        After add-on adjustments
-                    </p>
-                </div>
-
-                <span className="text-lg font-semibold">
+                <span>
                     {isFree ? "FREE" : formatAmount(grandTotal)}
                 </span>
             </div>
@@ -160,6 +176,17 @@ export const ConformeSiteDetails = ({ cartSite }: { cartSite: CartSite }) => {
                     {margin >= 0 ? "+" : ""}
                     {formatAmount(margin)}
                 </Badge>
+            </div>
+            <div className="flex items-end justify-between">
+                <div>
+                    <span className="text-xs font-semibold">
+                        Contract Amount
+                    </span>
+                </div>
+
+                <span className="text-lg font-semibold">
+                    {isFree ? "FREE" : formatAmount(totalPackage)}
+                </span>
             </div>
         </div>
     </div>

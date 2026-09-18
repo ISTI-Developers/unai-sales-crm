@@ -216,7 +216,13 @@ export const getTotalMonthly = (amount: number, to: Date, from: Date) => {
   return amount * differenceInCalendarMonths(addDays(to, 1), from);
 };
 export const getTotalDaily = (amount: number, to: Date, from: Date) => {
-  return amount * differenceInCalendarDays(addDays(to, 1), from);
+  return (
+    amount *
+    Math.round(
+      Math.max(differenceInCalendarDays(addDays(to, 1), from), 0) / 30,
+    ) *
+    30
+  );
 };
 export const getAddOnTotal = (item: SiteRow) => {
   const { installation, material } = item;
@@ -297,14 +303,13 @@ export const getTotalGivenRateBySite = (
   return tempRate;
 };
 
-export const getTotalGivenRate = (contract_rate: number, item: SiteRow) => {
-  let tempRate = contract_rate;
+export const getTotalChargeables = (item: SiteRow) => {
+  let tempRate = 0;
   const materialSRP = getSiteMaterial(
     item.site.size,
     item.site.site_code,
     item.material.cost,
   );
-
   if (item.installation.paid > 0) {
     tempRate += item.installation.cost * item.installation.paid;
   }
@@ -314,6 +319,28 @@ export const getTotalGivenRate = (contract_rate: number, item: SiteRow) => {
   }
 
   return tempRate;
+};
+export const getTotalChargeablesBySite = (
+  installation: Inclusion,
+  material: Inclusion,
+  item?: Site,
+) => {
+  let tempRate = 0;
+  if (!item) return 0;
+  const materialSRP = getSiteMaterial(item.size, item.site_code, material.cost);
+  if (installation.paid > 0) {
+    tempRate += installation.cost * installation.paid;
+  }
+
+  if (material.paid > 0) {
+    tempRate += materialSRP * material.paid;
+  }
+
+  return tempRate;
+};
+export const getTotalGivenRate = (contract_rate: number, item: SiteRow) => {
+  const chargeableCost = getTotalChargeables(item);
+  return contract_rate + chargeableCost;
 };
 export function getCurrentApprovers(request: Request) {
   const sorted = [...request.approvers].sort((a, b) => a.level - b.level);

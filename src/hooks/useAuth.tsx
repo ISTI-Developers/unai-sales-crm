@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 interface Credentials {
   username: string;
   password: string;
+  rememberMe?: boolean
 }
 
 // interface OOHResponse {
@@ -39,10 +40,9 @@ export const useLogin = () => {
   const { setUser } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ username, password }: Credentials) => {
+    mutationFn: async (credentials: Credentials) => {
       const formData = new FormData();
-      formData.append("username", username);
-      formData.append("password", password);
+      formData.append("data", JSON.stringify(credentials));
 
       try {
         // Local API call

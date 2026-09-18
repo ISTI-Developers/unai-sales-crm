@@ -44,30 +44,42 @@ function SitesTabs({ cart, setCart }: SitesTabsProps) {
                         let srpTotal = srp * difference;
 
                         if (item.type === "led") {
-                            difference = differenceInCalendarDays(addDays(item.date.to, 1), item.date.from)
+                            difference = Math.round(Math.max(differenceInCalendarDays(addDays(item.date.to, 1), item.date.from), 0) / 30) * 30
                             spotsRate = Number(item.spots_rate);
                             spotsCount = item.spots_count;
+                            const hasPackageRate = packageRate > 0;
+                            const isFree = item.is_free;
                             if (packageRate > 0) {
                                 spotsCount = packageRate / difference / (spotsRate > 0 ? spotsRate : srp)
                             }
 
-                            spotsCount = Math.ceil(spotsCount)
-                            contractAmount = spotsCount * spotsRate * difference;
-                            srpTotal = srp * difference * spotsCount;
-                            if (item.is_free) {
-                                contractAmount = 0;
-                                srpTotal = spotsRate * difference * spotsCount
+                            // Package rate determines the actual number of spots
+                            if (hasPackageRate) {
+                                spotsCount = Math.floor(
+                                    packageRate / difference / spotsRate
+                                );
                             }
+
+                            // SRP is always based on the actual number of spots
+                            srpTotal = isFree ? hasPackageRate ? packageRate : spotsCount * difference * srp : spotsCount * difference * srp;
+                            contractAmount = isFree
+                                ? 0
+                                : hasPackageRate
+                                    ? packageRate
+                                    : spotsCount * difference * spotsRate;
                         } else {
-                            contractAmount = getTotalGivenRate(packageRate * difference, item) - addOnTotal;
+                            contractAmount = getTotalGivenRate(packageRate * difference, item);
                             srpTotal = getTotalSiteSRP(item, difference);
                         }
 
-                        const margin = contractAmount - srpTotal;
+                        let margin = contractAmount - srpTotal;
+                        if (item.type === "static") {
+                            margin = contractAmount - addOnTotal - srpTotal;
+                        }
 
 
 
-                        return <div role='button' onClick={() => setActiveTab(item.site.site_code)} data-active={item.site.site_code === activeTab} key={index} className='p-3 hover:bg-zinc-50 data-[active=true]:bg-zinc-100 data-[active=true]:hover:bg-zinc-100 space-y-2'>
+                        return <div role='button' onClick={() => setActiveTab(item.site.site_code)} data-active={item.site.site_code === activeTab} key={index} className='p-3 hover:bg-zinc-50 data-[active=true]:bg-zinc-600 data-[active=true]:text-white data-[active=true]:hover:bg-zinc-700 space-y-2'>
                             <div className='text-xs'>
                                 <p className='text-sm font-medium'>{item.site.site_code} <span className='text-[0.65rem]'>{item.site.size}</span></p>
                                 <p className='text-[0.65rem] line-clamp-2' title={item.site.address}>{item.site.address}</p>
