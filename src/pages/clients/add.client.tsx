@@ -218,10 +218,17 @@ const AddClient = () => {
     }
 
     if (client.parent_name) {
-      data.parent_name = String(clients?.find(c => c.name === client.parent_name)?.ID ?? "");
-    }
-    // console.log(data)
-    // return;
+      const parentName = client.parent_name;
+      const clientDetails = clients?.find(c => c.name.trim() === parentName.trim())
+      if (!clientDetails) {
+        toast({
+          variant: "warning",
+          title: "Parent client details not found. Please check again."
+        })
+        throw new Error("Parent not found.");
+      }
+      data.parent_name = String(clientDetails.ID);
+    } 
     insertClient(data, {
       onSuccess: (data) => {
         if (data.acknowledged) {
