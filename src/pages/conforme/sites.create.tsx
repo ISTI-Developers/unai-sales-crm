@@ -2,8 +2,8 @@ import { Cart, SiteRow } from '@/interfaces/requests.interface'
 import { Dispatch, SetStateAction, useEffect, useMemo, useState } from 'react'
 import SiteItem from './siteItem.create';
 import { formatAmount } from '@/lib/format';
-import { addDays, differenceInCalendarDays, differenceInCalendarMonths } from 'date-fns';
-import { cn, getAddOnTotal, getTotalGivenRate, getTotalSiteSRP } from '@/lib/utils';
+import { addDays, differenceInCalendarMonths } from 'date-fns';
+import { cn, getAddOnTotal, getDurationInDays, getTotalGivenRate, getTotalSiteSRP } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { CalendarIcon, TagIcon, TrendingDown, TrendingUp } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -44,7 +44,7 @@ function SitesTabs({ cart, setCart }: SitesTabsProps) {
                         let srpTotal = srp * difference;
 
                         if (item.type === "led") {
-                            difference = Math.round(Math.max(differenceInCalendarDays(addDays(item.date.to, 1), item.date.from), 0) / 30) * 30
+                            difference = getDurationInDays(item.date.from, item.date.to)
                             spotsRate = Number(item.spots_rate);
                             spotsCount = item.spots_count;
                             const hasPackageRate = packageRate > 0;
@@ -69,7 +69,7 @@ function SitesTabs({ cart, setCart }: SitesTabsProps) {
                                     : spotsCount * difference * spotsRate;
                         } else {
                             contractAmount = getTotalGivenRate(packageRate * difference, item);
-                            srpTotal = getTotalSiteSRP(item, difference);
+                            srpTotal = getTotalSiteSRP(item, difference) + addOnTotal;
                         }
 
                         let margin = contractAmount - srpTotal;

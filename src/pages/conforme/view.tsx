@@ -119,7 +119,7 @@ function ViewConforme() {
                         </div>
                     </div>
                     <div className="grid grid-cols-2 gap-2 w-full lg:flex lg:w-fit">
-                        {currentUser?.ID === user?.ID &&
+                        {
                             <>
                                 <Button className=" group col-[1/3]" variant="outline" asChild>
                                     <Link to={`../create?token=${v4()}&no=${params.request_no}`}>
@@ -127,13 +127,12 @@ function ViewConforme() {
                                         Create New
                                     </Link>
                                 </Button>
-                                {/* {data.status === 1 &&
+                                {data.status === 1 &&
                                     <Button variant="outline" className="text-emerald-600 border-emerald-600 bg-emerald-50" asChild>
                                         <Link to={`../${params.request_no}/generate`}>
-                                            <PencilRuler />
                                             Generate Conforme
                                         </Link>
-                                    </Button>} */}
+                                    </Button>}
                             </>
                         }
                         {isCurrentApprover &&

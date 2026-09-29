@@ -195,6 +195,8 @@ function CreateConforme() {
         brand: cart.brand,
         sites: cart.sites.map(item => {
           const addOnTotal = getAddOnTotal(item);
+          const difference = differenceInCalendarMonths(addDays(item.date.to, 1), item.date.from);
+          const packageRate = getTotalGivenRate(Number(item.package_rate) * difference, item);
           return {
             ID: item.site.ID,
             from: format(item.date.from, "yyyy-MM-dd"),
@@ -205,7 +207,7 @@ function CreateConforme() {
             installation: item.installation,
             material: item.material,
             add_on_total: addOnTotal,
-            net_amount: Number(item.package_rate) - addOnTotal
+            net_amount: packageRate - addOnTotal
           }
         }),
         leds: cart.leds.map(item => {

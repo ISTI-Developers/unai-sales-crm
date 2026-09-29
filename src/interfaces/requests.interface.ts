@@ -2,6 +2,7 @@ import { SitePreview } from "./sites.interface";
 import { Client } from "./client.interface";
 import { TermsAndConditions, termsAndConditions } from "@/data/conforme-tnc";
 
+export const THRESHOLD = 4 as const;
 export interface AddOns {
   installation: number;
   material: number;
@@ -151,10 +152,13 @@ export type ConformeSite = {
   address: string;
   board_facing: string;
   size: string;
+  region: string;
   image?: string;
   start: string;
   end: string;
+  add_on_total: number;
   monthly_rate: number;
+  offered_rate: number;
   total_rate: number;
   installation: {
     free: number;
@@ -166,6 +170,21 @@ export type ConformeSite = {
     paid: number;
     cost: number;
   };
+};
+export type ConformeLED = {
+  ID: number;
+  site_code: string;
+  address: string;
+  board_facing: string;
+  size: string;
+  start: string;
+  end: string;
+  srp: number;
+  spots_price: number;
+  spots_count: number;
+  package_rate: number;
+  total_rate: number;
+  is_free: boolean;
 };
 
 export type PaymentMethod = "PDC" | "BANK";
@@ -189,7 +208,7 @@ export const appliesToPayment = {
   END: "last",
 } as const;
 
-type PaymentTerms = {
+export type PaymentTerms = {
   monthly_payment: PaymentTiming;
   contract_terms: Record<number, PaymentRule[]>;
   other_terms: TermsAndConditions[];
@@ -214,16 +233,69 @@ export const defaultPaymentTerms: PaymentTerms = {
   other_terms: termsAndConditions,
 };
 
+export type Signatory = {
+  name: string;
+  title: string;
+  signature?: File;
+};
+
+export type MaterialPrinting =
+  | {
+      internal: true;
+      format: "fixed" | "regional";
+      value?:
+        | number
+        | {
+            metro_manila: number;
+            provincial: number;
+          };
+    }
+  | {
+      internal: false;
+      format: "fixed";
+      value: number;
+    }
+  | {
+      internal: false;
+      format: "regional";
+      value: {
+        metro_manila: number;
+        provincial: number;
+      };
+    };
+
+export type InstallationAndDismantling =
+  | {
+      internal: true;
+      value?: number;
+    }
+  | {
+      internal: false;
+      value: number;
+    };
+
+export type Production = {
+  material_printing: MaterialPrinting;
+  installation_and_dismantling: InstallationAndDismantling;
+};
 export type Conforme = {
   business_name: string;
   product: string;
   business_address: string;
   billing_address: string;
   authorized_signatory: string;
-  contact_number: string;
   position: string;
   sites: ConformeSite[];
+  leds: ConformeLED[];
+  add_ons: GlobalAddOns[];
   terms: PaymentTerms;
+  internal_signatory: Signatory[];
+  internal_signatory_options: {
+    layout: "combined" | "separated";
+    use_code_names: boolean;
+  };
+  external_signatory: Signatory[];
+  production: Production;
 };
 
 export const approvalStep: Record<string, string> = {
