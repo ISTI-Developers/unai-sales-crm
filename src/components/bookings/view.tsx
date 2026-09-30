@@ -20,6 +20,7 @@ import { v4 } from 'uuid';
 import { List } from '@/interfaces';
 import { MultiComboBox } from '../multicombobox';
 import { useAccess } from '@/hooks/useClients';
+import { getBookingContext } from '@/lib/fetch';
 
 function ViewBooking({ site }: { site: SiteAvailability }) {
     const [openBooking, setOpenBooking] = useState(false);
@@ -33,7 +34,9 @@ function ViewBooking({ site }: { site: SiteAvailability }) {
         "CONTRACT EXTENSION",
         "CHANGE OF CONTRACT PERIOD/DURATION",
     ]);
-
+    const bookingContext = useMemo(() => {
+        return getBookingContext(siteBookings);
+    }, [siteBookings]);
     const bookings = useMemo(() => {
         return siteBookings
             .filter((item) => (!show ? item.booking_status !== "CANCELLED" : true))
@@ -73,20 +76,7 @@ function ViewBooking({ site }: { site: SiteAvailability }) {
         }
     }
 
-    const mapped = bookings.map(current => {
-        const currentKey = getBookingKey(current);
-
-        const hasNewerOverride = bookings.some(next =>
-            next.ID > current.ID &&
-            OVERRIDE_TYPES.has(next.booking_status) &&
-            getBookingKey(next) === currentKey
-        );
-
-        return {
-            ...current,
-            is_overriden: hasNewerOverride,
-        };
-    });
+    const mapped = bookings;
     return (
         <Dialog open={openBooking} onOpenChange={setOpenBooking} modal={false}>
             <Tooltip>
@@ -135,7 +125,7 @@ function ViewBooking({ site }: { site: SiteAvailability }) {
                             <TableBody>
                                 {mapped.map((item) => {
                                     return (
-                                        <BookingItem item={item} key={`${item.site_code}-${item.ID}`} show={show} />
+                                        <BookingItem item={item} key={`${item.site_code}-${item.ID}`} show={show} bookingContext={bookingContext} />
                                     );
                                 })}
                             </TableBody>
@@ -146,7 +136,7 @@ function ViewBooking({ site }: { site: SiteAvailability }) {
     )
 }
 
-const BookingItem = ({ item, show }: { item: Booking; show: boolean; }) => {
+const BookingItem = ({ item, show, bookingContext }: { item: Booking; show: boolean; bookingContext: { previous?: Booking; current?: Booking; next?: Booking } }) => {
     const { data: users } = useUsers();
     const { mutate: cancelBooking } = useCancelBooking();
     const [open, setOpen] = useState(false);
@@ -160,6 +150,7 @@ const BookingItem = ({ item, show }: { item: Booking; show: boolean; }) => {
     );
     const status = useMemo(() => {
         const invalid = ["CANCELLED", "PRE-TERMINATION"];
+
         const now = new Date();
 
         const start = new Date(item.date_from);
@@ -172,10 +163,12 @@ const BookingItem = ({ item, show }: { item: Booking; show: boolean; }) => {
         const isFuture =
             start > now;
 
-        if (item.is_overriden) {
-            return "STOPPED";
-        }
-        // invalid statuses first
+        /*
+         * ---------------------------------------------------------
+         * INVALID / OVERRIDE STATUSES
+         * ---------------------------------------------------------
+         */
+
         if (item.booking_status === "PRE-TERMINATION") {
             return "PRE-TERMINATED";
         }
@@ -184,23 +177,73 @@ const BookingItem = ({ item, show }: { item: Booking; show: boolean; }) => {
             return "CANCELLED";
         }
 
-        // active booking
-        if (isRunning) {
+        /*
+         * ---------------------------------------------------------
+         * RESOLVED CURRENT
+         * ---------------------------------------------------------
+         *
+         * Do NOT determine RUNNING solely from the item's dates.
+         *
+         * getBookingContext() already resolved which booking is
+         * actually current after considering:
+         *
+         * - NEW
+         * - RENEWAL
+         * - QUEUEING
+         * - overlapping bookings
+         * - bumped queueing bookings
+         * - current date
+         */
+        if (bookingContext.current?.ID === item.ID) {
             return "RUNNING";
         }
 
-        // future booking
-        if (isFuture) {
+        /*
+         * ---------------------------------------------------------
+         * RESOLVED NEXT
+         * ---------------------------------------------------------
+         *
+         * This is important because a QUEUEING booking that was
+         * bumped will NOT be bookingContext.next.
+         */
+        if (bookingContext.next?.ID === item.ID) {
             return "UPCOMING";
         }
 
-        // already ended
+        /*
+         * ---------------------------------------------------------
+         * PREVIOUS / ENDED
+         * ---------------------------------------------------------
+         */
+
+        if (bookingContext.previous?.ID === item.ID) {
+            return "COMPLETED";
+        }
+
+        /*
+         * ---------------------------------------------------------
+         * OTHER BOOKINGS
+         * ---------------------------------------------------------
+         */
+
+        if (isFuture) {
+            return "STOPPED";
+        }
+
         if (end < now && !invalid.includes(item.booking_status)) {
             return "COMPLETED";
         }
 
+        /*
+         * A booking that isn't current/next/previous and is
+         * currently within its dates is effectively superseded.
+         */
+        if (isRunning) {
+            return "STOPPED";
+        }
+
         return "STOPPED";
-    }, [item]);
+    }, [item, bookingContext]);
 
     const onContinue = async () => {
         onSend(true);

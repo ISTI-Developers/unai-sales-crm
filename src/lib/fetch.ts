@@ -15,12 +15,10 @@ import {
   differenceInDays,
   format,
   subDays,
+  endOfDay,
+  startOfDay,
 } from "date-fns";
-import {
-  AvailableSites,
-  Landmarks,
-  Site,
-} from "@/interfaces/sites.interface";
+import { AvailableSites, Landmarks, Site } from "@/interfaces/sites.interface";
 import { useCurrentWeekReport } from "@/hooks/useDashboard";
 import { getRecord, saveRecord, wp } from "@/providers/api";
 import { useQuery } from "@tanstack/react-query";
@@ -658,7 +656,9 @@ export const getBookingContext = (bookings: Booking[]) => {
   }
 
   /*
-   * Ignore cancelled bookings.
+   * ---------------------------------------------------------
+   * REMOVE CANCELLED BOOKINGS
+   * ---------------------------------------------------------
    */
   const validBookings = bookings.filter(
     (booking) => booking.booking_status !== "CANCELLED",
@@ -669,7 +669,11 @@ export const getBookingContext = (bookings: Booking[]) => {
   }
 
   /*
+   * ---------------------------------------------------------
+   * SAME START DATE
+   *
    * For the same date_from, keep only the latest booking.
+   * ---------------------------------------------------------
    */
   const latestPerStartDate = new Map<string, Booking>();
 
@@ -686,17 +690,130 @@ export const getBookingContext = (bookings: Booking[]) => {
 
   /*
    * ---------------------------------------------------------
+   * HELPERS
+   * ---------------------------------------------------------
+   */
+
+  const getFrom = (booking: Booking) => startOfDay(new Date(booking.date_from));
+
+  /*
+   * date_to is inclusive.
+   *
+   * Example:
+   * 2026-09-30 means the booking is valid until
+   * 2026-09-30 23:59:59, not midnight.
+   */
+  const getTo = (booking: Booking) => endOfDay(new Date(booking.date_to));
+
+  const datesOverlap = (a: Booking, b: Booking) => {
+    const aFrom = getFrom(a);
+    const aTo = getTo(a);
+
+    const bFrom = getFrom(b);
+    const bTo = getTo(b);
+
+    return aFrom <= bTo && aTo >= bFrom;
+  };
+
+  /*
+   * ---------------------------------------------------------
+   * BOOKING PRECEDENCE
+   * ---------------------------------------------------------
+   *
+   * NEW and RENEWAL can bump a QUEUEING booking when
+   * their booking periods overlap.
+   *
+   * This is NOT a global status priority.
+   *
+   * Example:
+   *
+   * NEW
+   * Jan 1 - Mar 31
+   *
+   * QUEUEING
+   * Apr 1 - Jun 30
+   *
+   * The QUEUEING survives because there is no overlap.
+   *
+   * But:
+   *
+   * RENEWAL
+   * Jul 1 - Sep 30
+   *
+   * QUEUEING
+   * Aug 1 - Oct 31
+   *
+   * QUEUEING is bumped because the periods overlap.
+   * ---------------------------------------------------------
+   */
+  const isBumpedQueueing = (booking: Booking) => {
+    if (booking.booking_status !== "QUEUEING") {
+      return false;
+    }
+
+    return valid.some((other) => {
+      if (other.ID === booking.ID) {
+        return false;
+      }
+
+      const isHigherPriority =
+        other.booking_status === "NEW" || other.booking_status === "RENEWAL";
+
+      if (!isHigherPriority) {
+        return false;
+      }
+
+      return datesOverlap(booking, other);
+    });
+  };
+
+  /*
+   * ---------------------------------------------------------
    * CURRENT RUNNING BOOKINGS
    * ---------------------------------------------------------
    */
   const currentBookings = valid
     .filter((booking) => {
-      const from = new Date(booking.date_from);
-      const to = new Date(booking.date_to);
+      const from = getFrom(booking);
+      const to = getTo(booking);
 
       return from <= now && to >= now;
     })
-    .sort((a, b) => b.ID - a.ID);
+    .sort((a, b) => {
+      /*
+       * PRE-TERMINATION / CONTRACT should take precedence
+       * over ordinary running bookings.
+       */
+      const aSpecial =
+        a.booking_status === "PRE-TERMINATION" ||
+        a.booking_status.includes("CONTRACT");
+
+      const bSpecial =
+        b.booking_status === "PRE-TERMINATION" ||
+        b.booking_status.includes("CONTRACT");
+
+      if (aSpecial !== bSpecial) {
+        return aSpecial ? -1 : 1;
+      }
+
+      /*
+       * NEW / RENEWAL should beat QUEUEING when overlapping.
+       */
+      const aHigher =
+        a.booking_status === "NEW" || a.booking_status === "RENEWAL";
+
+      const bHigher =
+        b.booking_status === "NEW" || b.booking_status === "RENEWAL";
+
+      if (aHigher !== bHigher) {
+        return aHigher ? -1 : 1;
+      }
+
+      /*
+       * Otherwise use latest ID.
+       */
+      return b.ID - a.ID;
+    });
 
   const runningBooking = currentBookings[0];
 
@@ -707,9 +824,20 @@ export const getBookingContext = (bookings: Booking[]) => {
    */
   const futureBookings = valid
     .filter((booking) => {
-      const from = new Date(booking.date_from);
+      const from = getFrom(booking);
 
+      /*
+       * Already started.
+       */
       if (from <= now) {
+        return false;
+      }
+
+      /*
+       * A QUEUEING booking that overlaps a NEW / RENEWAL
+       * booking has been bumped and must not become NEXT.
+       */
+      if (isBumpedQueueing(booking)) {
         return false;
       }
 
@@ -733,11 +861,33 @@ export const getBookingContext = (bookings: Booking[]) => {
       }
     })
     .sort((a, b) => {
-      const dateDiff =
-        new Date(a.date_from).getTime() - new Date(b.date_from).getTime();
+      const dateDiff = getFrom(a).getTime() - getFrom(b).getTime();
 
       if (dateDiff !== 0) {
         return dateDiff;
+      }
+
+      /*
+       * If they start on the same date, prefer:
+       * RENEWAL / NEW over QUEUEING.
+       */
+      const priority = (booking: Booking) => {
+        switch (booking.booking_status) {
+          case "RENEWAL":
+            return 3;
+          case "NEW":
+            return 2;
+          case "QUEUEING":
+            return 1;
+          default:
+            return 0;
+        }
+      };
+
+      const priorityDiff = priority(b) - priority(a);
+
+      if (priorityDiff !== 0) {
+        return priorityDiff;
       }
 
       return b.ID - a.ID;
@@ -750,50 +900,41 @@ export const getBookingContext = (bookings: Booking[]) => {
    * DETERMINE CURRENT
    * ---------------------------------------------------------
    *
-   * Preserve the behavior of getLatestBooking():
+   * Rules:
    *
-   * 1. Future qualifying booking
-   * 2. Currently running booking
-   * 3. Latest valid booking as fallback
+   * 1. A qualifying future booking can become CURRENT,
+   *    preserving the previous getLatestBooking() behavior.
+   *
+   * 2. Otherwise use the currently running booking.
+   *
+   * 3. PRE-TERMINATION / CONTRACT can override an ordinary
+   *    running booking.
+   *
+   * 4. If nothing is running/upcoming, fall back to the
+   *    latest valid booking.
+   * ---------------------------------------------------------
    */
   let current: Booking | undefined;
 
   if (nextBooking) {
     current = nextBooking;
   } else if (runningBooking) {
-    if (
-      runningBooking.booking_status === "PRE-TERMINATION" ||
-      runningBooking.booking_status.includes("CONTRACT")
-    ) {
-      current = runningBooking;
-    } else {
-      /*
-       * Check for an override of the running booking.
-       */
-      const currentOverride = currentBookings
-        .filter((booking) => {
-          if (booking.ID === runningBooking.ID) {
-            return false;
-          }
-
-          return (
-            booking.booking_status === "PRE-TERMINATION" ||
-            booking.booking_status.includes("CONTRACT")
-          );
-        })
-        .sort((a, b) => b.ID - a.ID)[0];
-
-      current = currentOverride ?? runningBooking;
-    }
+    /*
+     * runningBooking has already been sorted so that:
+     *
+     * PRE-TERMINATION / CONTRACT
+     *        ↓
+     * NEW / RENEWAL
+     *        ↓
+     * QUEUEING
+     */
+    current = runningBooking;
   } else {
     /*
      * Nothing running and nothing upcoming.
      *
-     * IMPORTANT:
-     * Preserve the original fallback behavior.
-     *
-     * Even if all bookings have ended, return the latest
-     * valid booking.
+     * Preserve the original fallback behavior:
+     * return the latest valid booking.
      */
     current = [...valid].sort((a, b) => b.ID - a.ID)[0];
   }
@@ -803,13 +944,27 @@ export const getBookingContext = (bookings: Booking[]) => {
    * PREVIOUS BOOKING
    * ---------------------------------------------------------
    *
-   * Find the most recent valid booking that ended before
+   * Find the most recent booking that:
+   *
+   * 1. Is not the current booking
+   * 2. Ended before the current booking started
+   *
+   * This naturally handles:
+   *
+   * NEW/RENEWAL
+   *       ↓
+   * QUEUEING
+   *
+   * where the queueing booking overlaps the higher-priority
+   * booking: the queueing booking won't be considered a
+   * previous booking because it did not actually end before
    * the current booking started.
+   * ---------------------------------------------------------
    */
   let previous: Booking | undefined;
 
   if (current) {
-    const currentStart = new Date(current.date_from);
+    const currentStart = getFrom(current);
 
     previous = valid
       .filter((booking) => {
@@ -817,13 +972,12 @@ export const getBookingContext = (bookings: Booking[]) => {
           return false;
         }
 
-        const bookingEnd = new Date(booking.date_to);
+        const bookingEnd = getTo(booking);
 
         return bookingEnd < currentStart;
       })
       .sort((a, b) => {
-        const dateDiff =
-          new Date(b.date_to).getTime() - new Date(a.date_to).getTime();
+        const dateDiff = getTo(b).getTime() - getTo(a).getTime();
 
         if (dateDiff !== 0) {
           return dateDiff;
@@ -833,6 +987,11 @@ export const getBookingContext = (bookings: Booking[]) => {
       })[0];
   }
 
+  /*
+   * ---------------------------------------------------------
+   * RETURN CONTEXT
+   * ---------------------------------------------------------
+   */
   return {
     current,
     previous,
