@@ -18,16 +18,20 @@ function ClientBrandCombobox({ value, onValueChange, className }: ClientBrandCom
     const { user } = useAuth();
     const { data: clients, isLoading } = useClients();
     const [open, setOpen] = useState(false)
-    const [inputValue, setInputValue] = useState("")
+    const [inputValue, setInputValue] = useState("");
 
     const filteredClients = useMemo(() => {
-        if (!clients || isLoading) return [];
+        if (!clients || !user || isLoading) return [];
 
         const seen = new Set<string>();
 
-        const uniqueClients = clients
+        const ownedClients = clients.filter(client => {
+            //TODO: show all to admins
+            return client.sales_unit_id === user.sales_unit?.sales_unit_id || client.account_id === user.ID || client.status === 46;
+        })
+        const uniqueClients = ownedClients
             .filter(client => {
-                const key = `${client.name.trim().toLowerCase()}-${client.brand?.trim().toLowerCase()}`;
+                const key = client.name.trim().toLowerCase();
 
                 if (seen.has(key)) return false;
 
@@ -35,7 +39,7 @@ function ClientBrandCombobox({ value, onValueChange, className }: ClientBrandCom
                 return true;
             });
 
-        if (!inputValue) return uniqueClients.slice(0, 20);
+        if (!inputValue) return uniqueClients.slice(0, 50);
 
         const lower = inputValue.toLowerCase();
         const fuse = new Fuse(uniqueClients, {
@@ -44,8 +48,8 @@ function ClientBrandCombobox({ value, onValueChange, className }: ClientBrandCom
             keys: ["name", "brand"],
         });
         return fuse.search(lower).map(res => res.item)
-            .slice(0, 20);
-    }, [clients, inputValue, isLoading]);
+            .slice(0, 50);
+    }, [clients, inputValue, isLoading, user]);
     return (
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
@@ -92,8 +96,8 @@ function ClientBrandCombobox({ value, onValueChange, className }: ClientBrandCom
                                         )}
                                     />
                                     <div>
-                                        <p className='font-semibold'>{item.name}</p>
-                                        <p className='italic text-xs'>{item.brand}</p>
+                                        <p className='font-semibold uppercase'>{item.name}</p>
+                                        <p className='italic text-xs truncate max-w-[100px]'>{item.brand}</p>
                                     </div>
                                 </CommandItem>
                             ))}

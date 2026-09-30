@@ -23,7 +23,7 @@ export const termsAndConditions: TermsAndConditions[] = [
         content: "Payment must be given to United Neon Advertising, Inc. upon signing of the agreement.",
         isBold: false,
         use: true,
-        fixed: false,
+        fixed: true,
         indented: true,
     },
     {

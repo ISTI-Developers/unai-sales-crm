@@ -5,14 +5,14 @@ import InputNumber from '@/components/ui/number-input';
 import { Cart, SiteRow } from '@/interfaces/requests.interface';
 
 import { formatAmount } from '@/lib/format';
-import { cn, getAddOnTotal, getCost, getSiteInstallationCost, getSiteMaterial, getTotalChargeables, getTotalGivenRate, getTotalSiteSRP } from '@/lib/utils';
+import { cn, getAddOnTotal, getCost, getMonthlyDuration, getSiteInstallationCost, getSiteMaterial, getTotalChargeables, getTotalGivenRate, getTotalSiteSRP } from '@/lib/utils';
 import { Trash2Icon, ChevronsUp, CircleQuestionMarkIcon } from 'lucide-react';
 import { Dispatch, SetStateAction, useMemo, useState } from 'react'
-import { addDays, differenceInCalendarMonths } from 'date-fns';
 import { AnimatePresence, motion } from "framer-motion";
 import { Badge } from '@/components/ui/badge';
 import { InputGroup, InputGroupAddon } from '@/components/ui/input-group';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { addDays, differenceInCalendarDays } from 'date-fns';
 
 interface SiteItemProps {
     item: SiteRow;
@@ -44,9 +44,10 @@ function SiteItem({ item, setCart, index }: SiteItemProps) {
             }))
         }))
     }
+    console.log(item);
 
     const addOnTotal = getAddOnTotal(item);
-    const monthDifference = useMemo(() => differenceInCalendarMonths(addDays(item.date.to, 1), item.date.from), [item.date]);
+    const monthDifference = useMemo(() => getMonthlyDuration(item.date.from, item.date.to), [item.date]);
 
     const monthlyPackageRate = Number(item.package_rate) // getTotalGivenRate(Number(item.package_rate), item);
     const totalChargeables = getTotalChargeables(item);
@@ -83,7 +84,7 @@ function SiteItem({ item, setCart, index }: SiteItemProps) {
                     <div className="min-w-0 flex-1">
                         <DatePicker
                             date={item.date.from}
-                            min={new Date()}
+                            min={addDays(new Date(item.site.end_date ?? new Date()), 1)}
                             className="w-full text-xs"
                             withIcon={false}
                             onDateChange={(value) => {
@@ -98,9 +99,9 @@ function SiteItem({ item, setCart, index }: SiteItemProps) {
                                                 date: {
                                                     from: value,
                                                     to:
-                                                        row.date.to > value
+                                                        row.date.to > value && differenceInCalendarDays(row.date.to, value) > 30
                                                             ? row.date.to
-                                                            : value,
+                                                            : addDays(value, 30),
                                                 },
                                             }
                                             : row
@@ -113,7 +114,7 @@ function SiteItem({ item, setCart, index }: SiteItemProps) {
                     <div className="min-w-0 flex-1">
                         <DatePicker
                             date={item.date.to}
-                            min={item.date.from}
+                            min={addDays(item.date.from, 30)}
                             className="w-full text-xs"
                             withIcon={false}
                             onDateChange={(value) => {

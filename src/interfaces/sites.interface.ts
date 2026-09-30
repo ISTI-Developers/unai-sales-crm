@@ -27,11 +27,6 @@ export interface Site {
   vicinity_population: number;
 }
 
-export type SitePreview = Pick<
-  Site,
-  "ID" | "site_code" | "address" | "size" | "price" | "board_facing" | "region"
-> & { spots_count?: number };
-
 export interface SiteDetailswithMapping extends Site {
   [key: string]: string | number | null | undefined | Landmarks[];
 }
@@ -125,7 +120,10 @@ export interface SiteAvailability extends Site {
   remaining_days?: number;
   booking_status?: string;
 }
-
+export type SitePreview = Pick<
+  SiteAvailability,
+  "ID" | "site_code" | "address" | "size" | "price" | "board_facing" | "region" | "end_date"
+> & { spots_count?: number, availability?: string };
 export interface LatestSites {
   structure_id: number;
   structure_code: string;

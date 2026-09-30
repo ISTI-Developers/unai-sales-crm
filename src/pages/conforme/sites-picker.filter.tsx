@@ -1,7 +1,7 @@
-import { SiteAvailability } from "@/interfaces/sites.interface";
+import { SiteAvailabilityWithStatus } from "@/data/sitePicker.columns";
 import { FilterFn } from "@tanstack/react-table";
 
-export const siteGlobalFilter: FilterFn<SiteAvailability> = (row, _columnId, filterValue) => {
+export const siteGlobalFilter: FilterFn<SiteAvailabilityWithStatus> = (row, _columnId, filterValue) => {
     const query = String(filterValue ?? "").trim().toLowerCase();
 
     if (!query) return true;
