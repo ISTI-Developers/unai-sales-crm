@@ -9,7 +9,7 @@ function RequestorCell({ request }: { request: RequestTable }) {
     return (
         <div className='flex items-center capitalize gap-2 text-xs'>
             <Avatar className='size-8'>
-                <AvatarImage src={`${import.meta.env.VITE_SERVER}images/${data.image}`} />
+                <AvatarImage className="object-cover overflow-hidden object-top" src={`${import.meta.env.VITE_SERVER}images/${data.image}`} />
                 <AvatarFallback className='uppercase text-xs font-semibold'>
                     {`${data.first_name.charAt(0)}${data.last_name.charAt(0)}`}
                 </AvatarFallback>

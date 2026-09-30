@@ -21,7 +21,7 @@ function ApproverCell({ request }: { request: Request }) {
                     return <Tooltip key={approver.ID}>
                         <TooltipTrigger asChild>
                             <Avatar className="size-8 font-semibold border">
-                                <AvatarImage src={`${import.meta.env.VITE_SERVER}images/${approver.image}`}/>
+                                <AvatarImage className="object-cover overflow-hidden object-top" src={`${import.meta.env.VITE_SERVER}images/${approver.image}`}/>
                                 <AvatarFallback className="text-xs">
                                     {fallback}
                                 </AvatarFallback>
