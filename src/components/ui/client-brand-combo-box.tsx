@@ -26,7 +26,9 @@ function ClientBrandCombobox({ value, onValueChange, className }: ClientBrandCom
         const seen = new Set<string>();
 
         const ownedClients = clients.filter(client => {
-            //TODO: show all to admins
+            if([1,3,10].includes(user.role.role_id)){
+                return client;
+            }
             return client.sales_unit_id === user.sales_unit?.sales_unit_id || client.account_id === user.ID || client.status === 46;
         })
         const uniqueClients = ownedClients
@@ -44,7 +46,7 @@ function ClientBrandCombobox({ value, onValueChange, className }: ClientBrandCom
         const lower = inputValue.toLowerCase();
         const fuse = new Fuse(uniqueClients, {
             includeMatches: true,
-            threshold: 0.4,
+            threshold: 0.3,
             keys: ["name", "brand"],
         });
         return fuse.search(lower).map(res => res.item)
