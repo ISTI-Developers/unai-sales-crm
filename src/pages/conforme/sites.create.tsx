@@ -2,8 +2,7 @@ import { Cart, SiteRow } from '@/interfaces/requests.interface'
 import { Dispatch, SetStateAction, useEffect, useMemo, useState } from 'react'
 import SiteItem from './siteItem.create';
 import { formatAmount } from '@/lib/format';
-import { addDays, differenceInCalendarDays, differenceInCalendarMonths } from 'date-fns';
-import { cn, getAddOnTotal, getTotalGivenRate, getTotalSiteSRP } from '@/lib/utils';
+import { cn, getAddOnTotal, getDurationInDays, getMonthlyDuration, getTotalGivenRate, getTotalSiteSRP } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { CalendarIcon, TagIcon, TrendingDown, TrendingUp } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -37,14 +36,14 @@ function SitesTabs({ cart, setCart }: SitesTabsProps) {
 
                         const packageRate = Number(item.package_rate);
                         const srp = Number(item.srp);
-                        let difference = differenceInCalendarMonths(addDays(item.date.to, 1), item.date.from);
+                        let difference = getMonthlyDuration(item.date.from, item.date.to)
                         let spotsRate = 1;
                         let spotsCount = 1;
                         let contractAmount = 0;
                         let srpTotal = srp * difference;
 
                         if (item.type === "led") {
-                            difference = Math.round(Math.max(differenceInCalendarDays(addDays(item.date.to, 1), item.date.from), 0) / 30) * 30
+                            difference = getDurationInDays(item.date.from, item.date.to)
                             spotsRate = Number(item.spots_rate);
                             spotsCount = item.spots_count;
                             const hasPackageRate = packageRate > 0;
@@ -69,7 +68,7 @@ function SitesTabs({ cart, setCart }: SitesTabsProps) {
                                     : spotsCount * difference * spotsRate;
                         } else {
                             contractAmount = getTotalGivenRate(packageRate * difference, item);
-                            srpTotal = getTotalSiteSRP(item, difference);
+                            srpTotal = getTotalSiteSRP(item, difference) + addOnTotal;
                         }
 
                         let margin = contractAmount - srpTotal;

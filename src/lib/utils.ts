@@ -1,5 +1,5 @@
 import { ChartConfig } from "@/components/ui/chart";
-import { Request, SiteRow } from "@/interfaces/requests.interface";
+import { Request, SiteRow, THRESHOLD } from "@/interfaces/requests.interface";
 import { Site } from "@/interfaces/sites.interface";
 import { clsx, type ClassValue } from "clsx";
 import {
@@ -203,7 +203,7 @@ export const getSiteMaterial = (
     const W = Number(width);
 
     let materialCost = getCost(site_code);
-    if (customRate) {
+    if (customRate && customRate > 0) {
       materialCost = customRate;
     }
     return H * W * materialCost;
@@ -212,17 +212,41 @@ export const getSiteMaterial = (
   return 0;
 };
 
-export const getTotalMonthly = (amount: number, to: Date, from: Date) => {
-  return amount * differenceInCalendarMonths(addDays(to, 1), from);
+export const getTotalMonthly = (
+  amount: number,
+  to: string | Date,
+  from: string | Date,
+) => {
+  return amount * getMonthlyDuration(from, to);
 };
-export const getTotalDaily = (amount: number, to: Date, from: Date) => {
-  return (
-    amount *
-    Math.round(
-      Math.max(differenceInCalendarDays(addDays(to, 1), from), 0) / 30,
-    ) *
-    30
+export const getMonthlyDuration = (from: Date | string, to: Date | string) => {
+  return differenceInCalendarMonths(addDays(new Date(to), 1), new Date(from));
+};
+export const getDurationInDays = (from: Date | string, to: Date | string) => {
+  const duration = differenceInCalendarDays(
+    addDays(new Date(to), 1),
+    new Date(from),
   );
+  const nearest30 = Math.round(duration / 30) * 30;
+  const deviation = Math.abs(duration - nearest30);
+  // console.log({
+  //   nearest30,
+  //   duration,
+  //   deviation: duration - nearest30,
+  //   absDev: deviation,
+  //   THRESHOLD,
+  // });
+  if (deviation <= THRESHOLD) {
+    return nearest30;
+  }
+  return duration;
+};
+export const getTotalDaily = (
+  amount: number,
+  to: string | Date,
+  from: string | Date,
+) => {
+  return amount * getDurationInDays(from, to);
 };
 export const getAddOnTotal = (item: SiteRow) => {
   const { installation, material } = item;
@@ -235,6 +259,17 @@ export const getAddOnTotal = (item: SiteRow) => {
   return installationAmt + materialAmt;
 };
 
+export const getDefaultInstallations = (duration: number) => {
+  if (duration <= 5) {
+    return 1;
+  } else if (duration > 5 && duration <= 8) {
+    return 2;
+  } else if (duration > 8 && duration <= 11) {
+    return 3;
+  } else {
+    return 4;
+  }
+};
 export type Inclusion = {
   free: number;
   paid: number;

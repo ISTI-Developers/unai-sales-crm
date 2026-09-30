@@ -63,6 +63,8 @@
     "idb": "^8.0.3",
     "input-otp": "^1.2.4",
     "js-cookie": "^3.0.5",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
     "lodash.debounce": "^4.0.8",
     "lucide": "^1.21.0",
     "lucide-react": "^1.21.0",

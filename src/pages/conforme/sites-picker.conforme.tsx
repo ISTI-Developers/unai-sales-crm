@@ -2,12 +2,11 @@ import Search from '@/components/search';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { columns } from '@/data/sitePicker.columns';
+import { columns, SiteAvailabilityWithStatus } from '@/data/sitePicker.columns';
 import { useResponsiveTable } from '@/hooks/use-responsive-table';
 import useAvailableSites from '@/hooks/useAvailableSites'
 import { useImage, useThumbnail } from '@/hooks/useSites';
 import { Cart, SiteRow } from '@/interfaces/requests.interface';
-import { SiteAvailability } from '@/interfaces/sites.interface';
 import { getLatestBooking } from '@/lib/fetch';
 import { cn, getCost, getSiteInstallationCost } from '@/lib/utils';
 import { addDays, differenceInCalendarDays, isBefore } from 'date-fns';
@@ -15,21 +14,22 @@ import { useInView } from 'framer-motion';
 import { CircleCheck, ImageOff, Loader2, PlusIcon } from 'lucide-react';
 import { Dispatch, SetStateAction, useEffect, useMemo, useRef, useState } from 'react';
 import { siteGlobalFilter } from './sites-picker.filter';
+import { Badge } from '@/components/ui/badge';
 
 interface SitesPickerProps {
     cartSites: SiteRow[];
     setCart: Dispatch<SetStateAction<Cart>>;
 }
 
-const INITIAL_LIMIT = 25;
+const INITIAL_LIMIT = 30;
 
 function SitesPicker({ cartSites, setCart }: SitesPickerProps) {
     const sites = useAvailableSites();
     const [open, setOpen] = useState(false);
-    const [selectedSites, setSelectedSites] = useState<SiteAvailability[]>([])
+    const [selectedSites, setSelectedSites] = useState<SiteAvailabilityWithStatus[]>([])
 
     const filteredSites = useMemo(() => {
-        const availableSites = sites.filter(site => {
+        const availableSites: SiteAvailabilityWithStatus[] = sites.map(site => {
             const remainingDays = site.remaining_days ?? 0;
             const siteBookings = site.bookings.map(sb => ({
                 ...sb,
@@ -42,15 +42,23 @@ function SitesPicker({ cartSites, setCart }: SitesPickerProps) {
                     new Date(),
                     latestBooking.date_from
                 );
-                return difference < -30;
+                return {
+                    ...site,
+                    availability: difference < -30 ? "QUEUEING" : "BOOKED"
+                }
             }
-            return remainingDays <= 60;
+            return {
+                ...site,
+                availability: remainingDays <= 60 ? "AVAILABLE" : `BOOKED UNTIL ${latestBooking?.date_to}`
+            }
         });
+
+        // selected sites
         const selectedCodes = new Set(
             cartSites.map(site => site.site.site_code)
         );
 
-        const sortSelectedFirst = (sites: SiteAvailability[]) => {
+        const sortSelectedFirst = (sites: SiteAvailabilityWithStatus[]) => {
             return [...sites].sort((a, b) => {
                 const aSelected = selectedCodes.has(a.site_code);
                 const bSelected = selectedCodes.has(b.site_code);
@@ -61,7 +69,8 @@ function SitesPicker({ cartSites, setCart }: SitesPickerProps) {
 
         return sortSelectedFirst(availableSites)
     }, [sites, cartSites]);
-    const { table, setGlobalFilter, globalFilter } = useResponsiveTable({ data: filteredSites, columns, size: INITIAL_LIMIT, globalFilterFn: siteGlobalFilter })
+
+    const { table, setGlobalFilter, globalFilter } = useResponsiveTable<SiteAvailabilityWithStatus, unknown>({ data: filteredSites, columns, size: INITIAL_LIMIT, globalFilterFn: siteGlobalFilter })
 
     const onSelectSites = () => {
         const sites = selectedSites.map(site => {
@@ -75,7 +84,7 @@ function SitesPicker({ cartSites, setCart }: SitesPickerProps) {
 
             const endDate = site.end_date
                 ? !isBefore(new Date(site.end_date), new Date())
-                    ? new Date(site.end_date)
+                    ? addDays(new Date(site.end_date), 1)
                     : new Date()
                 : new Date();
 
@@ -210,9 +219,9 @@ function SiteCard({
     selectedSites,
     setSite
 }: {
-    site: SiteAvailability;
-    selectedSites: SiteAvailability[];
-    setSite: Dispatch<SetStateAction<SiteAvailability[]>>;
+    site: SiteAvailabilityWithStatus;
+    selectedSites: SiteAvailabilityWithStatus[];
+    setSite: Dispatch<SetStateAction<SiteAvailabilityWithStatus[]>>;
 }) {
     const imageRef = useRef<HTMLDivElement>(null);
     const isInView = useInView(imageRef, {
@@ -280,6 +289,9 @@ function SiteCard({
                         />
                     </div>
                 )}
+            <Badge className={cn('absolute top-2 right-2 text-[0.7rem] leading-tight',
+                site.availability.includes("AVAILABLE") ? "bg-emerald-200 text-emerald-700 hover:bg-emerald-200" : "bg-red-200 text-red-700 hover:bg-red-200"
+            )}>{site.availability}</Badge>
 
             <div className="absolute bottom-0 bg-gradient-to-t from-[#000000ee] from-25% to-transparent w-full text-white text-xs leading-tight p-3">
                 <h3 className='text-sm font-semibold'>{site.site_code} <span>({site.size})</span></h3>

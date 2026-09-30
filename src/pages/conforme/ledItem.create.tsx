@@ -7,8 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Cart, LEDSiteRow } from "@/interfaces/requests.interface";
 import { formatAmount } from "@/lib/format";
-import { cn } from "@/lib/utils";
-import { addDays, differenceInCalendarDays } from "date-fns";
+import { cn, getDurationInDays } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronsUp, Trash2Icon, TrendingDown, TrendingUp } from "lucide-react";
 import { Dispatch, SetStateAction, useMemo, useState } from "react";
@@ -45,7 +44,7 @@ function LEDItem({ item, setCart, index }: SiteItemProps) {
         }))
     }
 
-    const daysDifference = useMemo(() => Math.round(Math.max(differenceInCalendarDays(addDays(item.date.to, 1), item.date.from), 0) / 30) * 30, [item.date]);
+    const daysDifference = useMemo(() => getDurationInDays(item.date.from, item.date.to), [item.date]);
     const days = daysDifference;
 
     const srp = Number(item.srp);

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -100,6 +99,7 @@ const Main = () => {
       }
       if (!acc[item.client_id].account_executives.some(a => a.account_id === item.account_id)) {
         acc[item.client_id].account_executives.push({
+          client_account_id: item.account_id,
           account_id: item.account_id,
           account_executive: item.account_executive,
           account_image: item.account_image,
