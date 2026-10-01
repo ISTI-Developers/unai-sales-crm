@@ -2,7 +2,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { useSingleRequest } from '@/hooks/useRequests';
 import { useUser } from '@/hooks/useUsers';
 import { CartDetails, Conforme, ConformeLED, ConformeSite, defaultPaymentTerms } from '@/interfaces/requests.interface';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import LesseeTab from './lessee.generate';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -16,6 +16,7 @@ import LEDsTab from './leds.generate';
 import AcknowledgementTab from './acknowledgement.generate';
 import { GenerateConformeButton } from './print- button';
 import { generateConforme } from '@/lib/print';
+import { getDurationInDays, getMonthlyDuration } from '@/lib/utils';
 
 function GenerateConforme() {
     const params = useParams();
@@ -47,6 +48,45 @@ function GenerateConforme() {
         external_signatory: []
     })
 
+    const areAllDurationSame = useMemo(() => {
+        const sites = conforme.sites;
+        const leds = conforme.leds;
+
+        if (sites.length <= 1 || leds.length <= 1) return true;
+
+        const firstSite = getMonthlyDuration(
+            sites[0].start,
+            sites[0].end,
+        );
+        let firstLED = getDurationInDays(leds[0].start, leds[0].end);
+
+        if (firstLED % 30 !== 0) return false;
+
+        firstLED = firstLED / 30;
+
+        const sitesAreSimilar = sites.every((site) => {
+            const duration = getMonthlyDuration(
+                site.start,
+                site.end,
+            );
+
+            return duration === firstSite;
+        });
+
+        const ledsAreSimilar = leds.every((led) => {
+            const duration = getDurationInDays(
+                led.start,
+                led.end,
+            );
+
+            if (duration % 30 !== 0) return false;
+
+
+            return duration / 30 === firstLED;
+        });
+
+        return sitesAreSimilar && ledsAreSimilar
+    }, [conforme.leds, conforme.sites]);
 
     useEffect(() => {
         if (!data || !sites || isLoading || !user || initializedRef.current) return;
@@ -137,7 +177,7 @@ function GenerateConforme() {
                             <p className="text-sm capitalize">{`${user?.first_name} ${user?.last_name}`}</p>
                         </div>
                     </div>
-                    <GenerateConformeButton onGenerate={(options) => generateConforme(data.request_no, conforme, options, user)} />
+                    <GenerateConformeButton onGenerate={(options) => generateConforme(data.request_no, conforme, options, user)} hasOfferedRate={conforme.sites.every(item => item.offered_rate !== 0)} areAllDurationsSimilar={areAllDurationSame} />
                 </header>
                 <main className='grid grid-cols-2 print:block w-full gap-4'>
                     <ScrollArea className='h-[80dvh] print:hidden'>
