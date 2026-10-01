@@ -73,7 +73,7 @@ function SitesTabs({ cart, setCart }: SitesTabsProps) {
 
                         let margin = contractAmount - srpTotal;
                         if (item.type === "static") {
-                            margin = contractAmount - addOnTotal - srpTotal;
+                            margin = contractAmount - srpTotal;
                         }
 
 

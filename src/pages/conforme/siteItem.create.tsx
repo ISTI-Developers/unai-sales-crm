@@ -54,7 +54,7 @@ function SiteItem({ item, setCart, index }: SiteItemProps) {
     const totalPackageRate = getTotalGivenRate(monthlyPackageRate * monthDifference, item);
     const totalNetAmount = totalPackageRate - addOnTotal;
     const srpTotal = getTotalSiteSRP(item, monthDifference) + addOnTotal;
-    const margin = totalNetAmount - srpTotal;
+    const margin = totalPackageRate - srpTotal;
 
     return <div className='relative flex flex-col gap-2 group bg-zinc-100'>
         <header className='border-b p-3 bg-zinc-600 text-white'>
