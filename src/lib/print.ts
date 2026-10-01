@@ -1,11 +1,6 @@
 import { appliesToPayment, Conforme } from "@/interfaces/requests.interface";
 import { User } from "@/interfaces/user.interface";
-import {
-  addDays,
-  differenceInCalendarDays,
-  differenceInCalendarMonths,
-  format,
-} from "date-fns";
+import { format } from "date-fns";
 import jsPDF from "jspdf";
 import autoTable, { UserOptions } from "jspdf-autotable";
 import "/fonts/Aptos.ttf";
@@ -14,7 +9,7 @@ import "/fonts/Aptos-SemiBold.ttf";
 import "/fonts/Aptos-SemiBold-Italic.ttf";
 import "/fonts/Aptos-Bold.ttf";
 import "/fonts/Aptos-Bold-Italic.ttf";
-import { formatAmount, formatDateRange } from "./format";
+import { formatAmount } from "./format";
 import {
   capitalize,
   getDefaultInstallations,
@@ -100,25 +95,60 @@ const defs = {
       "DETAILS",
       "DIMENSIONS",
       "CONTRACT PERIOD",
+      "STANDARD COST",
       "ITEM COST",
-      "PACKAGE COST",
     ],
+    WITH_RATE_CARD_MERGED: [
+      "ITEMS",
+      "DETAILS",
+      "DIMENSIONS",
+      "CONTRACT PERIOD",
+      "STANDARD COST",
+      "RENTAL COST",
+    ],
+    WITH_TOTAL_COST: [
+      "ITEMS",
+      "DETAILS",
+      "DIMENSIONS",
+      "CONTRACT PERIOD",
+      "ITEM COST",
+      "TOTAL COST",
+    ],
+    WITH_MERGED_COST: [
+      "ITEMS",
+      "DETAILS",
+      "DIMENSIONS",
+      "CONTRACT PERIOD",
+      "ITEM COST",
+      "RENTAL COST",
+    ],
+  },
+  HEADER_SET: {
+    item_cost: ["item cost"],
+
+    standard_rental: ["standard cost", "rental cost"],
+
+    standard_item: ["standard cost", "item cost"],
+
+    item_total: ["item cost", "total cost"],
+
+    item_rental: ["item cost", "rental cost"],
   },
   COLUMN_STYLES: {
     DEFAULT: {
-      0: { cellWidth: 41 },
-      1: { cellWidth: 46 },
+      0: { cellWidth: 38 },
+      1: { cellWidth: 51 },
       2: { cellWidth: 35 },
-      3: { cellWidth: 40 },
+      3: { cellWidth: 38 },
       4: { cellWidth: 22.5 },
     },
     WITH_RATE_CARD: {
-      0: { cellWidth: 41 },
-      1: { cellWidth: 35 },
-      2: { cellWidth: 22 },
-      3: { cellWidth: 35 },
-      4: { cellWidth: 27.3 },
-      5: { cellWidth: 24.2 },
+      0: { cellWidth: 38 },
+      1: { cellWidth: 41.5 },
+      2: { cellWidth: 21 },
+      3: { cellWidth: 32.5 },
+      4: { cellWidth: 26.5 },
+      5: { cellWidth: 25 },
     },
   },
   BODY: {
@@ -367,7 +397,6 @@ export async function generateConforme(
   const items: ConformeItem[] = [
     ...conforme.sites.map((s) => ({ ...s, type: "SITE" as const })),
     ...conforme.leds.map((s) => ({ ...s, type: "LED" as const })),
-    ...conforme.add_ons.map((s) => ({ ...s, type: "ADD_ON" as const })),
   ];
   const body = items.map((item) => {
     const definitions = options.displayRateCard
@@ -391,46 +420,6 @@ export async function generateConforme(
         return defs.BODY.DEFAULT.PAID_ADD_ON;
     }
   });
-  // const hasDifferentDurations = conforme.sites.some(
-  //   (item, index, sites) =>
-  //     index > 0 &&
-  //     getMonthlyDuration(item.start, item.end) !==
-  //       getMonthlyDuration(sites[0].start, sites[0].end),
-  // );
-
-  // if (!hasDifferentDurations) {
-  //   const freeInstallationPlaceholder = !options.displayRateCard
-  //     ? defs.BODY.DEFAULT.FREE_ADD_ON
-  //     : defs.BODY.WITH_RATE_CARD.FREE_ADD_ON;
-  //   body.push(freeInstallationPlaceholder);
-  //   const freeInstallation = conforme.sites.reduce(
-  //     (acc, item) => {
-  //       if (item.installation.free > 0) {
-  //         acc.free += item.installation.free;
-  //       }
-  //       const duration = getMonthlyDuration(item.start, item.end);
-  //       const defaultFreeInstallations = getDefaultInstallations(duration);
-  //       acc.free += defaultFreeInstallations;
-
-  //       return acc;
-  //     },
-  //     {
-  //       label: "INSTALLATION & DISMANTLING",
-  //       free: 0,
-  //       value: 0,
-  //       total: 0,
-  //     },
-  //   );
-
-  //   items.push({ ...freeInstallation, type: "FREE_ADD_ON" as const });
-  // }
-  if (freeMaterialAddOns.free > 0) {
-    const freeMaterial = !options.displayRateCard
-      ? defs.BODY.DEFAULT.FREE_ADD_ON
-      : defs.BODY.WITH_RATE_CARD.FREE_ADD_ON;
-    body.push(freeMaterial);
-    items.push({ ...freeMaterialAddOns, type: "FREE_ADD_ON" as const });
-  }
   if (paidMaterialAddOns.paid > 0) {
     const paidMaterial = !options.displayRateCard
       ? defs.BODY.DEFAULT.PAID_ADD_ON
@@ -438,23 +427,60 @@ export async function generateConforme(
     body.push(paidMaterial);
     items.push({ ...paidMaterialAddOns, type: "PAID_ADD_ON" as const });
   }
+  if (conforme.add_ons.length > 0) {
+    const addOnTemplate = !options.displayRateCard
+      ? defs.BODY.DEFAULT.ADD_ON
+      : defs.BODY.WITH_RATE_CARD.ADD_ON;
+    body.push(...conforme.add_ons.map(() => addOnTemplate));
+    items.push(
+      ...conforme.add_ons.map((s) => ({ ...s, type: "ADD_ON" as const })),
+    );
+  }
+  if (freeMaterialAddOns.free > 0) {
+    const freeMaterial = !options.displayRateCard
+      ? defs.BODY.DEFAULT.FREE_ADD_ON
+      : defs.BODY.WITH_RATE_CARD.FREE_ADD_ON;
+    body.push(freeMaterial);
+    items.push({ ...freeMaterialAddOns, type: "FREE_ADD_ON" as const });
+  }
 
   const siteInstallations = getFreeInstallations(conforme);
-  console.log(siteInstallations);
 
   let tableTop = 0;
   let tableBottom = 0;
+
+  let endColumn = defs.HEADER_SET.item_cost;
+  let head = defs.HEADER.DEFAULT;
+
+  if (options.displayTotalCost) {
+    endColumn = defs.HEADER_SET.item_total;
+    head = defs.HEADER.WITH_TOTAL_COST;
+  } else if (options.displayRateCard || options.mergePackageCost) {
+    if (options.displayRateCard && options.mergePackageCost) {
+      endColumn = defs.HEADER_SET.standard_rental;
+      head = defs.HEADER.WITH_RATE_CARD_MERGED;
+    } else if (options.displayRateCard) {
+      endColumn = defs.HEADER_SET.standard_item;
+      head = defs.HEADER.WITH_RATE_CARD;
+    } else {
+      endColumn = defs.HEADER_SET.item_rental;
+      head = defs.HEADER.WITH_MERGED_COST;
+    }
+  }
+  const columns = [
+    "site",
+    "details",
+    "dimensions",
+    "contract period",
+    ...endColumn,
+  ];
 
   addTable(
     doc,
     layout,
     {
       theme: "plain",
-      head: [
-        options.displayRateCard
-          ? defs.HEADER.WITH_RATE_CARD
-          : defs.HEADER.DEFAULT,
-      ],
+      head: [head],
       body: body,
       styles: {
         font: "aptos",
@@ -462,9 +488,12 @@ export async function generateConforme(
         cellPadding: 0,
       },
 
-      columnStyles: options.displayRateCard
-        ? defs.COLUMN_STYLES.WITH_RATE_CARD
-        : defs.COLUMN_STYLES.DEFAULT,
+      columnStyles:
+        options.displayRateCard ||
+        options.displayTotalCost ||
+        options.mergePackageCost
+          ? defs.COLUMN_STYLES.WITH_RATE_CARD
+          : defs.COLUMN_STYLES.DEFAULT,
 
       headStyles: {
         minCellHeight: 7,
@@ -484,12 +513,21 @@ export async function generateConforme(
 
         if (data.section === "body") {
           data.cell.text = [];
+
           const rawRow = data.row.raw as string[];
           const rowType = rawRow[0] as "SITE" | "LED" | "ADD_ON";
-          if (rowType === "SITE") {
-            data.cell.styles.minCellHeight = 29;
-          } else {
-            data.cell.styles.minCellHeight = 10;
+
+          data.cell.styles.minCellHeight =
+            rowType === "SITE" ? 29 : rowType === "LED" ? 12 : 9.5;
+
+          const column = columns[data.column.index];
+
+          if (column === "rental cost") {
+            if (data.row.index === 0) {
+              data.cell.rowSpan = body.length;
+            } else {
+              data.cell.text = [];
+            }
           }
         }
       },
@@ -503,9 +541,7 @@ export async function generateConforme(
           tableBottom = data.cell.y + data.cell.height;
         }
         if (data.section === "head") {
-          const headersArray = options.displayRateCard
-            ? defs.HEADER.WITH_RATE_CARD
-            : defs.HEADER.DEFAULT;
+          const headersArray = head;
 
           const headers = headersArray.map((head, index) => {
             return {
@@ -519,7 +555,7 @@ export async function generateConforme(
               subheader:
                 head === "DIMENSIONS"
                   ? "(H x W)"
-                  : head === "PACKAGE COST"
+                  : index === headersArray.length - 1
                     ? "(Discounts applied)"
                     : "",
             };
@@ -559,35 +595,65 @@ export async function generateConforme(
           }
           return;
         }
-        if (data.section !== "body") return;
+        if (
+          data.section === "body" &&
+          columns[data.column.index] === "rental cost" &&
+          data.row.index === 0
+        ) {
+          const x = data.cell.x;
 
-        const isLastColumn =
-          data.column.index === data.table.columns.length - 1;
-
-        if (isLastColumn) {
           doc.setDrawColor(158, 158, 158);
           doc.setLineWidth(0.1);
 
-          doc.line(
-            data.table.columns[0].dataKey !== undefined
-              ? data.cell.x -
-                  data.table.columns
-                    .slice(0, data.column.index)
-                    .reduce((sum, col) => sum + col.width, 0)
-              : data.cell.x,
-            data.cell.y + data.cell.height,
-            data.cell.x + data.cell.width,
-            data.cell.y + data.cell.height,
-          );
+          doc.line(x, data.cell.y, x, data.cell.y + data.cell.height);
         }
-        doc.setDrawColor(158, 158, 158);
-        doc.setLineWidth(0.1);
-
-        doc.rect(MARGIN, tableTop, CONTENT.width, tableBottom - tableTop);
+        if (data.section !== "body") return;
+        const colIndex = data.column.index;
         const row = data.row.index;
-        const col = data.column.index;
+        if (colIndex === 0 && row < data.table.body.length - 1) {
+          const lineY = data.cell.y + data.cell.height;
+          const tableLeft = data.cell.x;
 
+          const rentalCostIndex = columns.indexOf("rental cost");
+
+          const lineRight =
+            rentalCostIndex >= 0
+              ? tableLeft +
+                data.table.columns
+                  .slice(0, rentalCostIndex)
+                  .reduce((sum, column) => sum + column.width, 0)
+              : tableLeft +
+                data.table.columns.reduce(
+                  (sum, column) => sum + column.width,
+                  0,
+                );
+
+          doc.setDrawColor(158, 158, 158);
+          doc.setLineWidth(0.1);
+
+          doc.line(tableLeft, lineY, lineRight, lineY);
+        }
+
+        let rentalCost = 0;
         const item = items[row];
+
+        if (options.mergePackageCost) {
+          rentalCost = items.reduce((acc, item) => {
+            if (item.type === "SITE") {
+              acc += item.monthly_rate;
+            } else if (item.type === "LED") {
+              const duration = getDurationInDays(item.start, item.end);
+              const spots = item.spots_count;
+              const package_rate = item.package_rate;
+              if (package_rate !== 0) {
+                acc += (package_rate / duration) * 30;
+              } else {
+                acc += spots * item.spots_price * 30;
+              }
+            }
+            return acc;
+          }, 0);
+        }
 
         const x = data.cell.x;
         const y = data.cell.y;
@@ -599,9 +665,11 @@ export async function generateConforme(
           item.type === "PAID_ADD_ON";
 
         const padding = 2;
+
+        const col = columns[colIndex];
         switch (col) {
-          case 0: {
-            doc.setFontSize(8);
+          case "site": {
+            doc.setFontSize(7);
             toggleFont(doc, "bold");
             if (item.type === "SITE") {
               renderColumnWithImage(
@@ -659,7 +727,7 @@ export async function generateConforme(
             }
             break;
           }
-          case 1: {
+          case "details": {
             if (isAddOn) return;
 
             const padding = 2;
@@ -667,52 +735,65 @@ export async function generateConforme(
             const maxWidth = data.cell.width - padding * 2;
 
             toggleFont(doc);
-            doc.setFontSize(7.5);
+            doc.setFontSize(7);
 
             const value1 = doc.splitTextToSize(item.address ?? "", maxWidth);
 
-            const value2 = doc.splitTextToSize(
-              item.board_facing ?? "",
-              maxWidth,
-            );
-            const installation = `*w/ FREE ${siteInstallations.get(item.site_code)}x INSTALLATION & DISMANTLING`;
-            const value3 = doc.splitTextToSize(installation, maxWidth);
+            const isLED = item.type === "LED";
+
+            const value2 = isLED
+              ? []
+              : doc.splitTextToSize(item.board_facing ?? "", maxWidth);
+
+            let addtValue = `*w/ FREE ${siteInstallations.get(item.site_code)}x INSTALLATION & DISMANTLING`;
+
+            if (isLED) {
+              const duration = getDurationInDays(item.start, item.end);
+              addtValue = `${formatAmount(item.spots_count * duration, {
+                style: "decimal",
+              })} spots total (${item.spots_count} spots/day)`;
+            }
+
+            const value3 = doc.splitTextToSize(addtValue, maxWidth);
 
             const lineHeight = 2.5;
             const gap = 1.5;
 
-            // Total height occupied by both text blocks
             const value1Height = value1.length * lineHeight;
             const value2Height = value2.length * lineHeight;
+            const value3Height = value3.length * lineHeight;
 
-            let totalHeight = value1Height + gap + value2Height;
+            const totalHeight = isLED
+              ? value1Height + gap + value3Height
+              : value1Height + gap + value2Height + gap + value3Height;
 
-            if (item.type === "SITE") {
-              const value3Height = value3.length * lineHeight;
-              totalHeight += value3Height + gap;
-            }
-
-            // Center the entire block vertically
             let y =
               data.cell.y + (data.cell.height - totalHeight) / 2 + lineHeight;
 
+            // Address
+            doc.setFontSize(7);
+            toggleFont(doc, "normal");
             doc.text(value1, x, y);
 
             y += value1Height + gap;
 
-            doc.setFontSize(7);
-            toggleFont(doc, "italic");
-            doc.text(value2, x, y);
-            if (item.type === "SITE") {
-              y += value2Height + gap;
+            // Board facing — non-LED only
+            if (!isLED) {
+              doc.setFontSize(6);
+              toggleFont(doc, "italic");
+              doc.text(value2, x, y);
 
-              toggleFont(doc, "bold");
-              doc.text(value3, x, y);
+              y += value2Height + gap;
             }
+
+            // Additional information
+            doc.setFontSize(7);
+            toggleFont(doc, "bold");
+            doc.text(value3, x, y);
 
             break;
           }
-          case 2: {
+          case "dimensions": {
             if (isAddOn) return;
 
             toggleFont(doc);
@@ -730,7 +811,7 @@ export async function generateConforme(
 
             break;
           }
-          case 3: {
+          case "contract period": {
             if (isAddOn) return;
 
             const padding = 2;
@@ -740,30 +821,21 @@ export async function generateConforme(
             toggleFont(doc);
             doc.setFontSize(8);
 
-            const value1 = formatDateRange(
-              new Date(item.start),
-              new Date(item.end),
-            );
+            const value1 = `${format(new Date(item.start), "PP")} - ${format(new Date(item.end), "PP")}`;
 
             let duration: string;
 
             if (item.type === "SITE") {
-              const months = differenceInCalendarMonths(
-                addDays(new Date(item.end), 1),
-                new Date(item.start),
-              );
+              const months = getMonthlyDuration(item.start, item.end);
 
-              duration = `${months} months`;
+              duration = `${months} mo${months > 1 ? "s" : ""}.`;
             } else {
-              const days =
-                Math.round(
-                  Math.max(
-                    differenceInCalendarDays(addDays(item.end, 1), item.start),
-                    0,
-                  ) / 30,
-                ) * 30;
+              const days = getDurationInDays(item.start, item.end);
 
-              duration = `${days} days`;
+              duration =
+                days % 30 === 0
+                  ? `${days / 30} mo${days / 30 > 1 ? "s" : ""}.`
+                  : `${days} days`;
             }
 
             const value2 = duration;
@@ -787,7 +859,7 @@ export async function generateConforme(
               align: "center",
             });
 
-            y += height1 + gap;
+            y += height1 + gap + 1;
 
             // Center second value horizontally
             doc.text(lines2, x + maxWidth / 2, y, {
@@ -796,20 +868,65 @@ export async function generateConforme(
 
             break;
           }
-          case 4: {
+          case "standard cost": {
+            if (item.type !== "LED" && item.type !== "SITE") return;
             toggleFont(doc);
             doc.setFontSize(8);
 
-            let text = "FREE";
+            let text = "0";
+            if (item.type === "SITE") {
+              text = `${formatAmount(
+                item.offered_rate > 0 ? item.offered_rate : item.monthly_rate,
+              )}/mo.`;
+            } else {
+              if (!item.is_free) {
+                if (item.package_rate) {
+                  text = formatAmount(item.package_rate);
+                } else {
+                  const { spots_count, spots_price } = item;
+
+                  const days = getDurationInDays(item.start, item.end);
+
+                  text = `${formatAmount(spots_count * spots_price * days)}`;
+                }
+              }
+            }
+
+            const padding = 2;
+
+            doc.text(
+              text,
+              data.cell.x + data.cell.width - padding,
+              data.cell.y + data.cell.height / 2,
+              {
+                align: "right",
+                baseline: "middle",
+              },
+            );
+
+            break;
+          }
+          case "item cost": {
+            toggleFont(doc);
+            doc.setFontSize(8);
+
+            let text = "0";
 
             if (item.type === "ADD_ON") {
               if (!item.is_free) {
                 text = formatAmount(item.total);
+              } else {
+                text = formatAmount(0);
               }
             } else if (item.type === "PAID_ADD_ON") {
               text = formatAmount(item.total);
             } else if (item.type === "FREE_ADD_ON") {
-              text = "FREE";
+              // if (options.displayTotalCost || options.mergePackageCost) {
+              //   text = formatAmount(item.value);
+              // } else {
+              //   text = formatAmount(0);
+              // }
+              text = formatAmount(0);
             } else if (item.type === "SITE") {
               if (item.monthly_rate !== 0) {
                 text = formatAmount(item.monthly_rate);
@@ -844,12 +961,83 @@ export async function generateConforme(
 
             break;
           }
+          case "rental cost": {
+            toggleFont(doc);
+            doc.setFontSize(7.5);
+
+            const displayText = `${formatAmount(rentalCost)}/mo.`;
+
+            const padding = 2;
+
+            doc.text(
+              displayText,
+              data.cell.x + data.cell.width - padding,
+              data.cell.y + data.cell.height / 2,
+              {
+                align: "right",
+                baseline: "middle",
+              },
+            );
+
+            break;
+          }
+          case "total cost": {
+            toggleFont(doc);
+            doc.setFontSize(8);
+
+            let text = "0";
+
+            if (item.type === "ADD_ON") {
+              if (!item.is_free) {
+                text = formatAmount(item.total);
+              } else {
+                text = "FREE";
+              }
+            } else if (item.type === "PAID_ADD_ON") {
+              text = formatAmount(item.total);
+            } else if (item.type === "FREE_ADD_ON") {
+              text = "FREE";
+            } else if (item.type === "SITE") {
+              const duration = getMonthlyDuration(item.start, item.end);
+              text = formatAmount(item.monthly_rate * duration);
+            } else {
+              if (item.package_rate) {
+                text = formatAmount(item.package_rate);
+              } else {
+                const { spots_count, spots_price } = item;
+
+                const days = getDurationInDays(item.start, item.end);
+
+                text = formatAmount(spots_count * spots_price * days);
+              }
+            }
+
+            const displayText = text;
+
+            const padding = 2;
+
+            doc.text(
+              displayText,
+              data.cell.x + data.cell.width - padding,
+              data.cell.y + data.cell.height / 2,
+              {
+                align: "right",
+                baseline: "middle",
+              },
+            );
+
+            break;
+          }
         }
       },
     },
     false,
     request_no,
   );
+  doc.setDrawColor(158, 158, 158);
+  doc.setLineWidth(0.1);
+
+  doc.rect(MARGIN, tableTop, CONTENT.width, tableBottom - tableTop);
   layout.move(2.5);
   const parts = [
     { text: "NOTE: All amounts are ", bold: false },
@@ -971,7 +1159,6 @@ export async function generateConforme(
 
   const initialTerms = paymentTerms.slice(0, 7);
   const otherTerms = paymentTerms.slice(7);
-  console.log(initialTerms, otherTerms);
 
   doc.setFontSize(7);
   addTable(
@@ -1155,113 +1342,120 @@ export async function generateConforme(
 
   const rowCount = Math.max(internal.length, external.length);
 
-  const signatoryBody = Array.from({ length: rowCount }, (_, index) => {
-    const internalSignatory = internal[index];
-    const externalSignatory = external[index];
-
-    return [
-      internalSignatory
-        ? `\n\n\n${internalSignatory.name.toUpperCase()}\n${capitalize(internalSignatory.title.toLowerCase(), " ")}`
-        : "",
-      externalSignatory
-        ? `\n\n\n${externalSignatory.name.toUpperCase()}\n${capitalize(externalSignatory.title.toLowerCase(), " ")}`
-        : "",
-    ];
-  });
-
-  // SIGNATORIES
-  doc.setFontSize(8);
-  toggleFont(doc);
-  doc.text(
-    `Should you find the above provisions agreeable, kindly signify your conformity on the space provided below.`,
-    CONTENT.left,
-    layout.currentY,
-  );
-  layout.move(4);
-  addTable(doc, layout, {
-    head: [
-      ["UNITED NEON ADVERTISING, INC.", conforme.business_name.toUpperCase()],
+  const signatoryBody = [
+    [
+      "Should you find the above provisions agreeable, kindly signify your conformity on the space provided below.",
+      "",
     ],
+    ["UNITED NEON ADVERTISING, INC.", conforme.business_name.toUpperCase()],
+    ...Array.from({ length: rowCount }, () => ["", ""]),
+  ];
+  // SIGNATORIES
+  addTable(
+    doc,
+    layout,
+    {
+      body: signatoryBody,
 
-    body: signatoryBody,
+      tableWidth: CONTENT.width,
 
-    tableWidth: CONTENT.width,
+      columnStyles: {
+        0: {
+          cellWidth: CONTENT.width / 2,
+          halign: "left",
+        },
+        1: {
+          cellWidth: CONTENT.width / 2,
+          halign: "left",
+        },
+      },
 
-    columnStyles: {
-      0: {
-        cellWidth: CONTENT.width / 2,
+      theme: "plain",
+
+      styles: {
+        font: "aptos",
+        fontSize: 8,
+        fontStyle: "normal",
+        cellPadding: {
+          top: 1,
+          right: 0,
+          bottom: 1,
+          left: 0,
+        },
+        lineWidth: 0,
+        valign: "top",
         halign: "left",
+        overflow: "linebreak",
       },
-      1: {
-        cellWidth: CONTENT.width / 2,
-        halign: "left",
+
+      didParseCell: (data) => {
+        if (data.section !== "body") return;
+
+        const row = data.row.index;
+
+        // CONFORMITY TEXT
+        if (row === 0) {
+          if (data.column.index === 0) {
+            data.cell.colSpan = 2;
+            data.cell.styles.minCellHeight = 5;
+          } else {
+            data.cell.text = [];
+          }
+
+          return;
+        }
+
+        // SIGNATORY HEADER
+        if (row === 1) {
+          data.cell.styles.font = "aptos";
+          data.cell.styles.fontStyle = "bold";
+          data.cell.styles.fontSize = 8;
+          data.cell.styles.minCellHeight = 5;
+          return;
+        }
+
+        // SIGNATORY BODY
+        data.cell.text = [];
+        data.cell.styles.minCellHeight = 20;
+      },
+
+      didDrawCell: (data) => {
+        if (data.section !== "body") return;
+
+        const row = data.row.index;
+
+        // Skip conformity text and header
+        if (row < 2) return;
+
+        const signatoryIndex = row - 2;
+
+        const signatory =
+          data.column.index === 0
+            ? internal[signatoryIndex]
+            : external[signatoryIndex];
+
+        if (!signatory) return;
+
+        const x = data.cell.x;
+        const y = data.cell.y + 20;
+
+        // Name
+        toggleFont(doc, "bold");
+        doc.setFontSize(8);
+
+        doc.text(signatory.name.toUpperCase(), x, y);
+
+        // Title
+        toggleFont(doc);
+        doc.setFontSize(7);
+
+        doc.text(capitalize(signatory.title, " "), x, y + 3);
       },
     },
-
-    theme: "plain",
-
-    styles: {
-      font: "aptos",
-      fontSize: 8,
-      fontStyle: "normal",
-      cellPadding: {
-        top: 1,
-        right: 0,
-        bottom: 1,
-        left: 0,
-      },
-      lineWidth: 0,
-      valign: "top",
-      halign: "left",
-      overflow: "linebreak",
-    },
-
-    headStyles: {
-      font: "aptos",
-      fontStyle: "bold",
-      fontSize: 8,
-      cellPadding: {
-        top: 1,
-        right: 0,
-        bottom: 1,
-        left: 0,
-      },
-      lineWidth: 0,
-      fillColor: false,
-      textColor: 0,
-    },
-
-    didParseCell: (data) => {
-      if (data.section !== "body") return;
-
-      data.cell.text = [];
-      data.cell.styles.minCellHeight = 20;
-    },
-
-    didDrawCell: (data) => {
-      if (data.section !== "body") return;
-
-      const signatory =
-        data.column.index === 0
-          ? internal[data.row.index]
-          : external[data.row.index];
-
-      if (!signatory) return;
-
-      const x = data.cell.x;
-      const y = data.cell.y + 20;
-
-      // Name: bold
-      toggleFont(doc, "bold");
-      doc.setFontSize(8);
-      doc.text(signatory.name.toUpperCase(), x, y);
-
-      // Title: regular, with a little spacing
-      toggleFont(doc);
-      doc.setFontSize(7);
-      doc.text(capitalize(signatory.title, " "), x, y + 3);
-    },
-  });
+    false,
+    request_no,
+    true,
+  );
 
   if (import.meta.env.DEV) {
     const blobUrl = doc.output("bloburl");
@@ -1285,6 +1479,7 @@ function addTable(
   options: UserOptions,
   rightAlign?: boolean,
   CENo?: string,
+  keepTogether: boolean = false,
 ) {
   autoTable(doc, {
     ...options,
@@ -1298,13 +1493,16 @@ function addTable(
       left: rightAlign ? CONTENT.right - 64.5 : MARGIN,
       right: MARGIN,
       top: MARGIN + 8,
-      bottom: MARGIN + 7.5,
+      bottom: MARGIN + 12,
     },
 
     tableWidth: CONTENT.width,
+    ...(keepTogether && {
+      pageBreak: "avoid" as const,
+    }),
 
-    willDrawPage: (hookData) => {
-      const pageNumber = hookData.pageNumber;
+    willDrawPage: () => {
+      const pageNumber = doc.getCurrentPageInfo().pageNumber;
 
       if (decoratedPages.has(pageNumber)) return;
 
@@ -1358,7 +1556,7 @@ function renderColumnWithImage(
   w: number,
   p: number,
 ) {
-  const imageSize = Math.max(w - p, 25);
+  const imageSize = Math.max(w - p, 22);
 
   const imageX = x + (w - imageSize) / 2;
   const imageY = y + p;

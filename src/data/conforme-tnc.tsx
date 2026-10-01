@@ -109,6 +109,13 @@ export const termsAndConditions: TermsAndConditions[] = [
         fixed: true,
     },
     {
+        label: "ASC SCREENING AND APPROVAL WAIVER",
+        content: "The Client acknowledges and confirms that United Neon Advertising, Inc. has informed them that all advertising materials must undergo Advertising Standards Council (ASC) screening and approval prior to printing and installation; should the Client choose not to proceed with such screening and approval, the Client acknowledges and agrees to assume full responsibility and releases and holds United Neon Advertising, Inc. harmless from any claims, damages, costs, or liabilities arising therefrom, to the extent permitted by applicable law.",
+        isBold: false,
+        use: true,
+        fixed: false,
+    },
+    {
         content: "Neither party shall be liable to the other for damages or any delay or default in the performance of its obligations under this contract if such failure is due to force majeure and if the same is without the fault or negligence of the other party. This shall include, without limitation, any act of God, act of any government or other authority or statutory undertaking, earthquake, industrial dispute, fire, explosion, accident, power failure, flood, riot, war within the locality of the Billboard structure. All obligations of each party shall return to the status of being in full force and effect upon the termination of such occurrence; provided, however, that in the event of a force majeure lasting more than ninety (90) days, this Contract may be terminated with neither party incurring any liability whatsoever.",
         isBold: false,
         use: true,
@@ -128,7 +135,7 @@ export const termsAndConditions: TermsAndConditions[] = [
         fixed: true,
     },
     {
-        content: "This agreement may be renewed upon expiration, should the client be: (1) not in delay in the payment of monthly rentals; (2) not in default of any provisions on the formal contract; (3) able to submit a signed conforme to the Lessor at least 60 days prior to contract expiration.  Should there be no signed contract/conforme received on the given period, the site will be open for selling to other interested parties. Cancellation Penalty Fee for Renewed Contracts: Equivalent to One month rental amount.",
+        content: "This agreement may be renewed upon expiration, should the client be: (1) not in delay in the payment of monthly rentals; (2) not in default of any provisions on the formal contract; (3) able to submit a signed conforme to the Lessor at least 60 days prior to contract expiration.  Should there be no signed contract/conforme received on the given period, the site will be open for selling to other interested parties.",
         isBold: false,
         use: true,
         fixed: true,
