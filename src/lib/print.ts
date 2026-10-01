@@ -217,6 +217,9 @@ export async function generateConforme(
   options: PrintButtonOptions,
   user?: User,
 ) {
+  const exchangeRate = conforme.terms.other_terms[0];
+  const isDollar = exchangeRate.use;
+  const rate = exchangeRate.value ?? 60;
   const doc = new jsPDF({
     orientation: "portrait",
     unit: "mm",
@@ -875,19 +878,19 @@ export async function generateConforme(
 
             let text = "0";
             if (item.type === "SITE") {
-              text = `${formatAmount(
-                item.offered_rate > 0 ? item.offered_rate : item.monthly_rate,
-              )}/mo.`;
+              text = `${formatAmount(item.offered_rate / rate, { currency: "USD" })}/mo.`;
             } else {
               if (!item.is_free) {
                 if (item.package_rate) {
-                  text = formatAmount(item.package_rate);
+                  text = formatAmount(item.package_rate / rate, {
+                    currency: "USD",
+                  });
                 } else {
                   const { spots_count, spots_price } = item;
 
                   const days = getDurationInDays(item.start, item.end);
 
-                  text = `${formatAmount(spots_count * spots_price * days)}`;
+                  text = `${formatAmount((spots_count * spots_price * days) / rate, { currency: "USD" })}`;
                 }
               }
             }
@@ -914,33 +917,35 @@ export async function generateConforme(
 
             if (item.type === "ADD_ON") {
               if (!item.is_free) {
-                text = formatAmount(item.total);
+                text = formatAmount(item.total / rate, { currency: "USD" });
               } else {
                 text = formatAmount(0);
               }
             } else if (item.type === "PAID_ADD_ON") {
-              text = formatAmount(item.total);
+              text = formatAmount(item.total / rate, { currency: "USD" });
             } else if (item.type === "FREE_ADD_ON") {
-              // if (options.displayTotalCost || options.mergePackageCost) {
-              //   text = formatAmount(item.value);
-              // } else {
-              //   text = formatAmount(0);
-              // }
               text = formatAmount(0);
             } else if (item.type === "SITE") {
               if (item.monthly_rate !== 0) {
-                text = formatAmount(item.monthly_rate);
+                text = formatAmount(item.monthly_rate / rate, {
+                  currency: "USD",
+                });
               }
             } else {
               if (!item.is_free) {
                 if (item.package_rate) {
-                  text = formatAmount(item.package_rate);
+                  text = formatAmount(item.package_rate / rate, {
+                    currency: "USD",
+                  });
                 } else {
                   const { spots_count, spots_price } = item;
 
                   const days = getDurationInDays(item.start, item.end);
 
-                  text = formatAmount(spots_count * spots_price * days);
+                  text = formatAmount(
+                    (spots_count * spots_price * days) / rate,
+                    { currency: "USD" },
+                  );
                 }
               }
             }
@@ -965,7 +970,7 @@ export async function generateConforme(
             toggleFont(doc);
             doc.setFontSize(7.5);
 
-            const displayText = `${formatAmount(rentalCost)}/mo.`;
+            const displayText = `${formatAmount(rentalCost / rate, { currency: "USD" })}/mo.`;
 
             const padding = 2;
 
@@ -989,26 +994,32 @@ export async function generateConforme(
 
             if (item.type === "ADD_ON") {
               if (!item.is_free) {
-                text = formatAmount(item.total);
+                text = formatAmount(item.total / rate, { currency: "USD" });
               } else {
                 text = "FREE";
               }
             } else if (item.type === "PAID_ADD_ON") {
-              text = formatAmount(item.total);
+              text = formatAmount(item.total / rate, { currency: "USD" });
             } else if (item.type === "FREE_ADD_ON") {
               text = "FREE";
             } else if (item.type === "SITE") {
               const duration = getMonthlyDuration(item.start, item.end);
-              text = formatAmount(item.monthly_rate * duration);
+              text = formatAmount((item.monthly_rate * duration) / rate, {
+                currency: "USD",
+              });
             } else {
               if (item.package_rate) {
-                text = formatAmount(item.package_rate);
+                text = formatAmount(item.package_rate / rate, {
+                  currency: "USD",
+                });
               } else {
                 const { spots_count, spots_price } = item;
 
                 const days = getDurationInDays(item.start, item.end);
 
-                text = formatAmount(spots_count * spots_price * days);
+                text = formatAmount((spots_count * spots_price * days) / rate, {
+                  currency: "USD",
+                });
               }
             }
 
@@ -1062,16 +1073,22 @@ export async function generateConforme(
   const productionCost = getTotalProductionCost(conforme);
   const subTotal = rentalCost + productionCost;
   const vat = getVat(subTotal);
-  const grandTotal = options.removeVAT ? subTotal : subTotal + vat;
+  const grandTotal = options.removeVAT || isDollar ? subTotal : subTotal + vat;
   addTable(
     doc,
     layout,
     {
       body: [
-        ["RENTAL COST", formatAmount(rentalCost)],
-        ["PRODUCTION COST", formatAmount(productionCost)],
-        ["VAT", options.removeVAT ? "Exempt" : formatAmount(vat)],
-        ["GRAND TOTAL (VAT Inclusive)", formatAmount(grandTotal)],
+        ["RENTAL COST", formatAmount(rentalCost / rate, { currency: "USD" })],
+        [
+          "PRODUCTION COST",
+          formatAmount(productionCost / rate, { currency: "USD" }),
+        ],
+        ["VAT", options.removeVAT || isDollar ? "(Exempt)" : formatAmount(vat)],
+        [
+          "GRAND TOTAL (VAT Inclusive)",
+          formatAmount(grandTotal / rate, { currency: "USD" }),
+        ],
       ],
 
       tableWidth: 62.5,
