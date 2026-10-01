@@ -145,7 +145,7 @@ export const ConformeRatesTotal = ({ details }: { details: CartDetails }) => {
 
     const totalPackageRateWithPaidAddOns = totalPackageRate + globalPaidAddOns;
     const totalNetAmount = totalPackageRateWithPaidAddOns - totalAddOns;
-    const margin = totalNetAmount - totalSRP;
+    const margin = totalPackageRateWithPaidAddOns - totalSRP;
     return (
         <>
             <div className="px-1">

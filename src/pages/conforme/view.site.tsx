@@ -26,7 +26,7 @@ export const ConformeSiteDetails = ({ cartSite }: { cartSite: CartSite }) => {
     const totalSRP = getTotalSiteSRPBySite(site, cartSite.installation, cartSite.material, duration) + cartSite.add_on_total;
     const totalPackage = getTotalGivenRateBySite(cartSite.package_rate * duration, site, cartSite.installation, cartSite.material)
     const grandTotal = totalPackage - cartSite.add_on_total;
-    const margin = grandTotal - totalSRP;
+    const margin = totalPackage - totalSRP;
 
 
     console.log(site, cartSite)
