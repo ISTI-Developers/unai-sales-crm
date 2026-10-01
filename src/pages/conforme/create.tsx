@@ -575,7 +575,7 @@ const TotalRates = ({ cart }: { cart: Cart }) => {
 
   const totalPackageRateWithPaidAddOns = totalPackageRate + globalPaidAddOns;
   const totalNetAmount = totalPackageRateWithPaidAddOns - totalAddOns;
-  const margin = totalNetAmount - totalSRP;
+  const margin = totalPackageRateWithPaidAddOns - totalSRP;
   return (
     <div className="rounded-xl border bg-card p-5 space-y-4 w-full">
       <div>
