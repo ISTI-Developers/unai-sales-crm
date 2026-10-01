@@ -878,19 +878,19 @@ export async function generateConforme(
 
             let text = "0";
             if (item.type === "SITE") {
-              text = `${formatAmount(item.offered_rate / rate, { currency: "USD" })}/mo.`;
+              text = `${formatAmount(item.offered_rate / (isDollar ? rate : 1), { currency: isDollar ? "USD" : "PHP" })}/mo.`;
             } else {
               if (!item.is_free) {
                 if (item.package_rate) {
-                  text = formatAmount(item.package_rate / rate, {
-                    currency: "USD",
+                  text = formatAmount(item.package_rate / (isDollar ? rate : 1), {
+                    currency: isDollar ? "USD" : "PHP",
                   });
                 } else {
                   const { spots_count, spots_price } = item;
 
                   const days = getDurationInDays(item.start, item.end);
 
-                  text = `${formatAmount((spots_count * spots_price * days) / rate, { currency: "USD" })}`;
+                  text = `${formatAmount((spots_count * spots_price * days) / (isDollar ? rate : 1), { currency: isDollar ? "USD" : "PHP" })}`;
                 }
               }
             }
@@ -917,25 +917,25 @@ export async function generateConforme(
 
             if (item.type === "ADD_ON") {
               if (!item.is_free) {
-                text = formatAmount(item.total / rate, { currency: "USD" });
+                text = formatAmount(item.total / (isDollar ? rate : 1), { currency: isDollar ? "USD" : "PHP" });
               } else {
                 text = formatAmount(0);
               }
             } else if (item.type === "PAID_ADD_ON") {
-              text = formatAmount(item.total / rate, { currency: "USD" });
+              text = formatAmount(item.total / (isDollar ? rate : 1), { currency: isDollar ? "USD" : "PHP" });
             } else if (item.type === "FREE_ADD_ON") {
               text = formatAmount(0);
             } else if (item.type === "SITE") {
               if (item.monthly_rate !== 0) {
-                text = formatAmount(item.monthly_rate / rate, {
-                  currency: "USD",
+                text = formatAmount(item.monthly_rate / (isDollar ? rate : 1), {
+                  currency: isDollar ? "USD" : "PHP",
                 });
               }
             } else {
               if (!item.is_free) {
                 if (item.package_rate) {
-                  text = formatAmount(item.package_rate / rate, {
-                    currency: "USD",
+                  text = formatAmount(item.package_rate / (isDollar ? rate : 1), {
+                    currency: isDollar ? "USD" : "PHP",
                   });
                 } else {
                   const { spots_count, spots_price } = item;
@@ -943,8 +943,8 @@ export async function generateConforme(
                   const days = getDurationInDays(item.start, item.end);
 
                   text = formatAmount(
-                    (spots_count * spots_price * days) / rate,
-                    { currency: "USD" },
+                    (spots_count * spots_price * days) / (isDollar ? rate : 1),
+                    { currency: isDollar ? "USD" : "PHP" },
                   );
                 }
               }
@@ -970,7 +970,7 @@ export async function generateConforme(
             toggleFont(doc);
             doc.setFontSize(7.5);
 
-            const displayText = `${formatAmount(rentalCost / rate, { currency: "USD" })}/mo.`;
+            const displayText = `${formatAmount(rentalCost / (isDollar ? rate : 1), { currency: isDollar ? "USD" : "PHP" })}/mo.`;
 
             const padding = 2;
 
@@ -994,31 +994,31 @@ export async function generateConforme(
 
             if (item.type === "ADD_ON") {
               if (!item.is_free) {
-                text = formatAmount(item.total / rate, { currency: "USD" });
+                text = formatAmount(item.total / (isDollar ? rate : 1), { currency: isDollar ? "USD" : "PHP" });
               } else {
                 text = "FREE";
               }
             } else if (item.type === "PAID_ADD_ON") {
-              text = formatAmount(item.total / rate, { currency: "USD" });
+              text = formatAmount(item.total / (isDollar ? rate : 1), { currency: isDollar ? "USD" : "PHP" });
             } else if (item.type === "FREE_ADD_ON") {
               text = "FREE";
             } else if (item.type === "SITE") {
               const duration = getMonthlyDuration(item.start, item.end);
-              text = formatAmount((item.monthly_rate * duration) / rate, {
-                currency: "USD",
+              text = formatAmount((item.monthly_rate * duration) / (isDollar ? rate : 1), {
+                currency: isDollar ? "USD" : "PHP",
               });
             } else {
               if (item.package_rate) {
-                text = formatAmount(item.package_rate / rate, {
-                  currency: "USD",
+                text = formatAmount(item.package_rate / (isDollar ? rate : 1), {
+                  currency: isDollar ? "USD" : "PHP",
                 });
               } else {
                 const { spots_count, spots_price } = item;
 
                 const days = getDurationInDays(item.start, item.end);
 
-                text = formatAmount((spots_count * spots_price * days) / rate, {
-                  currency: "USD",
+                text = formatAmount((spots_count * spots_price * days) / (isDollar ? rate : 1), {
+                  currency: isDollar ? "USD" : "PHP",
                 });
               }
             }
@@ -1079,15 +1079,15 @@ export async function generateConforme(
     layout,
     {
       body: [
-        ["RENTAL COST", formatAmount(rentalCost / rate, { currency: "USD" })],
+        ["RENTAL COST", formatAmount(rentalCost / (isDollar ? rate : 1), { currency: isDollar ? "USD" : "PHP" })],
         [
           "PRODUCTION COST",
-          formatAmount(productionCost / rate, { currency: "USD" }),
+          formatAmount(productionCost / (isDollar ? rate : 1), { currency: isDollar ? "USD" : "PHP" }),
         ],
         ["VAT", options.removeVAT || isDollar ? "(Exempt)" : formatAmount(vat)],
         [
           "GRAND TOTAL (VAT Inclusive)",
-          formatAmount(grandTotal / rate, { currency: "USD" }),
+          formatAmount(grandTotal / (isDollar ? rate : 1), { currency: isDollar ? "USD" : "PHP" }),
         ],
       ],
 
