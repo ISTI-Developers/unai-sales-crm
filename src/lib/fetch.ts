@@ -651,27 +651,43 @@ const MODIFICATION_STATUSES = new Set([
 export const getBookingContext = (bookings: Booking[]) => {
   const now = new Date();
 
-  const from = (b: Booking) => startOfDay(new Date(b.date_from));
-  const to = (b: Booking) => endOfDay(new Date(b.date_to));
+  const from = (booking: Booking) => startOfDay(new Date(booking.date_from));
 
+  const to = (booking: Booking) => endOfDay(new Date(booking.date_to));
+
+  const overlaps = (a: Booking, b: Booking) =>
+    from(a) <= to(b) && to(a) >= from(b);
+
+  const emptyContext = {
+    current: undefined,
+    previous: undefined,
+    next: undefined,
+  };
+
+  // ---------------------------------------------------------
   // 1. Ignore cancelled bookings
-  const valid = bookings.filter((b) => b.booking_status !== "CANCELLED");
+  // ---------------------------------------------------------
+
+  const valid = bookings.filter(
+    (booking) => booking.booking_status !== "CANCELLED",
+  );
 
   if (!valid.length) {
-    return {
-      current: undefined,
-      previous: undefined,
-      next: undefined,
-    };
+    return emptyContext;
   }
 
-  // 2. For the same start date, keep only the latest version.
+  // ---------------------------------------------------------
+  // 2. Keep the latest version for the same start date
+  // ---------------------------------------------------------
   //
   // Example:
-  // NEW                 Aug 26 → Nov 25   ID 100
-  // CONTRACT EXTENSION  Aug 26 → Dec 11   ID 110
   //
-  // The extension is the effective version of the Aug 26 booking.
+  // NEW                  Aug 26 → Nov 25   ID 100
+  // CONTRACT EXTENSION   Aug 26 → Dec 11   ID 110
+  //
+  // ID 110 is the effective version.
+  // ---------------------------------------------------------
+
   const latestByStartDate = new Map<string, Booking>();
 
   for (const booking of valid) {
@@ -684,34 +700,96 @@ export const getBookingContext = (bookings: Booking[]) => {
 
   const effective = [...latestByStartDate.values()];
 
-  // 3. Find bookings that are currently active.
+  // ---------------------------------------------------------
+  // 3. Find queueing bookings that were bumped
+  // ---------------------------------------------------------
+  //
+  // A queueing booking is stopped if another non-queueing
+  // booking occupies any part of its period.
+  //
+  // Example:
+  //
+  // RENEWAL    Jul 1 → Sep 30
+  // QUEUEING   Aug 1 → Oct 31
+  //
+  // The queueing booking is bumped and must not become
+  // current just because today falls inside Aug 1 → Oct 31.
+  // ---------------------------------------------------------
+
+  const bumpedQueueingIds = new Set<number>();
+
+  for (const queueing of effective) {
+    if (queueing.booking_status !== "QUEUEING") {
+      continue;
+    }
+
+    const bumped = effective.some((other) => {
+      if (other.ID === queueing.ID) {
+        return false;
+      }
+
+      // Another queueing does not bump this queueing.
+      if (other.booking_status === "QUEUEING") {
+        return false;
+      }
+
+      return overlaps(queueing, other);
+    });
+
+    if (bumped) {
+      bumpedQueueingIds.add(queueing.ID);
+    }
+  }
+
+  // ---------------------------------------------------------
+  // 4. Find an actually active booking
+  // ---------------------------------------------------------
+  //
+  // Queueing is handled separately.
+  // Bumped queueing is excluded completely.
+  // ---------------------------------------------------------
+
   const active = effective
     .filter((booking) => {
+      if (booking.booking_status === "QUEUEING") {
+        return false;
+      }
+
+      if (bumpedQueueingIds.has(booking.ID)) {
+        return false;
+      }
+
       return from(booking) <= now && to(booking) >= now;
     })
     .sort((a, b) => {
-      // A modification that is currently active represents
-      // the changed version of the booking it supersedes.
       const aModification = MODIFICATION_STATUSES.has(a.booking_status);
+
       const bModification = MODIFICATION_STATUSES.has(b.booking_status);
 
+      // An active modification represents the
+      // modified version of the booking.
       if (aModification !== bModification) {
         return bModification ? 1 : -1;
       }
 
-      // If there are multiple active entries of the same kind,
-      // use the latest record.
       return b.ID - a.ID;
     });
 
   let current = active[0];
 
-  // 4. Queueing bookings only become eligible within 30 days.
+  // ---------------------------------------------------------
+  // 5. Find eligible queueing bookings
+  // ---------------------------------------------------------
   //
-  // They can become current only when there is no active booking
-  // that supersedes them.
-  const eligibleQueueing = effective
+  // Queueing becomes eligible only within 30 days of its
+  // start date.
+  //
+  // Bumped queueing is permanently excluded.
+  // ---------------------------------------------------------
+
+  const queueing = effective
     .filter((booking) => booking.booking_status === "QUEUEING")
+    .filter((booking) => !bumpedQueueingIds.has(booking.ID))
     .filter((booking) => {
       const daysUntilStart = differenceInCalendarDays(from(booking), now);
 
@@ -721,17 +799,60 @@ export const getBookingContext = (bookings: Booking[]) => {
       return from(a).getTime() - from(b).getTime() || b.ID - a.ID;
     });
 
-  // If nothing is currently active, the first eligible queueing
-  // booking becomes the current booking.
+  // ---------------------------------------------------------
+  // 6. Queueing can become current
+  // ---------------------------------------------------------
+  //
+  // Only if there is no active booking.
+  // ---------------------------------------------------------
+
   if (!current) {
-    current = eligibleQueueing[0];
+    current = queueing[0];
   }
 
-  // 5. Find the next eligible queueing booking after current.
-  const next = eligibleQueueing.find((booking) => booking.ID !== current?.ID);
+  // ---------------------------------------------------------
+  // 7. Next
+  // ---------------------------------------------------------
+  //
+  // `next` means the next eligible queueing booking,
+  // not every future booking.
+  // ---------------------------------------------------------
 
-  // 6. Previous = latest effective booking that ended
-  // before the current booking started.
+  const next = queueing.find((booking) => booking.ID !== current?.ID);
+
+  // ---------------------------------------------------------
+  // 8. Historical fallback
+  // ---------------------------------------------------------
+  //
+  // If there is:
+  //
+  //   - no active booking
+  //   - no eligible upcoming queueing
+  //
+  // use the latest completed booking as `current`.
+  //
+  // This lets the table still show the site's last known
+  // booking instead of having no current booking.
+  // ---------------------------------------------------------
+
+  if (!current && !next) {
+    current = effective
+      .filter((booking) => {
+        return booking.booking_status !== "QUEUEING" && to(booking) < now;
+      })
+      .sort((a, b) => {
+        return to(b).getTime() - to(a).getTime() || b.ID - a.ID;
+      })[0];
+  }
+
+  // ---------------------------------------------------------
+  // 9. Previous
+  // ---------------------------------------------------------
+  //
+  // The latest booking that ended before the current
+  // booking started.
+  // ---------------------------------------------------------
+
   const previous = current
     ? effective
         .filter((booking) => {
@@ -748,7 +869,6 @@ export const getBookingContext = (bookings: Booking[]) => {
     next,
   };
 };
-
 /*
  * Backward-compatible helper.
  *
