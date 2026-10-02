@@ -13,7 +13,7 @@ import { useUsers } from '@/hooks/useUsers';
 import { formatAmount, formatTermDetails } from '@/lib/format';
 import { Notification, sendNotification } from '@/hooks/useNotifications';
 import { Textarea } from '../ui/textarea';
-import { differenceInDays, subDays } from 'date-fns';
+import { differenceInDays, endOfDay, startOfDay, subDays } from 'date-fns';
 import InputNumber from '../ui/number-input';
 import { useAuth } from '@/providers/auth.provider';
 import { v4 } from 'uuid';
@@ -136,85 +136,70 @@ function ViewBooking({ site }: { site: SiteAvailability }) {
     )
 }
 
-const BookingItem = ({ item, show, bookingContext }: { item: Booking; show: boolean; bookingContext: { previous?: Booking; current?: Booking; next?: Booking } }) => {
+const BookingItem = ({
+    item,
+    show,
+    bookingContext,
+}: {
+    item: Booking;
+    show: boolean;
+    bookingContext: {
+        previous?: Booking;
+        current?: Booking;
+        next?: Booking;
+    };
+}) => {
     const { data: users } = useUsers();
     const { mutate: cancelBooking } = useCancelBooking();
     const [open, setOpen] = useState(false);
     const [send, onSend] = useState(false);
     const [reason, setReason] = useState("");
-    const { access: edit } = useAccess("booking.update")
+    const { access: edit } = useAccess("booking.update");
+
     const termDetails = formatTermDetails(
         item.date_from,
-        item.booking_status === "PRE-TERMINATION" ? subDays(new Date(item.date_to), 1) : item.date_to,
+        item.booking_status === "PRE-TERMINATION"
+            ? subDays(new Date(item.date_to), 1)
+            : item.date_to,
         item.monthly_rate
     );
-    const status = useMemo(() => {
-        const invalid = ["CANCELLED", "PRE-TERMINATION"];
 
+    const status = useMemo(() => {
         const now = new Date();
 
-        const start = new Date(item.date_from);
-        const end = new Date(item.date_to);
-
-        const isRunning =
-            start <= now &&
-            end >= now;
-
-        const isFuture =
-            start > now;
+        const start = startOfDay(new Date(item.date_from));
+        const end = endOfDay(new Date(item.date_to));
 
         /*
          * ---------------------------------------------------------
-         * INVALID / OVERRIDE STATUSES
+         * EXPLICIT BOOKING STATES
          * ---------------------------------------------------------
          */
-
-        if (item.booking_status === "PRE-TERMINATION") {
-            return "PRE-TERMINATED";
-        }
 
         if (item.booking_status === "CANCELLED") {
             return "CANCELLED";
         }
 
+        if (item.booking_status === "PRE-TERMINATION") {
+            return "PRE-TERMINATED";
+        }
+
         /*
          * ---------------------------------------------------------
-         * RESOLVED CURRENT
+         * RESOLVED BOOKING CONTEXT
          * ---------------------------------------------------------
          *
-         * Do NOT determine RUNNING solely from the item's dates.
-         *
-         * getBookingContext() already resolved which booking is
-         * actually current after considering:
-         *
-         * - NEW
-         * - RENEWAL
-         * - QUEUEING
-         * - overlapping bookings
-         * - bumped queueing bookings
-         * - current date
+         * getBookingContext() determines which booking actually
+         * represents the site's current timeline.
          */
+
         if (bookingContext.current?.ID === item.ID) {
             return "RUNNING";
         }
 
-        /*
-         * ---------------------------------------------------------
-         * RESOLVED NEXT
-         * ---------------------------------------------------------
-         *
-         * This is important because a QUEUEING booking that was
-         * bumped will NOT be bookingContext.next.
-         */
         if (bookingContext.next?.ID === item.ID) {
             return "UPCOMING";
         }
-
-        /*
-         * ---------------------------------------------------------
-         * PREVIOUS / ENDED
-         * ---------------------------------------------------------
-         */
 
         if (bookingContext.previous?.ID === item.ID) {
             return "COMPLETED";
@@ -224,54 +209,63 @@ const BookingItem = ({ item, show, bookingContext }: { item: Booking; show: bool
          * ---------------------------------------------------------
          * OTHER BOOKINGS
          * ---------------------------------------------------------
+         *
+         * These are bookings that exist in the site's history but
+         * are not the resolved current / next / previous booking.
          */
 
-        if (isFuture) {
-            return "STOPPED";
+        if (start > now) {
+            return "UPCOMING";
         }
 
-        if (end < now && !invalid.includes(item.booking_status)) {
+        if (end < now) {
             return "COMPLETED";
         }
 
-        /*
-         * A booking that isn't current/next/previous and is
-         * currently within its dates is effectively superseded.
-         */
-        if (isRunning) {
-            return "STOPPED";
-        }
-
+        // It is inside its date range but isn't the resolved
+        // current booking, so it has been superseded/stopped.
         return "STOPPED";
     }, [item, bookingContext]);
 
     const onContinue = async () => {
         onSend(true);
-        cancelBooking({ booking_id: item.ID, reason: reason }, {
-            onSuccess: async (data, variables) => {
-                if (data?.acknowledged) {
 
-                    setOpen(false);
-                    onSend(false);
-
-                    if (!users) return;
-                    const body = `Site ${item.site_code}'s booking has been cancelled.`;
-
-                    const notification: Notification = {
-                        title: "Booking Cancellation",
-                        recipients: [...users.filter(user => user.role.role_id in [1, 3, 4, 5, 10, 13]).map(user => Number(user.ID))],
-                        body: body,
-                        tag: "booking-cancellation",
-                        data: {
-                            url: `/booking?t=bookings&b=${variables.booking_id}`,
-                        },
-                    }
-                    await sendNotification(notification);
-
-                }
-
+        cancelBooking(
+            {
+                booking_id: item.ID,
+                reason: reason,
             },
-        });
+            {
+                onSuccess: async (data, variables) => {
+                    if (data?.acknowledged) {
+                        setOpen(false);
+                        onSend(false);
+
+                        if (!users) return;
+
+                        const body = `Site ${item.site_code}'s booking has been cancelled.`;
+
+                        const notification: Notification = {
+                            title: "Booking Cancellation",
+                            recipients: [
+                                ...users
+                                    .filter((user) =>
+                                        user.role.role_id in [1, 3, 4, 5, 10, 13]
+                                    )
+                                    .map((user) => Number(user.ID)),
+                            ],
+                            body,
+                            tag: "booking-cancellation",
+                            data: {
+                                url: `/booking?t=bookings&b=${variables.booking_id}`,
+                            },
+                        };
+
+                        await sendNotification(notification);
+                    }
+                },
+            }
+        );
     };
 
     return (
@@ -279,34 +273,66 @@ const BookingItem = ({ item, show, bookingContext }: { item: Booking; show: bool
             className={cn(
                 "text-xs h-10",
 
-                show && status === "CANCELLED" &&
-                "bg-red-50 text-red-300",
+                show &&
+                    status === "CANCELLED" &&
+                    "bg-red-50 text-red-300",
 
                 ["COMPLETED", "STOPPED"].includes(status) &&
-                "opacity-50 pointer-events-none",
+                    "opacity-50 pointer-events-none",
 
                 status === "PRE-TERMINATED" &&
-                "bg-amber-50 text-amber-700",
+                    "bg-amber-50 text-amber-700",
 
                 status === "RUNNING" &&
-                "bg-emerald-100 hover:bg-emerald-200 text-emerald-600",
+                    "bg-emerald-100 hover:bg-emerald-200 text-emerald-600",
+
+                status === "UPCOMING" &&
+                    "bg-blue-50 text-blue-600",
             )}
         >
             <TableCell className="font-semibold whitespace-nowrap">
                 <div>
                     <p>{status}</p>
-                    <p className='font-normal italic text-[0.5rem]'>{status !== item.booking_status && (item.booking_status === "QUEUEING" ? "NEW (FROM QUEUEING)" : item.booking_status)}</p>
+
+                    {/*
+                     * Show the actual booking option/status underneath
+                     * when the displayed status is different.
+                     */}
+                    {status !== item.booking_status && (
+                        <p className="font-normal italic text-[0.5rem]">
+                            {item.booking_status}
+                        </p>
+                    )}
                 </div>
             </TableCell>
-            <TableCell className='text-[0.65rem]'>{item.client}</TableCell>
-            <TableCell className='text-[0.65rem]'>{item.account_executive}</TableCell>
-            <TableCell className='text-[0.65rem]'>{formatAmount(item.srp)}</TableCell>
-            <TableCell className='text-[0.65rem]'>{termDetails}</TableCell>
-            {edit &&
+
+            <TableCell className="text-[0.65rem]">
+                {item.client}
+            </TableCell>
+
+            <TableCell className="text-[0.65rem]">
+                {item.account_executive}
+            </TableCell>
+
+            <TableCell className="text-[0.65rem]">
+                {formatAmount(item.srp)}
+            </TableCell>
+
+            <TableCell className="text-[0.65rem]">
+                {termDetails}
+            </TableCell>
+
+            {edit && (
                 <TableCell align="center">
-                    {!['CANCELLED', 'PRE-TERMINATED', 'COMPLETED', 'STOPPED'].includes(status) && (
+                    {![
+                        "CANCELLED",
+                        "PRE-TERMINATED",
+                        "COMPLETED",
+                        "STOPPED",
+                    ].includes(status) && (
                         <div className="flex items-center justify-center">
                             <EditBookingDialog item={item} />
+
                             <Dialog open={open} onOpenChange={setOpen}>
                                 <Tooltip delayDuration={100}>
                                     <TooltipTrigger asChild>
@@ -320,17 +346,39 @@ const BookingItem = ({ item, show, bookingContext }: { item: Booking; show: bool
                                             </Button>
                                         </DialogTrigger>
                                     </TooltipTrigger>
-                                    <TooltipContent>Cancel</TooltipContent>
+
+                                    <TooltipContent>
+                                        Cancel
+                                    </TooltipContent>
                                 </Tooltip>
+
                                 <DialogContent aria-describedby={undefined}>
                                     <DialogHeader>
-                                        <DialogTitle>Cancelation Confirmation</DialogTitle>
+                                        <DialogTitle>
+                                            Cancelation Confirmation
+                                        </DialogTitle>
                                     </DialogHeader>
+
                                     <p>Reason for cancellation:</p>
-                                    <Textarea disabled={send} value={reason} onChange={(e) => setReason(e.target.value)} />
+
+                                    <Textarea
+                                        disabled={send}
+                                        value={reason}
+                                        onChange={(e) =>
+                                            setReason(e.target.value)
+                                        }
+                                    />
+
                                     <DialogFooter>
-                                        <Button disabled={send} variant="destructive" onClick={onContinue}>
-                                            {send && <Loader2 className="animate-spin" />} Continue
+                                        <Button
+                                            disabled={send}
+                                            variant="destructive"
+                                            onClick={onContinue}
+                                        >
+                                            {send && (
+                                                <Loader2 className="animate-spin" />
+                                            )}
+                                            Continue
                                         </Button>
                                     </DialogFooter>
                                 </DialogContent>
@@ -338,7 +386,7 @@ const BookingItem = ({ item, show, bookingContext }: { item: Booking; show: bool
                         </div>
                     )}
                 </TableCell>
-            }
+            )}
         </TableRow>
     );
 };
