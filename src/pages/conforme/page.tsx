@@ -26,7 +26,7 @@ function DocumentPage({
             "
         >
             <header className="print:fixed print:top-0 print:left-0">
-                <img src="/header.png" alt="" />
+                <img src="/header2.png" alt="" />
             </header>
 
             {children}

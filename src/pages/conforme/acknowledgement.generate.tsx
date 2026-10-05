@@ -29,7 +29,7 @@ function AcknowledgementTab({ owner, conforme, setConforme }: TabProps) {
                 item =>
                     item.sales_unit &&
                     item.company?.ID === user?.company?.ID &&
-                    item.status !== 'inactive'
+                    item.status !== 'inactive' && item.last_name.toUpperCase() !== 'MENDOZA'
             )
             .map(item => ({
                 ID: item.ID,
@@ -40,6 +40,7 @@ function AcknowledgementTab({ owner, conforme, setConforme }: TabProps) {
             }));
     }, [user?.company?.ID, users]);
 
+    const hasSalesUnitHead = useMemo(() => !!user?.sales_unit, [user])
     const salesUnitHead = useMemo(() => {
         const salesUnit = user?.sales_unit?.sales_unit_id;
         return users.find(item => item.sales_unit?.sales_unit_id === salesUnit && item.role.name.toLowerCase().includes("sales unit head"))
@@ -109,7 +110,7 @@ function AcknowledgementTab({ owner, conforme, setConforme }: TabProps) {
                     </p>
 
                     <div className='flex gap-4'>
-                        {(salesUnitHead?.ID !== owner?.ID && !conforme.internal_signatory.some(signatory => signatory.name === `${salesUnitHead?.first_name} ${salesUnitHead?.last_name}`)) &&
+                        {(hasSalesUnitHead && salesUnitHead?.ID !== owner?.ID && !conforme.internal_signatory.some(signatory => signatory.name === `${salesUnitHead?.first_name} ${salesUnitHead?.last_name}`)) &&
                             <Button
                                 type="button"
                                 variant="outline"
