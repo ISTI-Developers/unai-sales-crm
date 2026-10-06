@@ -139,6 +139,7 @@ export type Request = {
 
 export type ApproverResponse = Pick<Approver, "ID" | "status" | "remarks"> & {
   request_no: string;
+  totals: Record<string, number>;
 };
 
 export type RequestTable = Request & {

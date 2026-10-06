@@ -7,7 +7,8 @@ import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Cart, LEDSiteRow } from "@/interfaces/requests.interface";
 import { formatAmount } from "@/lib/format";
-import { cn, getDurationInDays } from "@/lib/utils";
+import { cn, getDurationInDays, getMonthlyDuration } from "@/lib/utils";
+import { addDays, addMonths, isSameDay, subDays } from "date-fns";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronsUp, Trash2Icon, TrendingDown, TrendingUp } from "lucide-react";
 import { Dispatch, SetStateAction, useMemo, useState } from "react";
@@ -30,20 +31,43 @@ function LEDItem({ item, setCart, index }: SiteItemProps) {
 
     const applyToAll = () => {
         const dates = item.date;
+        const duration = getMonthlyDuration(dates.from, dates.to);
 
         setCart(prev => ({
             ...prev,
-            sites: prev.sites.map(site => ({
-                ...site,
-                date: dates,
-            })),
-            leds: prev.leds.map(led => ({
-                ...led,
-                date: dates
-            }))
+            sites: prev.sites.map(site => {
+                const siteDates = site.date;
+                if (getMonthlyDuration(siteDates.from, siteDates.to) === duration) return site;
+                let date = dates;
+                if (!isSameDay(dates.from, siteDates.from)) {
+                    date = {
+                        from: siteDates.from,
+                        to: addMonths(subDays(siteDates.from, 1), duration)
+                    }
+                }
+                return {
+                    ...site,
+                    date,
+                }
+            }),
+            leds: prev.leds.map(site => {
+                const siteDates = site.date;
+                const dailyDuration = getDurationInDays(siteDates.from, siteDates.to);
+                if (dailyDuration === duration * 30) return site;
+                let date = dates;
+                if (!isSameDay(dates.from, siteDates.from)) {
+                    date = {
+                        from: siteDates.from,
+                        to: addDays(subDays(siteDates.from, 1), duration)
+                    }
+                }
+                return {
+                    ...site,
+                    date,
+                }
+            })
         }))
     }
-
     const daysDifference = useMemo(() => getDurationInDays(item.date.from, item.date.to), [item.date]);
     const days = daysDifference;
 

@@ -28,8 +28,6 @@ export const ConformeSiteDetails = ({ cartSite }: { cartSite: CartSite }) => {
     const grandTotal = totalPackage - cartSite.add_on_total;
     const margin = totalPackage - totalSRP;
 
-
-    console.log(site, cartSite)
     return <div className="grid gap-2 p-4 border rounded-xl">
         <header className="grid grid-cols-2 gap-2">
             <div>
