@@ -1,13 +1,14 @@
 import Container from '@/misc/Container'
 import Page from '@/misc/Page'
-import CreateConforme from '@/pages/conforme/create'
 import Main from '@/pages/conforme/main'
-import ViewConforme from '@/pages/conforme/view'
 import { lazy } from 'react'
 import { Helmet } from 'react-helmet'
 import { Route, Routes } from 'react-router-dom'
 
 const GenerateConforme = lazy(() => import('@/pages/conforme/generate'))
+const CreateConforme = lazy(() => import('@/pages/conforme/create'))
+const ViewConforme = lazy(() => import('@/pages/conforme/view'))
+
 const Conforme = () => {
     return (
         <Container title="Conforme" className='p-0'>

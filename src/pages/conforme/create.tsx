@@ -9,7 +9,7 @@ import { formatAmount } from '@/lib/format';
 import { cn, getAddOnTotal, getTotalChargeables, getTotalDaily, getTotalGivenRate, getTotalSiteSRP } from '@/lib/utils';
 import { useAuth } from '@/providers/auth.provider';
 import { addDays, differenceInCalendarDays, differenceInCalendarMonths, format } from 'date-fns';
-import { ChevronLeft, PlusIcon } from 'lucide-react'
+import { ChevronLeft, Loader2, PlusIcon } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { v4 } from 'uuid';
@@ -26,7 +26,7 @@ function CreateConforme() {
   const { user } = useAuth();
   const [params] = useSearchParams();
   const { data, isLoading } = useSingleRequest(params.get("no") ?? undefined);
-  const { mutate: createRequest } = useInsertRequest();
+  const { mutate: createRequest, isPending } = useInsertRequest();
   const { data: clients = [], isLoading: clientsLoading } = useClients();
   const { data: sites = [], isLoading: sitesLoading } = useSites();
   const navigate = useNavigate();
@@ -183,7 +183,7 @@ function CreateConforme() {
       billable_total: totalBillableAddOns,
       add_ons_total: totalAddOns,
       net_total: totalNetAmount,
-      margin: totalNetAmount - totalSRP,
+      margin: totalPackageRateWithPaidAddOns - totalSRP,
     }
     const newCart: NewCart = {
       form_id: 1,
@@ -229,8 +229,6 @@ function CreateConforme() {
       },
       ...totals
     }
-
-    console.log(newCart);
 
     createRequest(newCart, {
       onSuccess: () => {
@@ -307,7 +305,13 @@ function CreateConforme() {
   const showLoader = isLoading || clientsLoading || sitesLoading;
 
   return (
-    <div className='space-y-4 p-4'>
+    <div className=' space-y-4 p-4'>
+      {isPending && <div className='fixed top-0 left-0 flex items-center justify-center z-[999] bg-black/10 backdrop-blur-sm w-full h-full'>
+        <div className='flex flex-col items-center justify-center animate-pulse'>
+          <Loader2 className='animate-spin' size={32} />
+          Submitting your request. Please wait...
+        </div>
+      </div>}
       <header className='flex items-center gap-2'>
         <Button variant="link" type="button" onClick={() => {
           navigate(-1)

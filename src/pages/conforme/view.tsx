@@ -21,10 +21,13 @@ import UserAvatar from "@/components/ui/user-avatar";
 import { ConformeLEDDetails } from "./view.led";
 import { ConformeSiteDetails } from "./view.site";
 import { ConformeRatesTotal } from "./view.totals";
+import { getTotalSRP, getTotalRentalCost, getTotalContractAmount, getTotalBillableAddOns, getTotalGlobalFreeAddOns, getTotalGlobalPaidAddOns, getFreeSiteAddOns, getSiteInclusions } from "@/lib/conforme";
+import { useSites } from "@/hooks/useSites";
 
 function ViewConforme() {
     const { user: currentUser } = useAuth();
     const params = useParams();
+    const { data: sites = [] } = useSites();
     const { data, isLoading } = useSingleRequest(params.request_no);
     const { mutate: updateApproverStatus } = useManageRequest();
     const { data: user } = useUser(data?.user_id);
@@ -47,20 +50,37 @@ function ViewConforme() {
     const isCurrentApprover = useMemo(() => {
         if (!data || !currentUser || isLoading) return false;
 
-        if (!data.approvers.length) return false;
-
         const approvers = data.approvers;
 
+        if (!approvers.length) return false;
 
-        const currentLevel = approvers.reduce((min, item) => Math.min(min, item.level), approvers[0].level);
+        // Start at the lowest approval level
+        const levels = [...new Set(approvers.map(approver => approver.level))]
+            .sort((a, b) => a - b);
 
-        if (approvers.some(approver => approver.status === 2)) {
-            return false;
+        for (const level of levels) {
+            const levelApprovers = approvers.filter(
+                approver => approver.level === level
+            );
+
+            // Any rejection stops the approval workflow
+            if (levelApprovers.some(approver => approver.status === 2)) {
+                return false;
+            }
+
+            // If this level isn't completely approved,
+            // this is the current approval level.
+            if (levelApprovers.some(approver => approver.status === 3)) {
+                return levelApprovers.some(
+                    approver =>
+                        approver.status === 3 &&
+                        approver.user_id === currentUser.ID
+                );
+            }
+
         }
-        const isPendingApproval = approvers.filter(approver => approver.level === currentLevel && approver.status === 3);
 
-        return isPendingApproval.find(approver => approver.user_id === currentUser.ID)
-
+        return false;
     }, [data, isLoading, currentUser]);
 
     const isDone = useMemo(() => {
@@ -76,6 +96,36 @@ function ViewConforme() {
         return data.approvers.some(approver => approver.status === 2);
     }, [data, isLoading])
 
+    const generateTotals = () => {
+        const details = JSON.parse(data!.details) as CartDetails;
+
+        const totalSRP = getTotalSRP(details, sites);
+        const totalPackageRental = getTotalRentalCost(details)
+        const totalPackageRate = getTotalContractAmount(details, sites)
+        const totalBillableAddOns = getTotalBillableAddOns(details, sites);
+        const globalFreeAddOns = getTotalGlobalFreeAddOns(details)
+        const globalPaidAddOns = getTotalGlobalPaidAddOns(details)
+
+        const freeSitesAndLEDs = getFreeSiteAddOns(details, sites);
+        const siteAddOns = getSiteInclusions(details, sites);
+
+        const totalAddOns = globalFreeAddOns + siteAddOns + freeSitesAndLEDs;
+
+        const totalPackageRateWithPaidAddOns = totalPackageRate + globalPaidAddOns;
+        const totalNetAmount = totalPackageRateWithPaidAddOns - totalAddOns;
+        const margin = totalPackageRateWithPaidAddOns - totalSRP;
+
+        return {
+            package_rate_total: totalPackageRateWithPaidAddOns,
+            srp_total: totalSRP,
+            rental_total: totalPackageRental,
+            billable_total: totalBillableAddOns,
+            add_ons_total: totalAddOns,
+            net_total: totalNetAmount,
+            margin: margin,
+        }
+    }
+
     const onApproverOptionClick = (status: number) => {
         if (!currentUser || !params.request_no || !data) return;
         const approver = data.approvers.find(app => app.user_id === Number(currentUser.ID));
@@ -83,8 +133,11 @@ function ViewConforme() {
             ID: approver!.ID,
             status: status,
             remarks: remarks,
-            request_no: params.request_no
+            request_no: params.request_no,
+            totals: generateTotals()
         }
+
+
         updateApproverStatus(approverData)
     }
     if (!data && isLoading) {

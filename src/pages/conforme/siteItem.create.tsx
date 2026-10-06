@@ -5,14 +5,14 @@ import InputNumber from '@/components/ui/number-input';
 import { Cart, SiteRow } from '@/interfaces/requests.interface';
 
 import { formatAmount } from '@/lib/format';
-import { cn, getAddOnTotal, getCost, getMonthlyDuration, getSiteInstallationCost, getSiteMaterial, getTotalChargeables, getTotalGivenRate, getTotalSiteSRP } from '@/lib/utils';
+import { cn, getAddOnTotal, getCost, getDurationInDays, getMonthlyDuration, getSiteInstallationCost, getSiteMaterial, getTotalChargeables, getTotalGivenRate, getTotalSiteSRP } from '@/lib/utils';
 import { Trash2Icon, ChevronsUp, CircleQuestionMarkIcon } from 'lucide-react';
 import { Dispatch, SetStateAction, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from "framer-motion";
 import { Badge } from '@/components/ui/badge';
 import { InputGroup, InputGroupAddon } from '@/components/ui/input-group';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { addDays, differenceInCalendarDays } from 'date-fns';
+import { addDays, addMonths, differenceInCalendarDays, isSameDay, subDays } from 'date-fns';
 
 interface SiteItemProps {
     item: SiteRow;
@@ -31,20 +31,43 @@ function SiteItem({ item, setCart, index }: SiteItemProps) {
 
     const applyToAll = () => {
         const dates = item.date;
+        const duration = getMonthlyDuration(dates.from, dates.to);
 
         setCart(prev => ({
             ...prev,
-            sites: prev.sites.map(site => ({
-                ...site,
-                date: dates,
-            })),
-            leds: prev.leds.map(led => ({
-                ...led,
-                date: dates
-            }))
+            sites: prev.sites.map(site => {
+                const siteDates = site.date;
+                if (getMonthlyDuration(siteDates.from, siteDates.to) === duration) return site;
+                let date = dates;
+                if (!isSameDay(dates.from, siteDates.from)) {
+                    date = {
+                        from: siteDates.from,
+                        to: addMonths(subDays(siteDates.from, 1), duration)
+                    }
+                }
+                return {
+                    ...site,
+                    date,
+                }
+            }),
+            leds: prev.leds.map(site => {
+                const siteDates = site.date;
+                const dailyDuration = getDurationInDays(siteDates.from, siteDates.to);
+                if (dailyDuration === duration * 30) return site;
+                let date = dates;
+                if (!isSameDay(dates.from, siteDates.from)) {
+                    date = {
+                        from: siteDates.from,
+                        to: addDays(subDays(siteDates.from, 1), duration * 30)
+                    }
+                }
+                return {
+                    ...site,
+                    date,
+                }
+            })
         }))
     }
-    console.log(item);
 
     const addOnTotal = getAddOnTotal(item);
     const monthDifference = useMemo(() => getMonthlyDuration(item.date.from, item.date.to), [item.date]);

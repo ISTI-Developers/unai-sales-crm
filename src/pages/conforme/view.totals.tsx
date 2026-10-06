@@ -1,145 +1,21 @@
 import { Badge } from "@/components/ui/badge";
 import { useSites } from "@/hooks/useSites";
 import { CartDetails } from "@/interfaces/requests.interface";
+import { getTotalBillableAddOns, getTotalContractAmount, getTotalGlobalFreeAddOns, getTotalGlobalPaidAddOns, getTotalRentalCost, getTotalSRP, getFreeSiteAddOns, getSiteInclusions } from "@/lib/conforme";
 import { formatAmount } from "@/lib/format";
-import { cn, getSiteInstallationCost, getSiteMaterial, getTotalChargeablesBySite, getTotalDaily, getTotalGivenRateBySite, getTotalSiteSRPBySite } from "@/lib/utils";
-import { addDays, differenceInCalendarDays, differenceInCalendarMonths } from "date-fns";
+import { cn } from "@/lib/utils";
 
 export const ConformeRatesTotal = ({ details }: { details: CartDetails }) => {
     const { data: sites = [] } = useSites();
-    const selectedSites = [...details.sites.map(item => ({ ...item, type: "static" as const })), ...details.leds.map(item => ({ ...item, type: "led" as const }))];
-    //   const totalSRP = selectedSites.reduce((acc, item) => {
-    //     if (item.type === "static") {
-    //       const difference = differenceInCalendarMonths(addDays(item.date.to, 1), item.date.from);
-    //       const addOnsTotal = getAddOnTotal(item);
-    //       acc += getTotalSiteSRP(item, difference) + addOnsTotal;
-    //     } else {
-    //       const days = Math.round(Math.max(differenceInCalendarDays(addDays(item.date.to, 1), item.date.from), 0) / 30) * 30;
-    //       const srp = Number(item.srp);
-    //       const spotsRate = Number(item.spots_rate);
-    //       const packageRate = Number(item.package_rate);
+    const totalSRP = getTotalSRP(details, sites);
+    const totalPackageRental = getTotalRentalCost(details)
+    const totalPackageRate = getTotalContractAmount(details, sites)
+    const totalBillableAddOns = getTotalBillableAddOns(details, sites);
+    const globalFreeAddOns = getTotalGlobalFreeAddOns(details)
+    const globalPaidAddOns = getTotalGlobalPaidAddOns(details)
 
-    //       const hasPackageRate = packageRate > 0;
-    //       const isFree = item.is_free;
-
-    //       let spotsCount = Number(item.spots_count);
-    //       if (hasPackageRate) {
-    //         spotsCount = Math.floor(
-    //           packageRate / days / spotsRate
-    //         );
-    //       }
-    //       acc += isFree ? hasPackageRate ? packageRate : spotsCount * days * srp : spotsCount * days * srp;
-    //     }
-    //     return acc;
-    //   }, 0)
-    const totalSRP = selectedSites.reduce((acc, item) => {
-        if (item.type === "static") {
-            const difference = differenceInCalendarMonths(addDays(new Date(item.to), 1), new Date(item.from));
-            const site = sites.find(s => s.ID === item.ID);
-            acc += getTotalSiteSRPBySite(site!, item.installation, item.material, difference) + item.add_on_total;
-        } else if (item.type === "led") {
-            const days = Math.round(Math.max(differenceInCalendarDays(addDays(item.to, 1), item.from), 0) / 30) * 30;
-            const srp = Number(item.srp);
-            const packageRate = Number(item.package_rate);
-            let spotsCount = Number(item.spots_count);
-            const hasPackageRate = packageRate > 0;
-            const isFree = item.is_free;
-            if (hasPackageRate) {
-                spotsCount = Math.floor(
-                    packageRate / days / srp
-                );
-            }
-            acc += isFree ? hasPackageRate ? packageRate : spotsCount * days * srp : spotsCount * days * srp;
-        }
-        return acc;
-    }, 0)
-    const totalPackageRental = selectedSites.reduce((acc, item) => {
-        const packageRate = Number(item.package_rate);
-        if (item.type === "static") {
-            const difference = differenceInCalendarMonths(addDays(new Date(item.to), 1), new Date(item.from));
-            acc += packageRate * difference;
-        } else {
-            if (item.is_free) {
-                acc += 0;
-            } else {
-                if (packageRate > 0) {
-                    acc += packageRate;
-                } else {
-                    const contractRate = item.spots_count * item.srp;
-                    acc += getTotalDaily(contractRate, new Date(item.to), new Date(item.from))
-                }
-            }
-        }
-        return acc;
-    }, 0)
-    const totalPackageRate = selectedSites.reduce((acc, item) => {
-        const packageRate = Number(item.package_rate);
-        if (item.type === "static") {
-            const difference = differenceInCalendarMonths(addDays(new Date(item.to), 1), new Date(item.from));
-            const site = sites.find(s => s.ID === item.ID);
-            acc += getTotalGivenRateBySite(packageRate * difference, site!, item.installation, item.material);
-        } else {
-            if (item.is_free) {
-                acc += 0;
-            } else {
-                if (packageRate > 0) {
-                    acc += packageRate;
-                } else {
-                    const contractRate = item.spots_count * item.srp;
-                    acc += getTotalDaily(contractRate, new Date(item.to), new Date(item.from))
-                }
-            }
-        }
-        return acc;
-    }, 0)
-    const totalBillableAddOns = selectedSites.reduce((acc, item) => {
-        if (item.type === "static") {
-            const site = sites.find(s => s.ID === item.ID);
-            acc += getTotalChargeablesBySite(item.installation, item.material, site);
-        }
-        return acc;
-    }, 0)
-    const globalFreeAddOns = details.add_ons.reduce((acc, item) => {
-        if (item.is_free) {
-            acc += item.total;
-        }
-        return acc
-    }, 0)
-
-    const globalPaidAddOns = details.add_ons.reduce((acc, item) => {
-        if (!item.is_free) {
-            acc += item.total;
-        }
-        return acc
-    }, 0)
-
-    const freeSitesAndLEDs = selectedSites.reduce((acc, item) => {
-        if (item.type === 'led') {
-            if (item.is_free) {
-                const contractAmount = getTotalDaily(item.srp, new Date(item.to), new Date(item.from)) * item.spots_count
-                acc += contractAmount
-            }
-        } else {
-            if (item.package_rate === 0) {
-                const site = sites.find(s => s.ID === item.ID);
-                const difference = differenceInCalendarMonths(addDays(new Date(item.to), 1), new Date(item.from));
-                acc += getTotalSiteSRPBySite(site!, item.installation, item.material, difference);
-            }
-        }
-        return acc;
-    }, 0)
-    const siteAddOns = details.sites.reduce((acc, item) => {
-        const { installation, material } = item;
-        const site = sites.find(s => s.ID === item.ID);
-
-        if (!site) return 0;
-        const installationAmt =
-            getSiteInstallationCost(site.size, site.region) *
-            installation.free;
-        const materialAmt =
-            getSiteMaterial(site.size, site.site_code) * material.free;
-        return acc += installationAmt + materialAmt;;
-    }, 0)
+    const freeSitesAndLEDs = getFreeSiteAddOns(details, sites);
+    const siteAddOns = getSiteInclusions(details, sites)
 
     const totalAddOns = globalFreeAddOns + siteAddOns + freeSitesAndLEDs;
 
