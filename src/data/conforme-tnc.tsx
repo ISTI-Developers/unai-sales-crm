@@ -23,7 +23,7 @@ export const termsAndConditions: TermsAndConditions[] = [
         content: "Payment must be given to United Neon Advertising, Inc. upon signing of the agreement.",
         isBold: false,
         use: true,
-        fixed: true,
+        fixed: false,
         indented: true,
     },
     {
@@ -145,7 +145,13 @@ export const termsAndConditions: TermsAndConditions[] = [
         content: "An interest charge of 1% per month and a penalty charge of 1% per month shall be charged in addition to any rentals and amounts, reckoned from due date, in case of delay or default in the payments thereof.",
         isBold: false,
         use: true,
-        fixed: true,
+        fixed: false,
+    },{
+        label: "TEMPORARY ROLL-DOWN DIRECTIVE",
+        content: "The Client acknowledges that the media site and advertising materials may be subject to temporary roll-down, concealment, or non-display as required by any LGU ordinance, resolution, announcement, directive, or similar government issuance relating to public events, observances, safety, or similar purposes. Compliance with such requirements shall be mandatory and shall not constitute a breach by the Media Owner, nor shall any resulting non-display period be deemed an extension of the Contract Term or entitle the Client to any credit, refund, or compensation.",
+        isBold:false,
+        use:true,
+        fixed:false
     }
 
 ]
