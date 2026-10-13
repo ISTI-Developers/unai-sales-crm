@@ -374,10 +374,6 @@ function CreateBooking({ site }: { site: SiteAvailability }) {
                         </div>
                     }
                     <div>
-                        <Label className='text-xs'>Select Booking</Label>
-                        {}
-                    </div>
-                    <div>
                         <Label className="mr-auto text-xs">{booking.booking_status === "PRE-TERMINATION" ? "Effectivity Date" : "Duration"}</Label>
                         <div className="flex justify-evenly items-center gap-4">
                             {showField("start") &&

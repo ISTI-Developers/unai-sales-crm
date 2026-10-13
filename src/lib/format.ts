@@ -1,9 +1,13 @@
 import { DeckType } from "@/misc/deckTemplate";
 import {
   addDays,
+  addMonths,
   addWeeks,
+  differenceInCalendarDays,
+  differenceInMonths,
   format,
   getISOWeek,
+  isBefore,
   isSameMonth,
   isSameYear,
   parse,
@@ -53,6 +57,37 @@ export function formatTermDetails(
   }
 
   return `${datePart} @ ${formatAmount(rate)}`;
+}
+export function formatDuration(startDate: Date, endDate: Date): string {
+  if (isBefore(endDate, startDate)) {
+    throw new Error("End date must be on or after start date.");
+  }
+
+  const exclusiveEnd = addDays(endDate, 1);
+
+  let months = differenceInMonths(exclusiveEnd, startDate);
+  let anchor = addMonths(startDate, months);
+
+  // If the month addition clamped to the inclusive end date,
+  // treat that as a complete month rather than adding a day.
+  if (months > 0 && anchor.getTime() === endDate.getTime()) {
+    months++;
+    anchor = addMonths(startDate, months);
+  }
+
+  const days = differenceInCalendarDays(exclusiveEnd, anchor);
+
+  const parts: string[] = [];
+
+  if (months > 0) {
+    parts.push(`${months} month${months !== 1 ? "s" : ""}`);
+  }
+
+  if (days > 0) {
+    parts.push(`${days} day${days !== 1 ? "s" : ""}`);
+  }
+
+  return parts.length ? parts.join(" and ") : "0 days";
 }
 
 export const formatDateRange = (from: Date, to: Date) => {
