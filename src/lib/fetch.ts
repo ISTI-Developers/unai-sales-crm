@@ -648,15 +648,15 @@ const MODIFICATION_STATUSES = new Set([
   "RELOCATION",
 ]);
 
+const from = (date_from: string | date) => startOfDay(new Date(date_from));
+
+const to = (date_to: string | Date) => endOfDay(new Date(date_to));
+
+const overlaps = (a: Booking, b: Booking) =>
+  from(a.date_from) <= to(b.date_to) && to(a.date_from) >= from(b.date_to);
+
 export const getBookingContext = (bookings: Booking[]) => {
   const now = new Date();
-
-  const from = (booking: Booking) => startOfDay(new Date(booking.date_from));
-
-  const to = (booking: Booking) => endOfDay(new Date(booking.date_to));
-
-  const overlaps = (a: Booking, b: Booking) =>
-    from(a) <= to(b) && to(a) >= from(b);
 
   const emptyContext = {
     current: undefined,
