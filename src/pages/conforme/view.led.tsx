@@ -17,9 +17,9 @@ export const ConformeLEDDetails = ({ cartLED }: { cartLED: LEDSite }) => {
     let spotsCount = cartLED.spots_count;
     if (cartLED.package_rate > 0) {
         spotsCount = cartLED.package_rate / duration / spotsRate;
-        spotsCount = Math.ceil(spotsCount)
+        spotsCount = Math.round(spotsCount)
     }
-    let grandTotal = spotsCount * spotsRate * duration;
+    let grandTotal = cartLED.package_rate ? cartLED.package_rate : spotsCount * spotsRate * duration;
     let totalSRP = srp * duration * spotsCount;
     if (cartLED.is_free) {
         grandTotal = 0;
