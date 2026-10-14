@@ -14,7 +14,7 @@ import PagePreview from './page.preview';
 import { LEDBoards } from '@/data/LEDBoards';
 import LEDsTab from './leds.generate';
 import AcknowledgementTab from './acknowledgement.generate';
-import { GenerateConformeButton } from './print- button';
+import { GenerateConformeButton } from './print-button';
 import { generateConforme } from '@/lib/print';
 import { getDurationInDays, getMonthlyDuration } from '@/lib/utils';
 

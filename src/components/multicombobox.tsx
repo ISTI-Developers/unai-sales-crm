@@ -39,7 +39,7 @@ export function MultiComboBox({
 }: ComboboxProps) {
   const [open, onOpenChange] = useState(false);
   return (
-    <Popover open={open} onOpenChange={onOpenChange} modal>
+    <Popover open={open} onOpenChange={onOpenChange} modal={false}>
       <PopoverTrigger disabled={disabled} asChild>
         <div
           className={cn(

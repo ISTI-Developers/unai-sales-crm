@@ -1,8 +1,8 @@
-import { SiteAvailability } from "@/interfaces/sites.interface";
+import { Availability } from "@/interfaces/bookings.interface";
 import { ColumnDef } from "@tanstack/react-table";
 import { Building, MapPin } from "lucide-react";
 
-export type SiteAvailabilityWithStatus = SiteAvailability & {
+export type SiteAvailabilityWithStatus = Availability & {
     availability: string;
 }
 export const columns: ColumnDef<SiteAvailabilityWithStatus>[] = [

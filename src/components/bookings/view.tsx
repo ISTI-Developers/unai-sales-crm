@@ -274,20 +274,20 @@ const BookingItem = ({
                 "text-xs h-10",
 
                 show &&
-                    status === "CANCELLED" &&
-                    "bg-red-50 text-red-300",
+                status === "CANCELLED" &&
+                "bg-red-50 text-red-300",
 
                 ["COMPLETED", "STOPPED"].includes(status) &&
-                    "opacity-50 pointer-events-none",
+                "opacity-50 pointer-events-none",
 
                 status === "PRE-TERMINATED" &&
-                    "bg-amber-50 text-amber-700",
+                "bg-amber-50 text-amber-700",
 
                 status === "RUNNING" &&
-                    "bg-emerald-100 hover:bg-emerald-200 text-emerald-600",
+                "bg-emerald-100 hover:bg-emerald-200 text-emerald-600",
 
                 status === "UPCOMING" &&
-                    "bg-blue-50 text-blue-600",
+                "bg-blue-50 text-blue-600",
             )}
         >
             <TableCell className="font-semibold whitespace-nowrap">
@@ -330,61 +330,61 @@ const BookingItem = ({
                         "COMPLETED",
                         "STOPPED",
                     ].includes(status) && (
-                        <div className="flex items-center justify-center">
-                            <EditBookingDialog item={item} />
+                            <div className="flex items-center justify-center">
+                                <EditBookingDialog item={item} />
 
-                            <Dialog open={open} onOpenChange={setOpen}>
-                                <Tooltip delayDuration={100}>
-                                    <TooltipTrigger asChild>
-                                        <DialogTrigger asChild>
-                                            <Button
-                                                variant="outline"
-                                                size="icon"
-                                                className="h-7 w-7 text-red-300 bg-transparent hover:bg-transparent border-none shadow-none"
-                                            >
-                                                <Ban />
-                                            </Button>
-                                        </DialogTrigger>
-                                    </TooltipTrigger>
+                                <Dialog open={open} onOpenChange={setOpen}>
+                                    <Tooltip delayDuration={100}>
+                                        <TooltipTrigger asChild>
+                                            <DialogTrigger asChild>
+                                                <Button
+                                                    variant="outline"
+                                                    size="icon"
+                                                    className="h-7 w-7 text-red-300 bg-transparent hover:bg-transparent border-none shadow-none"
+                                                >
+                                                    <Ban />
+                                                </Button>
+                                            </DialogTrigger>
+                                        </TooltipTrigger>
 
-                                    <TooltipContent>
-                                        Cancel
-                                    </TooltipContent>
-                                </Tooltip>
+                                        <TooltipContent>
+                                            Cancel
+                                        </TooltipContent>
+                                    </Tooltip>
 
-                                <DialogContent aria-describedby={undefined}>
-                                    <DialogHeader>
-                                        <DialogTitle>
-                                            Cancelation Confirmation
-                                        </DialogTitle>
-                                    </DialogHeader>
+                                    <DialogContent aria-describedby={undefined}>
+                                        <DialogHeader>
+                                            <DialogTitle>
+                                                Cancelation Confirmation
+                                            </DialogTitle>
+                                        </DialogHeader>
 
-                                    <p>Reason for cancellation:</p>
+                                        <p>Reason for cancellation:</p>
 
-                                    <Textarea
-                                        disabled={send}
-                                        value={reason}
-                                        onChange={(e) =>
-                                            setReason(e.target.value)
-                                        }
-                                    />
-
-                                    <DialogFooter>
-                                        <Button
+                                        <Textarea
                                             disabled={send}
-                                            variant="destructive"
-                                            onClick={onContinue}
-                                        >
-                                            {send && (
-                                                <Loader2 className="animate-spin" />
-                                            )}
-                                            Continue
-                                        </Button>
-                                    </DialogFooter>
-                                </DialogContent>
-                            </Dialog>
-                        </div>
-                    )}
+                                            value={reason}
+                                            onChange={(e) =>
+                                                setReason(e.target.value)
+                                            }
+                                        />
+
+                                        <DialogFooter>
+                                            <Button
+                                                disabled={send}
+                                                variant="destructive"
+                                                onClick={onContinue}
+                                            >
+                                                {send && (
+                                                    <Loader2 className="animate-spin" />
+                                                )}
+                                                Continue
+                                            </Button>
+                                        </DialogFooter>
+                                    </DialogContent>
+                                </Dialog>
+                            </div>
+                        )}
                 </TableCell>
             )}
         </TableRow>

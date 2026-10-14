@@ -10,10 +10,7 @@ import { Helmet } from "react-helmet";
 import { Link, Navigate, Route, Routes, useSearchParams } from "react-router-dom";
 
 const AddNewBooking = lazy(() => import("@/pages/bookings/add.booking"));
-const PresiteBookings = lazy(
-    () => import("@/components/booking/presite.booking")
-);
-
+const PresiteBookings = lazy(() => import("@/components/booking/presite.booking"));
 const SiteBookingsTab = lazy(() => import("@/pages/bookings/site.booking"))
 const SiteAvailabilityTab = lazy(() => import("@/pages/bookings/availability"))
 const Bookings = () => {
@@ -22,26 +19,14 @@ const Bookings = () => {
             <Helmet>
                 <title>Booking | Sales Platform</title>
             </Helmet>
-            <Routes>
-                <Route path="/" element={<Main />} />
-                <Route
-                    path="/new"
-                    element={
-                        <Suspense fallback={<>Loading...</>}>
-                            <AddNewBooking />
-                        </Suspense>
-                    }
-                />
-                <Route
-                    path="/edit"
-                    element={
-                        <Suspense fallback={<>Loading...</>}>
-                            <AddNewBooking />
-                        </Suspense>
-                    }
-                />
-                <Route path="/*" element={<Navigate to="/booking" replace />} />
-            </Routes>
+            <Suspense fallback={<>Loading...</>}>
+                <Routes>
+                    <Route path="/" element={<Main />} />
+                    <Route path="/new" element={<AddNewBooking />} />
+                    <Route path="/edit" element={<AddNewBooking />} />
+                    <Route path="/*" element={<Navigate to="/booking" replace />} />
+                </Routes>
+            </Suspense>
         </Container>
     );
 };
