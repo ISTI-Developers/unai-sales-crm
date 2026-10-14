@@ -107,7 +107,7 @@ function Book({ open, onOpenChange, activeRow: site }: BookProps) {
             site_rental: site.site_rental,
         }))
         if (isRenewal) {
-            const cnt = clients.find(c => c.name.toLowerCase() === client.toLowerCase());
+            const cnt = clients.find(c => c.name.toLowerCase().trim() === client.toLowerCase().trim());
             if (cnt) {
                 setClient({ ...cnt, brand: product })
             }
@@ -142,7 +142,7 @@ function Book({ open, onOpenChange, activeRow: site }: BookProps) {
                             }
                         });
                         if (value === "RENEWAL") {
-                            const cnt = clients.find(c => c.name.toLowerCase() === client.toLowerCase());
+                            const cnt = clients.find(c => c.name.toLowerCase().trim() === client.toLowerCase().trim());
                             if (cnt) {
                                 setClient({ ...cnt, brand: product })
                             }

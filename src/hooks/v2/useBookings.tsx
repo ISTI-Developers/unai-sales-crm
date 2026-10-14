@@ -255,8 +255,7 @@ const getSupersededIds = (bookings: Booking[]) => {
 
 export const getBookingContext = (bookings: TaggedBooking[]): BookingContext => {
     const now = new Date();
-    console.log(bookings);
-
+    
     const emptyContext = {
         current: undefined,
         previous: undefined,
