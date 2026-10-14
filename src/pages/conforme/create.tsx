@@ -8,7 +8,7 @@ import { Cart, CartDetails, NewCart } from '@/interfaces/requests.interface';
 import { formatAmount } from '@/lib/format';
 import { cn, getAddOnTotal, getDurationInDays, getMonthlyDuration, getTotalChargeables, getTotalDaily, getTotalGivenRate, getTotalSiteSRP } from '@/lib/utils';
 import { useAuth } from '@/providers/auth.provider';
-import { addDays, differenceInCalendarDays, differenceInCalendarMonths, format } from 'date-fns';
+import { format } from 'date-fns';
 import { ChevronLeft, Loader2, PlusIcon } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom'
@@ -21,6 +21,7 @@ import SitesTabs from './sites.create';
 import LedPicker from './led-picker';
 import AddOnItem from './addOnItem.create';
 import { Textarea } from '@/components/ui/textarea';
+import { getFreeSiteAddOns, getSiteInclusions, getTotalBillableAddOns, getTotalContractAmount, getTotalGlobalFreeAddOns, getTotalGlobalPaidAddOns, getTotalRentalCost, getTotalSRP } from '@/lib/conforme';
 
 function CreateConforme() {
   const { user } = useAuth();
@@ -65,112 +66,54 @@ function CreateConforme() {
     if (!token) {
       token = v4();
     }
-    const selectedSites = [...cart.sites.map(item => {
-      return { ...item, type: "static" as const }
-    }), ...cart.leds.map(item => {
-      return { ...item, type: "led" as const }
-    })]
-
-    const totalSRP = selectedSites.reduce((acc, item) => {
-      if (item.type === "static") {
-        const difference = differenceInCalendarMonths(addDays(item.date.to, 1), item.date.from);
-        const addOnsTotal = getAddOnTotal(item);
-        acc += getTotalSiteSRP(item, difference) + addOnsTotal;
-      } else {
-        const days = Math.round(Math.max(differenceInCalendarDays(addDays(item.date.to, 1), item.date.from), 0) / 30) * 30;
-        const srp = Number(item.srp);
-        const spotsRate = Number(item.spots_rate);
-        const packageRate = Number(item.package_rate);
-
-        const hasPackageRate = packageRate > 0;
-        const isFree = item.is_free;
-
-        let spotsCount = Number(item.spots_count);
-        if (hasPackageRate) {
-          spotsCount = Math.floor(
-            packageRate / days / spotsRate
-          );
+    const cartDetails: CartDetails = {
+      client_id: cart.client!.client_id,
+      client_name: cart.client!.name,
+      brand: cart.brand,
+      sites: cart.sites.map(item => {
+        const addOnTotal = getAddOnTotal(item);
+        const difference = getMonthlyDuration(item.date.from, item.date.to);
+        const packageRate = getTotalGivenRate(Number(item.package_rate) * difference, item);
+        return {
+          ID: item.site.ID,
+          from: format(item.date.from, "yyyy-MM-dd"),
+          to: format(item.date.to, "yyyy-MM-dd"),
+          srp: Number(item.srp),
+          package_rate: Number(item.package_rate),
+          offered_rate: Number(item.offered_rate),
+          installation: item.installation,
+          material: item.material,
+          add_on_total: addOnTotal,
+          net_amount: packageRate - addOnTotal
         }
-        acc += isFree ? hasPackageRate ? packageRate : spotsCount * days * srp : spotsCount * days * srp;
-      }
-      return acc;
-    }, 0)
-    const totalBillableAddOns = selectedSites.reduce((acc, item) => {
-      if (item.type === "static") {
-        acc += getTotalChargeables(item);
-      }
-      return acc;
-    }, 0)
-    const totalPackageRental = selectedSites.reduce((acc, item) => {
-      const packageRate = Number(item.package_rate);
-      if (item.type === "static") {
-        const difference = differenceInCalendarMonths(addDays(item.date.to, 1), item.date.from);
-        acc += packageRate * difference;
-      } else {
-        if (item.is_free) {
-          acc += 0;
-        } else {
-          if (packageRate > 0) {
-            acc += packageRate;
-          } else {
-            const contractRate = item.spots_count * Number(item.spots_rate)
-            acc += getTotalDaily(contractRate, item.date.to, item.date.from)
-          }
+      }),
+      leds: cart.leds.map(item => {
+        return {
+          ID: item.site.ID,
+          from: format(item.date.from, "yyyy-MM-dd"),
+          to: format(item.date.to, "yyyy-MM-dd"),
+          srp: Number(item.spots_rate),
+          spots_count: item.spots_count,
+          package_rate: Number(item.package_rate),
+          offered_rate: Number(item.offered_rate),
+          is_free: item.is_free,
+          net_amount: 0,
+          details: item.site
         }
-      }
-      return acc;
-    }, 0)
-    const totalPackageRate = selectedSites.reduce((acc, item) => {
-      const packageRate = Number(item.package_rate);
-      if (item.type === "static") {
-        const difference = differenceInCalendarMonths(addDays(item.date.to, 1), item.date.from);
-        acc += getTotalGivenRate(packageRate * difference, item);
-      } else {
-        if (item.is_free) {
-          acc += 0;
-        } else {
-          if (packageRate > 0) {
-            acc += packageRate;
-          } else {
-            const contractRate = item.spots_count * Number(item.spots_rate)
-            acc += getTotalDaily(contractRate, item.date.to, item.date.from)
-          }
-        }
-      }
-      return acc;
-    }, 0)
-    const globalFreeAddOns = cart.add_ons.reduce((acc, item) => {
-      if (item.is_free) {
-        acc += item.total;
-      }
-      return acc
-    }, 0)
+      }),
+      special_term: cart.special_term.trim(),
+      add_ons: cart.add_ons,
+    };
 
-    const globalPaidAddOns = cart.add_ons.reduce((acc, item) => {
-      if (!item.is_free) {
-        acc += item.total;
-      }
-      return acc
-    }, 0)
+    const totalSRP = getTotalSRP(cartDetails, sites);
+    const totalPackageRental = getTotalRentalCost(cartDetails)
+    const totalPackageRate = getTotalContractAmount(cartDetails, sites)
+    const totalBillableAddOns = getTotalBillableAddOns(cartDetails, sites);
+    const globalFreeAddOns = getTotalGlobalFreeAddOns(cartDetails)
+    const globalPaidAddOns = getTotalGlobalPaidAddOns(cartDetails)
 
-    const freeSitesAndLEDs = selectedSites.reduce((acc, item) => {
-      if (item.type === 'led') {
-        if (item.is_free) {
-          const contractAmount = getTotalDaily(Number(item.spots_rate) > 0 ? Number(item.spots_rate) : Number(item.srp), item.date.to, item.date.from) * item.spots_count
-          acc += contractAmount
-        }
-      } else {
-        if (item.package_rate === "0") {
-          const difference = differenceInCalendarMonths(addDays(item.date.to, 1), item.date.from);
-          acc += getTotalSiteSRP(item, difference);
-        }
-      }
-      return acc;
-    }, 0)
-    const siteAddOns = cart.sites.reduce((acc, item) => {
-      const total = getAddOnTotal(item);
-      return acc += total;
-    }, 0)
+    const freeSitesAndLEDs = getFreeSiteAddOns(cartDetails, sites);
+    const siteAddOns = getSiteInclusions(cartDetails, sites)
 
     const totalAddOns = globalFreeAddOns + siteAddOns + freeSitesAndLEDs;
 
@@ -185,51 +128,16 @@ function CreateConforme() {
       net_total: totalNetAmount,
       margin: totalPackageRateWithPaidAddOns - totalSRP,
     }
+
     const newCart: NewCart = {
       form_id: 1,
       user_id: Number(user.ID),
       token: token,
-      details: {
-        client_id: cart.client!.client_id,
-        client_name: cart.client!.name,
-        brand: cart.brand,
-        sites: cart.sites.map(item => {
-          const addOnTotal = getAddOnTotal(item);
-          const difference = differenceInCalendarMonths(addDays(item.date.to, 1), item.date.from);
-          const packageRate = getTotalGivenRate(Number(item.package_rate) * difference, item);
-          return {
-            ID: item.site.ID,
-            from: format(item.date.from, "yyyy-MM-dd"),
-            to: format(item.date.to, "yyyy-MM-dd"),
-            srp: Number(item.srp),
-            package_rate: Number(item.package_rate),
-            offered_rate: Number(item.offered_rate),
-            installation: item.installation,
-            material: item.material,
-            add_on_total: addOnTotal,
-            net_amount: packageRate - addOnTotal
-          }
-        }),
-        leds: cart.leds.map(item => {
-          return {
-            ID: item.site.ID,
-            from: format(item.date.from, "yyyy-MM-dd"),
-            to: format(item.date.to, "yyyy-MM-dd"),
-            srp: Number(item.spots_rate),
-            spots_count: item.spots_count,
-            package_rate: Number(item.package_rate),
-            offered_rate: Number(item.offered_rate),
-            is_free: item.is_free,
-            net_amount: 0,
-            details: item.site
-          }
-        }),
-        special_term: cart.special_term.trim(),
-        add_ons: cart.add_ons,
-      },
+      details: cartDetails,
       ...totals
     }
 
+    console.log(newCart)
     createRequest(newCart, {
       onSuccess: () => {
         navigate("/conforme")
@@ -507,7 +415,7 @@ const TotalRates = ({ cart }: { cart: Cart }) => {
   const totalPackageRental = selectedSites.reduce((acc, item) => {
     const packageRate = Number(item.package_rate);
     if (item.type === "static") {
-      const difference = differenceInCalendarMonths(addDays(item.date.to, 1), item.date.from);
+      const difference = getMonthlyDuration(item.date.from, item.date.to);
       acc += packageRate * difference;
     } else {
       if (item.is_free) {
@@ -526,7 +434,7 @@ const TotalRates = ({ cart }: { cart: Cart }) => {
   const totalPackageRate = selectedSites.reduce((acc, item) => {
     const packageRate = Number(item.package_rate);
     if (item.type === "static") {
-      const difference = differenceInCalendarMonths(addDays(item.date.to, 1), item.date.from);
+      const difference = getMonthlyDuration(item.date.from, item.date.to);
       acc += getTotalGivenRate(packageRate * difference, item);
     } else {
       if (item.is_free) {
@@ -564,7 +472,7 @@ const TotalRates = ({ cart }: { cart: Cart }) => {
       }
     } else {
       if (item.package_rate === "0") {
-        const difference = differenceInCalendarMonths(addDays(item.date.to, 1), item.date.from);
+        const difference = getMonthlyDuration(item.date.from, item.date.to);
         acc += getTotalSiteSRP(item, difference);
       }
     }
