@@ -120,8 +120,17 @@ function SitesPicker({ cartSites, setCart }: SitesPickerProps) {
                 : new Date();
 
             return {
-                site,
-                srp: site.srp,
+                site: {
+                    ID: site.ID,
+                    site_code: site.site_code,
+                    address: site.address,
+                    size: site.size,
+                    price: String(site.srp),
+                    board_facing: site.board_facing,
+                    region: site.region,
+                    end_date: format(endDate, "yyyy-MM-dd"),
+                },
+                srp: String(site.srp),
                 package_rate: "0",
                 offered_rate: "0",
                 installation: {
@@ -143,7 +152,7 @@ function SitesPicker({ cartSites, setCart }: SitesPickerProps) {
 
         setCart(prev => ({
             ...prev,
-            ...sites,
+            sites,
         }));
 
         setOpen(false);
