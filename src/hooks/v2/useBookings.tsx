@@ -62,6 +62,33 @@ export const useUpdateBooking = () => {
     });
 }
 
+export const useUpdateBookingTermDetails = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async ({ ID, data }: { ID: number; data: Partial<TaggedBooking> }) => {
+            const updateData = {
+                action: "term_change",
+                booking_id: ID,
+                modified_at: format(new Date(), "yyyy-MM-dd HH:mm:ss"),
+                ...data,
+            }
+
+
+            const response = await api.put<DefaultResponse>(`${v}/bookings`, updateData);
+            return response.data;
+
+        },
+        onSuccess: () => {
+            queryClient.refetchQueries({ queryKey: [v, "bookings"] });
+            toast({
+                description: "Booking has been updated.",
+                variant: "success",
+            })
+        },
+        onError: catchError,
+    });
+}
+
 export const usePreterminateBooking = () => {
     const queryClient = useQueryClient();
     return useMutation({
@@ -391,7 +418,7 @@ export const getCurrentBooking = (bookings: TaggedBooking[]) => {
         if (next.booking_status === "RENEWAL") {
             return next;
         }
-        if(differenceInCalendarDays(new Date(),new Date(next.date_from)) < 30){
+        if (differenceInCalendarDays(new Date(), new Date(next.date_from)) < 30) {
             return next;
         }
     }

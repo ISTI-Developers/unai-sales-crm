@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { getCurrentBooking, getDisplayStatus, modifiers, useAddBooking, usePreterminateBooking, useUpdateBooking } from "@/hooks/v2/useBookings";
+import { getCurrentBooking, getDisplayStatus, modifiers, useAddBooking, usePreterminateBooking, useUpdateBooking, useUpdateBookingTermDetails } from "@/hooks/v2/useBookings";
 import { BookingContext, BookingForm, Modifier, TaggedBooking } from "@/interfaces/bookings.interface"
 import { capitalize, cn } from "@/lib/utils";
 import { BanIcon, CalendarChevronsRight, Loader2, PencilIcon, RepeatIcon } from "lucide-react";
@@ -20,10 +20,11 @@ interface EditProps {
 }
 function Edit({ open, onOpenChange, booking, context }: EditProps) {
     const { mutate: updateBookingDetails, isPending: isUpdatePending } = useUpdateBooking();
+    const { mutate: updateBookingTermDetails, isPending: isChangePending } = useUpdateBookingTermDetails();
     const { mutate: preterminateBooking, isPending: isPreterminatePending } = usePreterminateBooking();
     const { mutate: createBooking, isPending: isCreatePending } = useAddBooking();
     const availableSites = useAvailableSites();
-    const isPending = isUpdatePending || isPreterminatePending || isCreatePending;
+    const isPending = isUpdatePending || isPreterminatePending || isCreatePending || isChangePending;
 
     const [action, setAction] = useState<Modifier | undefined>("CHANGE OF CONTRACT DETAILS")
     const [data, setData] = useState<TaggedBooking>({
@@ -58,7 +59,7 @@ function Edit({ open, onOpenChange, booking, context }: EditProps) {
                         addendum: booking.date_from === data.date_from && booking.date_to !== data.date_to ? "CONTRACT EXTENSION" : action,
                         remarks: data.remarks
                     }
-                    updateBookingDetails({ ID: data.ID, data: updateData }, {
+                    updateBookingTermDetails({ ID: data.ID, data: updateData }, {
                         onSuccess: () => {
                             onOpenChange(false)
                         }
