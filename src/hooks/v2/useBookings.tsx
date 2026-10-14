@@ -2,7 +2,7 @@ import { DefaultResponse } from "@/interfaces";
 import { Booking, BookingContext, BookingForm, TaggedBooking } from "@/interfaces/bookings.interface";
 import { spAPI as api, catchError } from "@/providers/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { addDays, endOfDay, format, startOfDay } from "date-fns";
+import { addDays, differenceInCalendarDays, endOfDay, format, startOfDay } from "date-fns";
 import { toast } from "../use-toast";
 
 const v = "v2";
@@ -226,7 +226,7 @@ const getSupersededIds = (bookings: Booking[]) => {
     return supersededIds;
 };
 
-export const getBookingContext = (bookings: Booking[]): BookingContext => {
+export const getBookingContext = (bookings: TaggedBooking[]): BookingContext => {
     const now = new Date();
     console.log(bookings);
 
@@ -385,12 +385,13 @@ export const getBookingContext = (bookings: Booking[]): BookingContext => {
     };
 };
 
-export const getCurrentBooking = (bookings: Booking[]) => {
+export const getCurrentBooking = (bookings: TaggedBooking[]) => {
     const { current, previous, next } = getBookingContext(bookings);
-
-    console.log({ current, previous, next });
     if (next) {
         if (next.booking_status === "RENEWAL") {
+            return next;
+        }
+        if(differenceInCalendarDays(new Date(),new Date(next.date_from)) < 30){
             return next;
         }
     }

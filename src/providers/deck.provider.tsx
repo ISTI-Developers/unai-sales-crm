@@ -1,14 +1,14 @@
 import { createMapURL, syncPackages } from "@/components/deck/helpers.deck";
-import { useBookings } from "@/hooks/useBookings";
 import { useDeck as useOneDeck } from "@/hooks/useDeck";
 import { fetchMap, getSiteImage, useSiteLandmarks, useSites } from "@/hooks/useSites";
+import { getCurrentBooking, useBookings } from "@/hooks/v2/useBookings";
 import { ProviderProps } from "@/interfaces";
+import { TaggedBooking } from "@/interfaces/bookings.interface";
 import { DeckProvider as DeckProviderType, DeckSite, DEFAULT_OPTIONS, DEFAULTS, displayOptions, optionsBaseContent } from "@/interfaces/deck.interface";
-import { getBookingContext, getEndDate, getLatestBooking } from "@/lib/fetch";
 import { haversineDistance } from "@/lib/utils";
 import { DeckFilters, DeckOptions } from "@/misc/deckTemplate";
 import { useQueryClient } from "@tanstack/react-query";
-import { addDays, differenceInCalendarDays, format, isBefore } from "date-fns";
+import { addDays, differenceInCalendarDays, format, isBefore, subDays } from "date-fns";
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 export const DeckProviderContext = createContext<DeckProviderType | null>(null);
@@ -50,26 +50,21 @@ export function DeckProvider({ children }: ProviderProps) {
 
     const contracts = allSites.map(site => {
       const siteBookings = bookings.filter(booking => booking.site_code === site.site_code);
-      const updatedBookings = siteBookings.map(sb => ({ ...sb, is_prime: site.is_prime }))
+      const updatedBookings: TaggedBooking[] = siteBookings.map(sb => ({ ...sb, is_prime: site.is_prime }))
 
-      const booking = getLatestBooking(updatedBookings);
-      const { current, previous } = getBookingContext(updatedBookings);
-      let endDate = getEndDate(booking);
-
-      if (current?.booking_status === "QUEUEING") {
-        const difference = differenceInCalendarDays(new Date(), current.date_from);
-        if (difference >= -30) {
-          endDate = getEndDate(current)
+      const displayedBooking = getCurrentBooking(updatedBookings);
+      let availability = new Date();
+      if (displayedBooking) {
+        if (displayedBooking.booking_status === "PRE-TERMINATION") {
+          availability = subDays(new Date(displayedBooking.date_to), 1)
         } else {
-          endDate = getEndDate(previous);
+          availability = new Date(displayedBooking.date_to)
         }
       }
 
-      const availability = endDate ? format(addDays(new Date(endDate), 1), "MMM d, yyyy") : null;
-
       return {
         ...site,
-        availability: availability,
+        availability: format(addDays(new Date(availability), 1), "MMM d, yyyy"),
       }
     })
     return contracts;

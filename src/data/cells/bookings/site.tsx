@@ -54,6 +54,13 @@ function SiteCode({ row }: CellContext<Availability, unknown>) {
             };
         }
 
+        if (next && !current) {
+            return {
+                status: "BOOKED",
+                availability: addDays(new Date(next.date_to), 1)
+            };
+        }
+
         return {
             status: "AVAILABLE",
             availability: new Date()

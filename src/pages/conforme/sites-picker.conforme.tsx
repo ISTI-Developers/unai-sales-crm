@@ -7,14 +7,14 @@ import { useResponsiveTable } from '@/hooks/use-responsive-table';
 import useAvailableSites from '@/hooks/useAvailableSites'
 import { useImage, useThumbnail } from '@/hooks/useSites';
 import { Cart, SiteRow } from '@/interfaces/requests.interface';
-import { getLatestBooking } from '@/lib/fetch';
 import { cn, getCost, getSiteInstallationCost } from '@/lib/utils';
-import { addDays, differenceInCalendarDays, isBefore } from 'date-fns';
+import { addDays, differenceInCalendarDays, format, isBefore } from 'date-fns';
 import { useInView } from 'framer-motion';
 import { CircleCheck, ImageOff, Loader2, PlusIcon } from 'lucide-react';
 import { Dispatch, SetStateAction, useEffect, useMemo, useRef, useState } from 'react';
 import { siteGlobalFilter } from './sites-picker.filter';
 import { Badge } from '@/components/ui/badge';
+import { getBookingContext, getCurrentBooking, isQueueing } from '@/hooks/v2/useBookings';
 
 interface SitesPickerProps {
     cartSites: SiteRow[];
@@ -30,27 +30,57 @@ function SitesPicker({ cartSites, setCart }: SitesPickerProps) {
 
     const filteredSites = useMemo(() => {
         const availableSites: SiteAvailabilityWithStatus[] = sites.map(site => {
-            const remainingDays = site.remaining_days ?? 0;
-            const siteBookings = site.bookings.map(sb => ({
-                ...sb,
-                is_prime: site.is_prime,
-            }));
+            const siteBookings = site.bookings;
+            const { current, next } = getBookingContext(siteBookings);
+            if (next) {
+                if (next.booking_status === "RENEWAL") {
+                    return {
+                        ...site,
+                        availability: `BOOKED UNTIL ${format(new Date(next.date_to), "yyyy-MM-dd")}`
+                    };
+                }
 
-            const latestBooking = getLatestBooking(siteBookings);
-            if (latestBooking?.booking_status === "QUEUEING") {
-                const difference = differenceInCalendarDays(
-                    new Date(),
-                    latestBooking.date_from
-                );
+                if (isQueueing(next)) {
+                    return {
+                        ...site,
+                        availability: `WITH QUEUEING ON ${format(new Date(next.date_from), "yyyy-MM-dd")}`
+                    };
+                }
+            }
+
+            if (current) {
+                if (isQueueing(current)) {
+                    return {
+                        ...site,
+                        availability: `WITH QUEUEING ON ${format(new Date(current.date_from), "yyyy-MM-dd")}`
+                    };
+                } else {
+                    const difference = differenceInCalendarDays(new Date(current.date_to), new Date());
+                    if (difference > 60) {
+                        return {
+                            ...site,
+                            availability: `BOOKED UNTIL ${format(new Date(current.date_to), "yyyy-MM-dd")}`
+                        };
+                    }
+                }
+
                 return {
                     ...site,
-                    availability: difference < -30 ? "QUEUEING" : "BOOKED"
-                }
+                    availability: "AVAILABLE"
+                };
+            }
+
+            if (next && !current) {
+                return {
+                    ...site,
+                    availability: `BOOKED UNTIL ${format(new Date(next.date_to), "yyyy-MM-dd")}`
+                };
             }
             return {
                 ...site,
-                availability: remainingDays <= 60 ? "AVAILABLE" : `BOOKED UNTIL ${latestBooking?.date_to}`
-            }
+                availability: "AVAILABLE"
+            };
+
         });
 
         // selected sites
@@ -74,6 +104,7 @@ function SitesPicker({ cartSites, setCart }: SitesPickerProps) {
 
     const onSelectSites = () => {
         const sites = selectedSites.map(site => {
+            const booking = getCurrentBooking(site.bookings);
             const existing = cartSites.find(
                 item => item.site.site_code === site.site_code
             );
@@ -82,15 +113,15 @@ function SitesPicker({ cartSites, setCart }: SitesPickerProps) {
                 return existing;
             }
 
-            const endDate = site.end_date
-                ? !isBefore(new Date(site.end_date), new Date())
-                    ? addDays(new Date(site.end_date), 1)
+            const endDate = booking?.date_to
+                ? !isBefore(new Date(booking.date_to), new Date())
+                    ? addDays(new Date(booking.date_to), 1)
                     : new Date()
                 : new Date();
 
             return {
                 site,
-                srp: site.price,
+                srp: site.srp,
                 package_rate: "0",
                 offered_rate: "0",
                 installation: {
@@ -112,7 +143,7 @@ function SitesPicker({ cartSites, setCart }: SitesPickerProps) {
 
         setCart(prev => ({
             ...prev,
-            sites,
+            ...sites,
         }));
 
         setOpen(false);

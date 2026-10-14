@@ -21,7 +21,7 @@ import {
   ordinal,
 } from "./utils";
 import { TermsAndConditions } from "@/data/conforme-tnc";
-import { PrintButtonOptions } from "@/pages/conforme/print- button";
+import { PrintButtonOptions } from "@/pages/conforme/print-button";
 
 type FreeAddOns = {
   label: string;

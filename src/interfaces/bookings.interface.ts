@@ -55,9 +55,9 @@ export interface ColumnActions {
 }
 
 export type BookingContext = {
-  current?: Booking;
-  previous?: Booking;
-  next?: Booking;
+  current?: TaggedBooking;
+  previous?: TaggedBooking;
+  next?: TaggedBooking;
   supersededIds: Set<number>;
 };
 export type Modifier = (typeof modifiers)[number];
