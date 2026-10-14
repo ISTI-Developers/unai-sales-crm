@@ -36,7 +36,7 @@ const Changelog = () => {
                   <p>{change}</p>
                   <ol>
                     {changes[change as keyof typeof changes].map((ch) => (
-                      <li key={ch} className="list-disc ml-4">
+                      <li key={ch} className="list-disc ml-4 whitespace-break-spaces">
                         {ch}
                       </li>
                     ))}
