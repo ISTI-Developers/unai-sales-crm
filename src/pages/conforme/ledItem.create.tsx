@@ -82,7 +82,7 @@ function LEDItem({ item, setCart, index }: SiteItemProps) {
 
     // Package rate determines the actual number of spots
     if (hasPackageRate) {
-        spotsCount = Math.floor(
+        spotsCount = Math.round(
             packageRate / days / spotsRate
         );
     }

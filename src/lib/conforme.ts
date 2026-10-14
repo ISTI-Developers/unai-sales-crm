@@ -10,6 +10,7 @@ import {
   getTotalSiteSRPBySite,
 } from "./utils";
 import { Site } from "@/interfaces/sites.interface";
+import { LEDBoards } from "@/data/LEDBoards";
 
 const getSelectedSites = (details: CartDetails) => {
   return [
@@ -31,20 +32,22 @@ export function getTotalSRP(details: CartDetails, sites: Site[]) {
           difference,
         ) + item.add_on_total;
     } else if (item.type === "led") {
+      const led = LEDBoards.find((led) => led.ID === item.ID)!;
       const days = getDurationInDays(item.from, item.to);
-      const srp = Number(item.srp);
+      const spots_rate = Number(item.srp);
       const packageRate = Number(item.package_rate);
       let spotsCount = Number(item.spots_count);
       const hasPackageRate = packageRate > 0;
       const isFree = item.is_free;
       if (hasPackageRate) {
-        spotsCount = Math.floor(packageRate / days / srp);
+        spotsCount = Math.round(packageRate / days / spots_rate);
       }
+
       acc += isFree
         ? hasPackageRate
           ? packageRate
-          : spotsCount * days * srp
-        : spotsCount * days * srp;
+          : spotsCount * days * spots_rate
+        : spotsCount * days * led.spots_price;
     }
     return acc;
   }, 0);

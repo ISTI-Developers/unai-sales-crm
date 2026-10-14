@@ -60,7 +60,7 @@ export const ConformeRatesTotal = ({ details }: { details: CartDetails }) => {
                     </span>
                 </div>
                 <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold mr-auto">Margin</span>
+                    <span className="text-sm font-semibold mr-auto">SRP Variance</span>
                     <Badge className={cn("flex items-center gap-1 px-3 pl-2", margin >= 0
                         ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 hover:bg-emerald-100"
                         : "bg-red-200 text-red-600 dark:bg-red-900/30 dark:text-red-400 hover:bg-red-200")}>

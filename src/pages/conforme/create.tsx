@@ -6,7 +6,7 @@ import { useInsertRequest, useSingleRequest } from '@/hooks/useRequests';
 import { useSites } from '@/hooks/useSites';
 import { Cart, CartDetails, NewCart } from '@/interfaces/requests.interface';
 import { formatAmount } from '@/lib/format';
-import { cn, getAddOnTotal, getTotalChargeables, getTotalDaily, getTotalGivenRate, getTotalSiteSRP } from '@/lib/utils';
+import { cn, getAddOnTotal, getDurationInDays, getMonthlyDuration, getTotalChargeables, getTotalDaily, getTotalGivenRate, getTotalSiteSRP } from '@/lib/utils';
 import { useAuth } from '@/providers/auth.provider';
 import { addDays, differenceInCalendarDays, differenceInCalendarMonths, format } from 'date-fns';
 import { ChevronLeft, Loader2, PlusIcon } from 'lucide-react'
@@ -476,11 +476,11 @@ const TotalRates = ({ cart }: { cart: Cart }) => {
 
   const totalSRP = selectedSites.reduce((acc, item) => {
     if (item.type === "static") {
-      const difference = differenceInCalendarMonths(addDays(item.date.to, 1), item.date.from);
+      const difference = getMonthlyDuration(item.date.from, item.date.to);
       const addOnsTotal = getAddOnTotal(item);
       acc += getTotalSiteSRP(item, difference) + addOnsTotal;
     } else {
-      const days = Math.round(Math.max(differenceInCalendarDays(addDays(item.date.to, 1), item.date.from), 0) / 30) * 30;
+      const days = getDurationInDays(item.date.from, item.date.to);
       const srp = Number(item.srp);
       const spotsRate = Number(item.spots_rate);
       const packageRate = Number(item.package_rate);
@@ -490,7 +490,7 @@ const TotalRates = ({ cart }: { cart: Cart }) => {
 
       let spotsCount = Number(item.spots_count);
       if (hasPackageRate) {
-        spotsCount = Math.floor(
+        spotsCount = Math.round(
           packageRate / days / spotsRate
         );
       }
@@ -620,7 +620,7 @@ const TotalRates = ({ cart }: { cart: Cart }) => {
         </div>
       </div>
       <div className="flex items-center justify-between">
-        <span className="text-sm font-semibold mr-auto">Margin</span>
+        <span className="text-sm font-semibold mr-auto">SRP Variance</span>
         <Badge className={cn("flex items-center gap-1 px-3 pl-2", margin >= 0
           ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 hover:bg-emerald-100"
           : "bg-red-200 text-red-600 dark:bg-red-900/30 dark:text-red-400 hover:bg-red-200")}>

@@ -259,7 +259,7 @@ const ConformeDetails = ({ data }: { data: Request }) => {
                 <p className="leading-[1]">{details.brand || "---"}</p>
             </div>
             <div className="flex items-center gap-2 text-sm">
-                <FileSignature />
+                <FileSignature className="shrink-0"/>
                 <p className="leading-[1]">{details.special_term || "---"}</p>
             </div>
         </div>
