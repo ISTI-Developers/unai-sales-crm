@@ -1,5 +1,5 @@
 import { DefaultResponse } from "@/interfaces";
-import { Booking, BookingContext, BookingForm, TaggedBooking } from "@/interfaces/bookings.interface";
+import { Booking, BookingContext, BookingForm, BookingHistory, TaggedBooking } from "@/interfaces/bookings.interface";
 import { spAPI as api, catchError } from "@/providers/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { addDays, differenceInCalendarDays, endOfDay, format, startOfDay } from "date-fns";
@@ -17,7 +17,16 @@ export const useBookings = () => {
         staleTime: 60000,
     });
 }
-// export const useOneBooking = () => { }
+export const useBookingHistory = () => {
+    return useQuery({
+        queryKey: [v, "bookings", "history"],
+        queryFn: async () => {
+            const response = await api.get<BookingHistory[]>(`${v}/bookings?type=history`);
+            return response.data;
+        },
+        staleTime: 60000,
+    });
+}
 // export const useOtherBookings = () => { }
 export const useAddBooking = () => {
     const queryClient = useQueryClient();
@@ -255,7 +264,7 @@ const getSupersededIds = (bookings: Booking[]) => {
 
 export const getBookingContext = (bookings: TaggedBooking[]): BookingContext => {
     const now = new Date();
-    
+
     const emptyContext = {
         current: undefined,
         previous: undefined,

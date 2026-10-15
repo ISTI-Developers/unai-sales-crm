@@ -93,7 +93,8 @@ function FilterItem<TData>({ column, editingFilter, setOption, onOpenChange }: F
                 items.forEach(item => values.add(item));
             });
 
-            return [...values].sort();
+            const filteredValues = [...values].filter(val => val.length > 0);
+            return [...filteredValues].sort();
         }
         return Array.from(column.getFacetedUniqueValues().keys()).filter(Boolean);
     }, [column, meta?.isArray]);
