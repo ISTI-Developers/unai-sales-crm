@@ -7,6 +7,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { addHours, format, isSameDay } from "date-fns";
 import { Building, Calendar, Loader, User2Icon } from "lucide-react";
 import { Link } from "react-router-dom";
+import Actions from "./cells/requests/actions";
 
 export const columns: ColumnDef<RequestTable>[] = [
     {
@@ -144,5 +145,12 @@ export const columns: ColumnDef<RequestTable>[] = [
             allowedOptions: ["is", "between"],
             icon: Calendar
         }
+    },
+    {
+        id: "actions",
+        header: "Actions",
+        cell: Actions,
+        enableColumnFilter: false,
+        enableGlobalFilter: false,
     }
 ]
