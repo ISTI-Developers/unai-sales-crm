@@ -82,3 +82,22 @@ export const useManageRequest = () => {
         onError: catchError,
     });
 };
+
+export const useRecallRequest = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (request_no: string) => {
+            const response = await api.delete<DefaultResponse>(`requests?request_no=${request_no}`);
+
+            return response.data;
+        },
+        onSuccess: (_, request_no) => {
+            toast({
+                variant: "success",
+                description: "Your request has been recalled."
+            })
+            queryClient.invalidateQueries({ queryKey: ['requests', "request_no", request_no] })
+        },
+        onError: catchError,
+    });
+}

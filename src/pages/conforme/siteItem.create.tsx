@@ -37,7 +37,6 @@ function SiteItem({ item, setCart, index }: SiteItemProps) {
             ...prev,
             sites: prev.sites.map(site => {
                 const siteDates = site.date;
-                if (getMonthlyDuration(siteDates.from, siteDates.to) === duration) return site;
                 let date = dates;
                 if (!isSameDay(dates.from, siteDates.from)) {
                     date = {
@@ -137,7 +136,7 @@ function SiteItem({ item, setCart, index }: SiteItemProps) {
                     <div className="min-w-0 flex-1">
                         <DatePicker
                             date={item.date.to}
-                            min={addDays(item.date.from, 30)}
+                            min={addMonths(subDays(item.date.from, 1), 1)}
                             className="w-full text-xs"
                             withIcon={false}
                             onDateChange={(value) => {
