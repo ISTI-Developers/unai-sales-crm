@@ -1,11 +1,9 @@
-import { AvatarGroup } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import UserAvatar from '@/components/ui/user-avatar';
+import AccountExecutives from '@/data/cells/bookings/ae';
 import { useAccess } from '@/hooks/useClients';
-import { useUsers } from '@/hooks/useUsers';
 import { getBookingContext, getDisplayStatus } from '@/hooks/v2/useBookings';
 import { Availability, BookingContext, TaggedBooking } from '@/interfaces/bookings.interface';
 import { formatAmount, formatDuration, formatTermDetails, splitClientName } from '@/lib/format';
@@ -21,7 +19,7 @@ interface ViewProps {
     onCancel: (booking: TaggedBooking) => void
 }
 const headers = ["status", "client", "AE", "SRP", "term details", "action"];
-    
+
 function View({ open, onOpenChange, activeRow: site, onEdit, onCancel }: ViewProps) {
     const bookings = site.bookings;
     const { access: edit } = useAccess("booking.update");
@@ -121,7 +119,7 @@ const Item = ({ item, context, onEdit, onCancel }: { item: TaggedBooking; contex
             <p className='truncate max-w-[200px]'>{product}</p>
         </TableCell>
         <TableCell className="text-[0.65rem]">
-            <AEColumn AE={item.account_executive} />
+            <AccountExecutives accounts={item.account_executive} />
         </TableCell>
         <TableCell className="text-[0.65rem]">
             {formatAmount(item.srp)}
@@ -170,27 +168,6 @@ const StatusColumn = ({ booking, context }: { booking: TaggedBooking; context: B
     </div>
 }
 
-const AEColumn = ({ AE }: { AE: string }) => {
-    const { data: users = [] } = useUsers();
-    const strippedAE = AE.trim();
 
-    const avatars = useMemo(() => {
-        const AEs = strippedAE.split(",");
-        return users.filter(user => {
-            const name = `${user.first_name} ${user.last_name}`;
-            return AEs.some(ae => ae.trim().toLowerCase() === name.toLowerCase());
-        })
-    }, [strippedAE, users])
-
-    if (avatars.length === 0) {
-        return <>---</>
-    }
-
-    return <AvatarGroup>
-        {avatars.map(avatar => {
-            return <UserAvatar key={avatar.ID} tooltip={`${avatar.first_name} ${avatar.last_name}`} className='size-8 text-[0.65rem]' fallbackClassName='bg-white' fallback={`${avatar.first_name[0]}${avatar.last_name[0]}`} image={avatar.image ?? null} />
-        })}
-    </AvatarGroup>
-}
 
 export default View

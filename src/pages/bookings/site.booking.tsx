@@ -2,11 +2,12 @@ import { Badge } from '@/components/ui/badge';
 import { DateRangePicker } from '@/components/ui/daterangepicker';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
-import { DataTable } from '@/data/data-table';
-import { columns } from '@/data/sitebookings.columns';
-import { useBooking, useSiteBookings } from '@/hooks/useBookings'
+import ResponsiveTable from '@/data/responsive-table';
+import { columns } from '@/data/v2/bookings.history';
+import { useBooking } from '@/hooks/useBookings'
 import { useAccess } from '@/hooks/useClients';
 import { useSite } from '@/hooks/useSites';
+import { useBookingHistory } from '@/hooks/v2/useBookings';
 import { formatAmount } from '@/lib/format';
 import { addDays, differenceInMonths, format } from 'date-fns';
 import { Calendar, MapPin, PhilippinePeso, Quote, User, Users } from 'lucide-react';
@@ -16,7 +17,7 @@ import { SetURLSearchParams, useSearchParams } from 'react-router-dom';
 
 const SiteBookingsTab = () => {
     const [dates, setDates] = useState<DateRange | undefined>(undefined)
-    const { data: bookings, isLoading } = useSiteBookings();
+    const { data: bookings, isLoading } = useBookingHistory();
     const { access: edit } = useAccess("booking.update");
 
     const [params, setParams] = useSearchParams();
@@ -30,7 +31,7 @@ const SiteBookingsTab = () => {
         const to = dates!.to;
 
         return bookings.filter(
-            (b) => format(new Date(b.booking_date), "yyyy-MM-dd") >= format(from, "yyyy-MM-dd") && format(new Date(b.booking_date), "yyyy-MM-dd") <= format(to, "yyyy-MM-dd")
+            (b) => format(new Date(b.modified_at), "yyyy-MM-dd") >= format(from, "yyyy-MM-dd") && format(new Date(b.modified_at), "yyyy-MM-dd") <= format(to, "yyyy-MM-dd")
         );
     }, [bookings, isLoading, dates]);
 
@@ -43,12 +44,16 @@ const SiteBookingsTab = () => {
     if (isLoading || !bookings) return <>Loading...</>
     return (
         <div>
-            <DataTable columns={filteredColumns} data={filteredBookings} className='justify-start gap-4' size={100} getRowClassName={(row) => {
-                if (row.booking_status === "CANCELLED") return "opacity-50 cursor-not-allowed bg-red-100/50 text-red-400 hover:bg-red-100/50 hover:text-red-400 select-none"
-                return ""
-            }}>
-                <DateRangePicker date={dates} onDateChange={setDates} />
-            </DataTable>
+            <ResponsiveTable
+                columns={filteredColumns}
+                data={filteredBookings}
+                size={50}
+                getRowClassName={(row) => {
+                    if (row.booking_status === "CANCELLED" || row.booking_status === "PRE-TERMINATION") return "opacity-60 bg-red-100/50 text-red-400 hover:bg-red-100/50 hover:text-red-400 select-none"
+                    return ""
+                }}>
+                <DateRangePicker date={dates} onDateChange={setDates} className='mr-auto'/>
+            </ResponsiveTable>
             {params.get("b") && <BookingPreview id={Number(params.get("b"))} setParams={setParams} />}
         </div>
     )

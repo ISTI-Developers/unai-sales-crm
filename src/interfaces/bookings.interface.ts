@@ -47,6 +47,15 @@ export interface Availability {
   bookings: TaggedBooking[];
 }
 
+export type BookingHistory = Booking & {
+  status: number;
+  structure_code: string;
+  area: string;
+  address: string;
+  size: string;
+  facing: string;
+};
+
 export interface ColumnActions {
   onOpen: (row: Availability) => void;
   onEdit: (row: Availability) => void;
