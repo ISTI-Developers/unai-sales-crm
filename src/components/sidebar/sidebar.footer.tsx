@@ -75,7 +75,7 @@ const FooterSidebar = () => {
         <>
             <SidebarFooter>
                 <SidebarMenu>
-                    <DropdownMenu modal={false}>
+                    <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <SidebarMenuButton
                                 size="lg"
@@ -94,6 +94,7 @@ const FooterSidebar = () => {
                             </SidebarMenuButton>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent
+                            onInteractOutside={(e) => e.preventDefault()}
                             className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
                             side={isMobile ? "bottom" : "right"}
                             align="end"
