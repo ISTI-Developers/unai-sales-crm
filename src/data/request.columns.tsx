@@ -91,6 +91,7 @@ export const columns: ColumnDef<RequestTable>[] = [
         }
     },
     {
+        id: "approver",
         accessorFn: (request) =>
             getCurrentApprovers(request).map(
                 app => `${app.first_name} ${app.last_name}`

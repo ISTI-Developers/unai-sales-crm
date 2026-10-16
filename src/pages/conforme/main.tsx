@@ -50,6 +50,13 @@ function Main() {
 
         return requests.filter(item => activeTab === "pending" ? item.status !== 1 : item.status === 1);
     }, [activeTab, requests, user?.ID])
+
+    const filteredColumns = useMemo(() => {
+        if (activeTab === "done") {
+            return columns.filter(col => col.id !== "approver");
+        }
+        return columns;
+    }, [activeTab])
     return (
         <div className="p-3 space-y-4">
             <Tabs value={activeTab} onValueChange={(value) => {
@@ -69,7 +76,7 @@ function Main() {
                     </Button>
                 </TabsList>
                 <TabsContent value={activeTab}>
-                    <ResponsiveTable data={filteredRequests} columns={columns} />
+                    <ResponsiveTable data={filteredRequests} columns={filteredColumns} />
                 </TabsContent>
             </Tabs>
         </div>
