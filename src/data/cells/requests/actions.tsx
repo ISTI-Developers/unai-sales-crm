@@ -4,7 +4,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useRecallRequest } from "@/hooks/useRequests";
 import { RequestTable } from "@/interfaces/requests.interface";
 import { CellContext } from "@tanstack/react-table"
-import { Undo2Icon } from "lucide-react";
+import { FileSymlinkIcon, Undo2Icon } from "lucide-react";
+import { Link } from "react-router-dom";
 
 function Actions({ row }: CellContext<RequestTable, unknown>) {
     const request = row.original;
@@ -35,6 +36,18 @@ function Actions({ row }: CellContext<RequestTable, unknown>) {
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
+            }
+            {request.status === 1 &&
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button asChild variant="ghost" size="icon" className="size-7 text-sky-400 hover:text-sky-400">
+                            <Link to={`/conforme/${request.request_no}/generate`}>
+                                <FileSymlinkIcon />
+                            </Link>
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Generate</TooltipContent>
+                </Tooltip>
             }
         </div>
     )
