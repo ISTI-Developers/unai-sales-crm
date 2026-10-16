@@ -6,7 +6,7 @@ export default defineConfig({
   assetsInclude: ["**/*.xlsx"],
   plugins: [react()],
   esbuild: {
-    drop: ["console", "debugger"],
+    // drop: ["console", "debugger"],
   },
   server: {
     port: 9424,
