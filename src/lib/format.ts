@@ -13,6 +13,7 @@ import {
   parse,
 } from "date-fns";
 import { Content } from "@tiptap/react";
+import { LEDBoard } from "@/data/LEDBoards";
 export function formatAmount(
   amount: string | number,
   options?: Intl.NumberFormatOptions,
@@ -335,3 +336,6 @@ export function safeParseTiptap(value: string): Content {
     };
   }
 }
+
+export const getKey = (item: LEDBoard) =>
+  `${item.site_code}-${item.board_facing}`;

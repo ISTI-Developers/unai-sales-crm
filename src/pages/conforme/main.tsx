@@ -46,7 +46,7 @@ function Main() {
     const filteredRequests = useMemo(() => {
         if (activeTab === "all") return requests;
 
-        if (activeTab === "todo") return requests.filter(item => item.approvers.some(approver => approver.ID === user?.ID && approver.status !== 1));
+        if (activeTab === "todo") return requests.filter(item => item.approvers.some(approver => approver.user_id === user?.ID && approver.status !== 1));
 
         return requests.filter(item => activeTab === "pending" ? item.status !== 1 : item.status === 1);
     }, [activeTab, requests, user?.ID])

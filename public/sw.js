@@ -7,68 +7,77 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("push", (event) => {
-  let payload = {};
+  event.waitUntil(
+    (async () => {
+      let payload = {};
 
-  try {
-    payload = event.data?.json() ?? {};
-  } catch {
-    payload = {
-      title: "UNMG Sales Platform",
-      body: event.data?.text() ?? "",
-    };
-  }
+      try {
+        const raw = event.data?.text() ?? "";
 
-  const title = payload.title ?? "UNMG Sales Platform";
+        try {
+          payload = raw ? JSON.parse(raw) : {};
+        } catch {
+          payload = { body: raw };
+        }
+      } catch (error) {
+        console.error("Failed to read push payload:", error);
+      }
 
-  const options = {
-    body: payload.body ?? "",
-    icon: payload.icon ?? "/icon.png",
-    badge: payload.badge ?? "/badge.png",
-    data: payload.data,
-    actions: [
-      { action: "view", title: "View" },
-      { action: "dismiss", title: "Dismiss" },
-    ],
-  };
+      const title = payload.title || "UNMG Sales Platform";
 
-  event.waitUntil(self.registration.showNotification(title, options));
+      await self.registration.showNotification(title, {
+        body: payload.body || "You have a new notification.",
+        icon: payload.icon || "/icon.png",
+        badge: payload.badge || "/badge.png",
+        data: payload.data || { url: "/" },
+        actions: [
+          { action: "view", title: "View" },
+          { action: "dismiss", title: "Dismiss" },
+        ],
+      });
+    })(),
+  );
 });
 
 self.addEventListener("notificationclick", (event) => {
-  const notification = event.notification;
-  const action = event.action;
+  event.notification.close();
 
-  notification.close();
+  if (event.action === "dismiss") return;
 
-  if (action === "dismiss") return;
+  event.waitUntil(
+    (async () => {
+      const target = new URL(
+        event.notification.data?.url ?? "/",
+        self.location.origin,
+      );
 
-  if (action === "view" || action === "") {
-    event.waitUntil(
-      (async () => {
-        const target = new URL(
-          notification.data?.url ?? "/",
-          self.location.origin,
-        );
+      if (target.origin !== self.location.origin) return;
 
-        // // Only allow navigation within this website.
-        // if (target.origin !== self.location.origin) {
-        //   return;
-        // }
+      const clients = await self.clients.matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      });
 
-        const clientList = await self.clients.matchAll({
-          type: "window",
-          includeUncontrolled: true,
-        });
+      // First, focus a tab already at the destination.
+      const existingTarget = clients.find(
+        (client) => client.url === target.href,
+      );
 
-        for (const client of clientList) {
-          if ("navigate" in client) {
-            await client.navigate(target.href);
-            return client.focus();
-          }
-        }
+      if (existingTarget) {
+        return existingTarget.focus();
+      }
+      
+      // Otherwise, navigate an existing tab belonging to this app.
+      const appClient = clients.find((client) => {
+        return new URL(client.url).origin === self.location.origin;
+      });
 
-        return self.clients.openWindow(target.href);
-      })(),
-    );
-  }
+      if (appClient && "navigate" in appClient) {
+        await appClient.navigate(target.href);
+        return appClient.focus();
+      }
+
+      return self.clients.openWindow(target.href);
+    })(),
+  );
 });

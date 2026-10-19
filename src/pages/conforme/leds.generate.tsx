@@ -1,4 +1,5 @@
 import { Label } from '@/components/ui/label';
+import { useImage } from '@/hooks/useSites';
 import { Conforme, ConformeLED } from '@/interfaces/requests.interface';
 import { formatAmount, formatDateRange } from '@/lib/format';
 import { addDays, differenceInCalendarDays } from 'date-fns';
@@ -18,6 +19,7 @@ function LEDsTab({ conforme }: LEDsTabProps) {
 }
 
 const SiteItem = ({ site }: { site: ConformeLED }) => {
+    const { data } = useImage(site.site_code);
     const termDate = formatDateRange(new Date(site.start), new Date(site.end));
     const days = Math.round(differenceInCalendarDays(addDays(new Date(site.end), 1), new Date(site.start)) / 30) * 30;
 
@@ -32,7 +34,10 @@ const SiteItem = ({ site }: { site: ConformeLED }) => {
 
 
     return <div className='p-2 border rounded-lg space-y-2'>
-        <main className='grid grid-cols-[0.75fr_1fr] gap-4'>
+        <main className='grid grid-cols-[auto_0.75fr_1fr] gap-4'>
+            {data?.selectedImage?.url &&
+                <img src={data.selectedImage.url} className='aspect-video object-cover object-top max-w-[150px] rounded-md' />
+            }
             <div className='text-xs leading-tight'>
                 <p className='font-semibold'>{site.site_code}</p>
                 <p>{site.address}</p>

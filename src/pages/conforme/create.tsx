@@ -198,7 +198,7 @@ function CreateConforme() {
           offered_rate: String(led.offered_rate),
           spots_count: led.spots_count,
           spots_rate: String(led.srp),
-          srp: String(led.srp),
+          srp: String(led.details.price),
           is_free: led.is_free,
         }
       }),
@@ -392,17 +392,17 @@ const TotalRates = ({ cart }: { cart: Cart }) => {
       const srp = Number(item.srp);
       const spotsRate = Number(item.spots_rate);
       const packageRate = Number(item.package_rate);
+      const spotsCount = Number(item.spots_count);
 
-      const hasPackageRate = packageRate > 0;
+      const hasPackageRate = packageRate > 0 && spotsCount === 0;
       const isFree = item.is_free;
 
-      let spotsCount = Number(item.spots_count);
-      if (hasPackageRate) {
-        spotsCount = Math.round(
-          packageRate / days / spotsRate
-        );
+      const spots = hasPackageRate ? Math.floor(packageRate / spotsRate / days) : spotsCount;
+      let srpTotal = srp * spots * days;
+      if (isFree) {
+        srpTotal = hasPackageRate ? packageRate : spotsRate * spots * days;
       }
-      acc += isFree ? hasPackageRate ? packageRate : spotsCount * days * srp : spotsCount * days * srp;
+      acc += srpTotal
     }
     return acc;
   }, 0)
@@ -466,10 +466,7 @@ const TotalRates = ({ cart }: { cart: Cart }) => {
 
   const freeSitesAndLEDs = selectedSites.reduce((acc, item) => {
     if (item.type === 'led') {
-      if (item.is_free) {
-        const contractAmount = getTotalDaily(Number(item.spots_rate) > 0 ? Number(item.spots_rate) : Number(item.srp), item.date.to, item.date.from) * item.spots_count
-        acc += contractAmount
-      }
+      return acc;
     } else {
       if (item.package_rate === "0") {
         const difference = getMonthlyDuration(item.date.from, item.date.to);

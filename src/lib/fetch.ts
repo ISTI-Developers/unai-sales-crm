@@ -648,7 +648,7 @@ const MODIFICATION_STATUSES = new Set([
   "RELOCATION",
 ]);
 
-const from = (date_from: string | date) => startOfDay(new Date(date_from));
+const from = (date_from: string | Date) => startOfDay(new Date(date_from));
 
 const to = (date_to: string | Date) => endOfDay(new Date(date_to));
 

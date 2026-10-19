@@ -46,26 +46,18 @@ function SitesTabs({ cart, setCart }: SitesTabsProps) {
                             difference = getDurationInDays(item.date.from, item.date.to)
                             spotsRate = Number(item.spots_rate);
                             spotsCount = item.spots_count;
-                            const hasPackageRate = packageRate > 0;
+
+                            const hasPackageRate = packageRate > 0 && spotsCount === 0;
                             const isFree = item.is_free;
-                            if (packageRate > 0) {
-                                spotsCount = packageRate / difference / (spotsRate > 0 ? spotsRate : srp)
+
+                            const spots = hasPackageRate ? Math.floor(packageRate / spotsRate / difference) : spotsCount;
+                            srpTotal = srp * spots * difference;
+                            contractAmount = hasPackageRate ? packageRate : spotsRate * spots * difference;
+                            if (isFree) {
+                                srpTotal = hasPackageRate ? packageRate : contractAmount;
+                                contractAmount = 0;
                             }
 
-                            // Package rate determines the actual number of spots
-                            if (hasPackageRate) {
-                                spotsCount = Math.floor(
-                                    packageRate / difference / spotsRate
-                                );
-                            }
-
-                            // SRP is always based on the actual number of spots
-                            srpTotal = isFree ? hasPackageRate ? packageRate : spotsCount * difference * srp : spotsCount * difference * srp;
-                            contractAmount = isFree
-                                ? 0
-                                : hasPackageRate
-                                    ? packageRate
-                                    : spotsCount * difference * spotsRate;
                         } else {
                             contractAmount = getTotalGivenRate(packageRate * difference, item);
                             srpTotal = getTotalSiteSRP(item, difference) + addOnTotal;
