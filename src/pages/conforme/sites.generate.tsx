@@ -1,3 +1,4 @@
+import SiteImagePicker from '@/components/site-image-picker';
 import { Label } from '@/components/ui/label';
 import { useImage } from '@/hooks/useSites';
 import { Conforme, ConformeSite } from '@/interfaces/requests.interface';
@@ -40,9 +41,12 @@ const SiteItem = ({ site, setConforme }: { site: ConformeSite; setConforme: Disp
 
     return <div className='p-2 border rounded-lg space-y-2'>
         <main className='grid grid-cols-[auto_0.75fr_1fr] gap-4'>
-            {data?.selectedImage?.url &&
-                <img src={data.selectedImage.url} className='aspect-video object-cover object-top max-w-[150px] rounded-md' />
-            }
+            <SiteImagePicker site_code={site.site_code} value={site.image} onValueChange={(value) => setConforme(prev => ({
+                ...prev,
+                sites: prev.sites.map(item =>
+                    site.ID === item.ID ? { ...item, image: value } : item
+                )
+            }))} />
             <div className='text-xs leading-tight'>
                 <p className='font-semibold'>{site.site_code}</p>
                 <p>{site.address}</p>

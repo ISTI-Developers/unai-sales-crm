@@ -518,7 +518,7 @@ export async function generateConforme(
           const rowType = rawRow[0] as "SITE" | "LED" | "ADD_ON";
 
           data.cell.styles.minCellHeight =
-            rowType === "SITE" ? 29 : rowType === "LED" ? 12 : 9.5;
+            rowType === "SITE" ? 29 : rowType === "LED" ? 27 : 9.5;
 
           const column = columns[data.column.index];
 
@@ -671,7 +671,7 @@ export async function generateConforme(
           case "site": {
             doc.setFontSize(7);
             toggleFont(doc, "bold");
-            if (item.type === "SITE") {
+            if (item.type === "SITE" || item.type === "LED") {
               renderColumnWithImage(
                 doc,
                 item.image!,
@@ -709,10 +709,7 @@ export async function generateConforme(
                 align: "left",
               });
             } else {
-              const text =
-                item.type === "LED"
-                  ? item.site_code
-                  : `${item.qty}x ${item.name.toUpperCase()}`;
+              const text = `${item.qty}x ${item.name.toUpperCase()}`;
 
               const lines = doc.splitTextToSize(text, width - padding * 2);
               const lineHeight = 3;
@@ -748,10 +745,14 @@ export async function generateConforme(
             let addtValue = `*w/ FREE ${siteInstallations.get(item.site_code)}x INSTALLATION & DISMANTLING`;
 
             if (isLED) {
+              const hasPackageRate = item.package_rate > 0;
               const duration = getDurationInDays(item.start, item.end);
-              addtValue = `${formatAmount(item.spots_count * duration, {
+              const spots = hasPackageRate
+                ? Math.floor(item.package_rate / duration / item.spots_price)
+                : item.spots_count;
+              addtValue = `${formatAmount(spots * duration, {
                 style: "decimal",
-              })} spots total (${item.spots_count} spots/day)`;
+              })} spots total (${spots} spots/day)`;
             }
 
             const value3 = doc.splitTextToSize(addtValue, maxWidth);
@@ -892,6 +893,8 @@ export async function generateConforme(
 
                   text = `${formatAmount((spots_count * spots_price * days) / (isDollar ? rate : 1), { currency: isDollar ? "USD" : "PHP" })}`;
                 }
+              } else {
+                text = formatAmount(text);
               }
             }
 
@@ -937,7 +940,7 @@ export async function generateConforme(
               }
             } else {
               if (!item.is_free) {
-                if (item.package_rate) {
+                if (item.package_rate > 0) {
                   text = formatAmount(
                     item.package_rate / (isDollar ? rate : 1),
                     {
@@ -953,6 +956,29 @@ export async function generateConforme(
                     (spots_count * spots_price * days) / (isDollar ? rate : 1),
                     { currency: isDollar ? "USD" : "PHP" },
                   );
+                }
+              } else {
+                if (options.displayTotalCost) {
+                  if (item.package_rate > 0) {
+                    text = formatAmount(
+                      item.package_rate / (isDollar ? rate : 1),
+                      {
+                        currency: isDollar ? "USD" : "PHP",
+                      },
+                    );
+                  } else {
+                    const { spots_count, spots_price } = item;
+
+                    const days = getDurationInDays(item.start, item.end);
+
+                    text = formatAmount(
+                      (spots_count * spots_price * days) /
+                        (isDollar ? rate : 1),
+                      { currency: isDollar ? "USD" : "PHP" },
+                    );
+                  }
+                } else {
+                  text = formatAmount(text);
                 }
               }
             }
@@ -1022,21 +1048,28 @@ export async function generateConforme(
                 },
               );
             } else {
-              if (item.package_rate) {
-                text = formatAmount(item.package_rate / (isDollar ? rate : 1), {
-                  currency: isDollar ? "USD" : "PHP",
-                });
+              if (item.is_free) {
+                text = "FREE";
               } else {
-                const { spots_count, spots_price } = item;
+                if (item.package_rate > 0) {
+                  text = formatAmount(
+                    item.package_rate / (isDollar ? rate : 1),
+                    {
+                      currency: isDollar ? "USD" : "PHP",
+                    },
+                  );
+                } else {
+                  const { spots_count, spots_price } = item;
 
-                const days = getDurationInDays(item.start, item.end);
+                  const days = getDurationInDays(item.start, item.end);
 
-                text = formatAmount(
-                  (spots_count * spots_price * days) / (isDollar ? rate : 1),
-                  {
-                    currency: isDollar ? "USD" : "PHP",
-                  },
-                );
+                  text = formatAmount(
+                    (spots_count * spots_price * days) / (isDollar ? rate : 1),
+                    {
+                      currency: isDollar ? "USD" : "PHP",
+                    },
+                  );
+                }
               }
             }
 
