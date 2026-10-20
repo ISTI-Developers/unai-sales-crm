@@ -2,6 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { DateRangePicker } from '@/components/ui/daterangepicker';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
+import AccountExecutives from '@/data/cells/bookings/ae';
 import ResponsiveTable from '@/data/responsive-table';
 import { columns } from '@/data/v2/bookings.history';
 import { useBooking } from '@/hooks/useBookings'
@@ -52,7 +53,7 @@ const SiteBookingsTab = () => {
                     if (row.booking_status === "CANCELLED" || row.booking_status === "PRE-TERMINATION") return "opacity-60 bg-red-100/50 text-red-400 hover:bg-red-100/50 hover:text-red-400 select-none"
                     return ""
                 }}>
-                <DateRangePicker date={dates} onDateChange={setDates} className='mr-auto'/>
+                <DateRangePicker date={dates} onDateChange={setDates} className='mr-auto' />
             </ResponsiveTable>
             {params.get("b") && <BookingPreview id={Number(params.get("b"))} setParams={setParams} />}
         </div>
@@ -91,25 +92,25 @@ const BookingPreview = ({ id, setParams }: { id?: number; setParams: SetURLSearc
                     </div>
                 </DialogHeader>
                 <div className='flex flex-col gap-1'>
-                    <div className='bg-slate-100 p-4 px-5 rounded'>
+                    <div className='bg-slate-100 p-4 px-5 mb-4 rounded'>
                         <p className='space-x-2'><span className='font-semibold'>{booking.site_code}</span>
                             <span className='text-[0.65rem] italic'>({booking.facing})</span></p>
                         <p className='text-sm flex gap-1 items-center'><MapPin size={16} strokeWidth={3} />{booking.address}</p>
                         {/* <p className='text-sm'><span className='font-semibold'>Size (H x W): </span><span>{booking.size}</span></p> */}
                     </div>
                     <Separator />
-                    <div className='grid grid-cols-2 text-sm pt-2'>
-                        <div className='flex flex-col gap-2'>
+                    <div className='grid gap-4 lg:grid-cols-2 text-sm py-4'>
+                        <div className='flex flex-col gap-4 lg:gap-2'>
                             <div>
                                 <p className='font-bold uppercase flex items-center gap-1'><Users size={16} strokeWidth={3} />Client:</p>
                                 <p>{booking.client}</p>
                             </div>
                             <div>
                                 <p className='font-bold uppercase flex items-center gap-1'><User size={16} strokeWidth={3} />AE/s:</p>
-                                <p>{booking.account_executive}</p>
+                                <AccountExecutives accounts={booking.account_executive} />
                             </div>
                         </div>
-                        <div className='flex flex-col gap-2'>
+                        <div className='flex flex-col gap-4 lg:gap-2'>
                             <div>
                                 <p className='font-bold uppercase flex items-center gap-1'><Calendar size={16} strokeWidth={3} />Term Duration:</p>
                                 <p>{`${differenceInMonths(addDays(new Date(booking.date_to), 1), new Date(booking.date_from))}mo/s (${format(new Date(booking.date_from), "MMM dd")} - ${format(new Date(booking.date_to), "MMM dd, yyyy")})`}</p>
@@ -125,7 +126,7 @@ const BookingPreview = ({ id, setParams }: { id?: number; setParams: SetURLSearc
                         </div>
                     </div>
                     <Separator />
-                    <div className='text-sm'>
+                    <div className='text-sm pt-4'>
                         <p className='font-bold uppercase flex items-center gap-1'><Quote size={16} strokeWidth={3} />Remarks</p>
                         <p>{booking.remarks}</p>
                     </div>
