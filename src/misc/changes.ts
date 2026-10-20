@@ -1,5 +1,7 @@
 export const changes = {
   changelog: [
-    `Added recall button to requests.`,
+    `New notification handler.`,
+    `Fixed led board calculations.`,
+    `Added led images to conforme.`,
   ],
 };
