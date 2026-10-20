@@ -10,7 +10,6 @@ import {
   getTotalSiteSRPBySite,
 } from "./utils";
 import { Site } from "@/interfaces/sites.interface";
-import { LEDBoards } from "@/data/LEDBoards";
 
 const getSelectedSites = (details: CartDetails) => {
   return [
@@ -32,22 +31,25 @@ export function getTotalSRP(details: CartDetails, sites: Site[]) {
           difference,
         ) + item.add_on_total;
     } else if (item.type === "led") {
-      const led = LEDBoards.find((led) => led.ID === item.ID)!;
       const days = getDurationInDays(item.from, item.to);
-      const spots_rate = Number(item.srp);
+
+      const srp = Number(item.details.price);
+      const spotsRate = Number(item.srp);
       const packageRate = Number(item.package_rate);
-      let spotsCount = Number(item.spots_count);
+      const spotsCount = Number(item.spots_count);
+
       const hasPackageRate = packageRate > 0;
       const isFree = item.is_free;
-      if (hasPackageRate) {
-        spotsCount = Math.round(packageRate / days / spots_rate);
-      }
 
-      acc += isFree
-        ? hasPackageRate
-          ? packageRate
-          : spotsCount * days * spots_rate
-        : spotsCount * days * led.spots_price;
+      const spots = hasPackageRate
+        ? Math.floor(packageRate / days / spotsRate)
+        : spotsCount;
+
+      let srpTotal = srp * spots * days;
+      if (isFree) {
+        srpTotal = hasPackageRate ? packageRate : spotsRate * spots * days;
+      }
+      acc += srpTotal;
     }
     return acc;
   }, 0);
@@ -147,12 +149,7 @@ export function getFreeSiteAddOns(details: CartDetails, sites: Site[]) {
   const selectedSites = getSelectedSites(details);
   return selectedSites.reduce((acc, item) => {
     if (item.type === "led") {
-      if (item.is_free) {
-        const contractAmount =
-          getTotalDaily(item.srp, new Date(item.to), new Date(item.from)) *
-          item.spots_count;
-        acc += contractAmount;
-      }
+      return acc;
     } else {
       if (item.package_rate === 0) {
         const site = sites.find((s) => s.ID === item.ID);

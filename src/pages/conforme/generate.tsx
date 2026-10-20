@@ -193,7 +193,7 @@ function GenerateConforme() {
                                     <AccordionTrigger>Site Specifications</AccordionTrigger>
                                     <AccordionContent className='space-y-4'>
                                         <SitesTab conforme={conforme} setConforme={setConforme} />
-                                        <LEDsTab conforme={conforme} />
+                                        <LEDsTab conforme={conforme} setConforme={setConforme} />
                                     </AccordionContent>
                                 </AccordionItem>
                                 <AccordionItem value='terms'>

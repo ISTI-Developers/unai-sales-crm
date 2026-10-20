@@ -177,6 +177,7 @@ export type ConformeLED = {
   site_code: string;
   address: string;
   board_facing: string;
+  image?: string;
   size: string;
   start: string;
   end: string;

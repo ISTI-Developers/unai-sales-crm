@@ -68,36 +68,30 @@ function LEDItem({ item, setCart, index }: SiteItemProps) {
             })
         }))
     }
-    const daysDifference = useMemo(() => getDurationInDays(item.date.from, item.date.to), [item.date]);
-    const days = daysDifference;
+    const days = useMemo(() => getDurationInDays(item.date.from, item.date.to), [item.date]);
 
     const srp = Number(item.srp);
     const spotsRate = Number(item.spots_rate);
     const packageRate = Number(item.package_rate);
+    const spotsCount = Number(item.spots_count);
 
-    const hasPackageRate = packageRate > 0;
+    const hasPackageRate = packageRate > 0 && spotsCount === 0;
     const isFree = item.is_free;
+    const packageRateSpots = Math.floor(packageRate / spotsRate / days);
+    // const maxSpotsForPackageRate = hasPackageRate ? Math.floor(packageRate / srp / days) : spotsCount;
 
-    let spotsCount = Number(item.spots_count);
+    const spots = hasPackageRate ? packageRateSpots : spotsCount;
 
-    // Package rate determines the actual number of spots
-    if (hasPackageRate) {
-        spotsCount = Math.round(
-            packageRate / days / spotsRate
-        );
+    let srpTotal = srp * spots * days;
+    let contractAmount = hasPackageRate ? packageRate : spotsRate * spots * days;
+    if (isFree) {
+        srpTotal = hasPackageRate ? packageRate : contractAmount;
+        contractAmount = 0;
     }
 
-    // SRP is always based on the actual number of spots
-    const srpTotal = isFree ? hasPackageRate ? packageRate : spotsCount * days * srp : spotsCount * days * srp;
-
-    // Contract amount
-    const contractAmount = isFree
-        ? 0
-        : hasPackageRate
-            ? packageRate
-            : spotsCount * days * spotsRate;
-
     const srpVariance = contractAmount - srpTotal;
+
+
     return (
         <div className="flex flex-col gap-2 group">
             <header className='relative border-b p-3 bg-zinc-500 text-white'>
@@ -188,7 +182,7 @@ function LEDItem({ item, setCart, index }: SiteItemProps) {
                         </span>
 
                         <span className="font-medium">
-                            {daysDifference} day/s
+                            {days} day/s
                         </span>
                     </div>
                 </div>
@@ -200,7 +194,7 @@ function LEDItem({ item, setCart, index }: SiteItemProps) {
 
                         <InputNumber
                             disabled={packageRate > 0}
-                            value={packageRate > 0 ? spotsCount : item.spots_count}
+                            value={packageRate > 0 ? spots : item.spots_count}
                             isMoney={false}
                             groupClassName="w-full"
                             max={item.site.spots_count ?? 0}
@@ -276,7 +270,7 @@ function LEDItem({ item, setCart, index }: SiteItemProps) {
                                 SRP:
                             </span>
                             <span className="font-medium ">
-                                {`${formatAmount(item.srp)}`}
+                                {`${formatAmount(srp)}`}
                             </span>
                         </div>
                     </div>
@@ -310,7 +304,7 @@ function LEDItem({ item, setCart, index }: SiteItemProps) {
                                 SRP per SPOT:
                             </span>
                             <span className="font-medium ">
-                                {`${formatAmount(Number(item.srp) * daysDifference)}`}
+                                {`${formatAmount(srp * days)}`}
                             </span>
                             <span className="text-[0.6rem]">
                                 (SPOTS RATE) x DURATION
@@ -367,7 +361,7 @@ function LEDItem({ item, setCart, index }: SiteItemProps) {
                                         <span>
                                             SRP Total
                                             <span className="ml-1 text-muted-foreground">
-                                                ({daysDifference} days)
+                                                ({days} days)
                                             </span>
                                         </span>
 
@@ -380,7 +374,7 @@ function LEDItem({ item, setCart, index }: SiteItemProps) {
                                         <span>
                                             Given Rate
                                             <span className="ml-1 text-muted-foreground">
-                                                ({daysDifference} days)
+                                                ({days} days)
                                             </span>
                                         </span>
 

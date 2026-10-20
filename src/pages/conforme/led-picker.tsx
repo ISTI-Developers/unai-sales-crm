@@ -6,6 +6,7 @@ import { LEDBoard, LEDBoards } from "@/data/LEDBoards";
 import { columns } from "@/data/ledPicker.columns";
 import { useResponsiveTable } from "@/hooks/use-responsive-table";
 import { Cart, LEDSiteRow } from "@/interfaces/requests.interface";
+import { getKey } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { addDays } from "date-fns";
 import { PlusIcon } from "lucide-react";
@@ -108,14 +109,13 @@ function LEDCard({
     selectedSites: LEDBoard[];
     setSite: Dispatch<SetStateAction<LEDBoard[]>>;
 }) {
-
     return (
         <div
             role="button"
             onClick={() => {
                 setSite(prev => {
-                    if (prev.some(p => p.site_code === site.site_code)) {
-                        return prev.filter(p => p.site_code !== site.site_code);
+                    if (prev.some(p => getKey(p) === getKey(site))) {
+                        return prev.filter(p => getKey(p) !== getKey(site));
                     }
 
                     return [...prev, site];
@@ -124,7 +124,7 @@ function LEDCard({
             className="relative rounded-lg border overflow-hidden w-full"
         >
             <div className={cn("text-xs leading-tight p-3 transition-all", selectedSites.some(
-                item => item.site_code === site.site_code
+                item => getKey(item) === getKey(site)
             ) ? "bg-emerald-100 text-emerald-700" : "")}>
                 <h3 className='text-sm font-semibold'>{site.site_code} <span>({site.size})</span></h3>
                 <p className="text-[0.65rem] font-light">{site.address}</p>

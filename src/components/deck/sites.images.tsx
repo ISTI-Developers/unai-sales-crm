@@ -10,8 +10,6 @@ const SiteImages = ({ site_code, selectedImage }: { site_code: string; selectedI
     useEffect(() => {
         if (!images?.selectedImage) return;
 
-        console.log(images.selectedImage)
-
         setSelectedSites(prev => {
             let changed = false;
 
