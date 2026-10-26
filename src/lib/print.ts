@@ -672,15 +672,17 @@ export async function generateConforme(
             doc.setFontSize(7);
             toggleFont(doc, "bold");
             if (item.type === "SITE" || item.type === "LED") {
-              renderColumnWithImage(
-                doc,
-                item.image!,
-                item.site_code,
-                x,
-                y,
-                width,
-                padding,
-              );
+              if (item.image) {
+                renderColumnWithImage(
+                  doc,
+                  item.image,
+                  item.site_code,
+                  x,
+                  y,
+                  width,
+                  padding,
+                );
+              }
             } else if (item.type === "FREE_ADD_ON") {
               const free = item.free;
               const label = item.label;
