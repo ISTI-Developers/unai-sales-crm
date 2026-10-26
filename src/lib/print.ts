@@ -926,14 +926,14 @@ export async function generateConforme(
                   currency: isDollar ? "USD" : "PHP",
                 });
               } else {
-                text = formatAmount(0);
+                text = "FREE";
               }
             } else if (item.type === "PAID_ADD_ON") {
               text = formatAmount(item.total / (isDollar ? rate : 1), {
                 currency: isDollar ? "USD" : "PHP",
               });
             } else if (item.type === "FREE_ADD_ON") {
-              text = formatAmount(0);
+              text = "FREE";
             } else if (item.type === "SITE") {
               if (item.monthly_rate !== 0) {
                 text = formatAmount(item.monthly_rate / (isDollar ? rate : 1), {
