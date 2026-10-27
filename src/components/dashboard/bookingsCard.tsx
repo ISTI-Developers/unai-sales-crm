@@ -89,10 +89,10 @@ const BookingsCardItem = ({ booking }: { booking: BookingCard }) => {
     }
     return <>
         <DialogTrigger asChild>
-            <div role='button' className='grid grid-cols-[1fr_auto] hover:bg-slate-50 text-sm py-1.5 gap-1'>
-                <div className='flex gap-2'>
+            <div role='button' className='grid grid-cols-[1fr_auto] hover:bg-slate-50 text-sm py-1.5'>
+                <div className='flex flex-col gap-1'>
+                    <Badge className='w-fit text-[0.6rem] px-2 h-5 bg-main-100'>{booking.addendum ?? booking.booking_status}</Badge>
                     <p className='font-bold'>{booking.site_code}</p>
-                    <Badge>{booking.booking_status}</Badge>
                 </div>
                 <p className='text-xs text-zinc-500'>{timestamp}</p>
                 <p className='text-xs uppercase italic text-zinc-500'>{booking.facing}</p>
@@ -102,7 +102,7 @@ const BookingsCardItem = ({ booking }: { booking: BookingCard }) => {
             <DialogHeader aria-description={undefined}>
                 <div className='flex justify-between'>
                     <DialogTitle>Booking Details</DialogTitle>
-                    <Badge>{booking.booking_status}</Badge>
+                    <Badge className='w-fit text-[0.6rem] px-2 h-5 bg-main-100'>{booking.addendum ?? booking.booking_status}</Badge>
                 </div>
             </DialogHeader>
             <div className='flex flex-col gap-1'>
