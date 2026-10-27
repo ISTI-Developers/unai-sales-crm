@@ -4,8 +4,9 @@ import BarCard from '../components/bar.card';
 import { useSites } from '@/hooks/useSites';
 import { useBookings } from '@/hooks/useBookings';
 import { ChartConfig } from '@/components/ui/chart';
-import { getBookingContext, getEndDate } from '@/lib/fetch';
-import { differenceInCalendarDays, differenceInDays } from 'date-fns';
+import { getEndDate } from '@/lib/fetch';
+import { differenceInDays } from 'date-fns';
+import { getCurrentBooking } from '@/hooks/v2/useBookings';
 
 const SiteAvailability = () => {
     const { data: sites } = useSites();
@@ -16,16 +17,8 @@ const SiteAvailability = () => {
 
         const endDates = sites.map(item => {
             const siteBookings = bookings.filter(booking => booking.site_code === item.site_code)
-            const updatedBookings = siteBookings.map(sb => ({ ...sb, is_prime: item.is_prime }))
 
-            const { current, previous } = getBookingContext(updatedBookings);
-            let currentBooking = current;
-            if (current?.booking_status === "QUEUEING") {
-                const difference = differenceInCalendarDays(new Date(), new Date(current.date_from));
-                if (difference >= -30) {
-                    currentBooking = previous;
-                }
-            }
+            const currentBooking = getCurrentBooking(siteBookings);
             return getEndDate(currentBooking);
         })
 

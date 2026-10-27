@@ -14,8 +14,8 @@ const WeeklyReportsCard = () => {
 
         <div className="flex flex-col gap-6 pt-2">
           {isWeeklyReportLoading ? (
-            <>{Array(10).fill(0).map(() => {
-              return <Skeleton className="w-full h-32" />
+            <>{Array(10).fill(0).map((_,index) => {
+              return <Skeleton key={index} className="w-full h-32" />
             })}</>
           ) : (
             <>

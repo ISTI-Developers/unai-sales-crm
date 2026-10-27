@@ -11,6 +11,7 @@ export interface Booking {
   site_code: string;
   srp: number;
   booking_status: string;
+  addendum: string | null;
   client: string;
   account_executive: string;
   date_from: string;
