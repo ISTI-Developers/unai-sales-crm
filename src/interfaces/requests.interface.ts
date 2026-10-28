@@ -301,9 +301,9 @@ export type Conforme = {
 };
 
 export const approvalStep: Record<string, string> = {
-  COO: "Margin exceeded 30% below SRP",
-  CRO: "Margin exceeded 20% below SRP",
-  "SALES DEPARTMENT HEAD": "Margin exceeded below SRP",
+  COO: "More than 20% Below SRP Threshold / Special Instructions",
+  CRO: "More than 10% Below SRP Threshold",
+  "SALES DEPARTMENT HEAD": "Below SRP Threshold",
   "SALES SUPPORT": "Sales Support Review",
   "SALES UNIT HEAD": "Sales Unit Head Review",
   "FINANCE CHECKER": "Finance Review",
