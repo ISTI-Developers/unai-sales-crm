@@ -46,7 +46,16 @@ function SitesPicker({ cartSites, setCart }: SitesPickerProps) {
                         availability: `WITH QUEUEING ON ${format(new Date(next.date_from), "yyyy-MM-dd")}`
                     };
                 }
+
+                if (!current || differenceInCalendarDays(new Date(next.date_from), new Date()) < 30) {
+                    return {
+                        ...site,
+                        availability: `BOOKED UNTIL ${format(new Date(next.date_to), "yyyy-MM-dd")}`
+                    };
+                }
             }
+
+
 
             if (current) {
                 if (isQueueing(current)) {
@@ -70,12 +79,7 @@ function SitesPicker({ cartSites, setCart }: SitesPickerProps) {
                 };
             }
 
-            if (next && !current) {
-                return {
-                    ...site,
-                    availability: `BOOKED UNTIL ${format(new Date(next.date_to), "yyyy-MM-dd")}`
-                };
-            }
+
             return {
                 ...site,
                 availability: "AVAILABLE"
