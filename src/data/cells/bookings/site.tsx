@@ -30,6 +30,13 @@ function SiteCode({ row }: CellContext<Availability, unknown>) {
                     availability: new Date(next.date_from)
                 };
             }
+            
+            if (differenceInCalendarDays(new Date(next.date_from), new Date()) < 30) {
+                return {
+                    status: "BOOKED",
+                    availability: addDays(new Date(next.date_to), 1)
+                };
+            }
         }
 
         if (current) {
