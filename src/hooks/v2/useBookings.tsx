@@ -426,6 +426,11 @@ export const getCurrentBooking = (bookings: TaggedBooking[]) => {
         if (next.booking_status === "RENEWAL") {
             return next;
         }
+
+        if (isQueueing(next)) {
+            return next;
+        }
+        
         if (differenceInCalendarDays(new Date(next.date_from), new Date()) < 30) {
             return next;
         }
