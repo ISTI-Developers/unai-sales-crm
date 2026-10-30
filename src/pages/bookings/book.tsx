@@ -11,7 +11,7 @@ import { splitClientName } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { addDays, addMonths, differenceInDays, format, isToday, subDays } from "date-fns";
 import { Loader2, RepeatIcon, TagPlusIcon } from "lucide-react";
-import { ChangeEvent, FormEvent, useEffect, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { ChangeOfContractForm, ContractRateForm, SalesUnitPicker } from "./components";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -52,7 +52,20 @@ function Book({ open, onOpenChange, activeRow: site }: BookProps) {
     const remainingDays = Math.max(differenceInDays(new Date(endDate ?? new Date()), new Date()), 0);
     const isRenewal = endDate ? remainingDays > 60 : false;
     const { client, product } = splitClientName(currentBooking?.client ?? "");
-    const startDate = currentBooking?.booking_status === "PRE-TERMINATION" ? new Date(endDate ?? new Date()) : addDays(new Date(endDate ?? new Date()), 1);
+
+    const startDate = useMemo(() => {
+        if (currentBooking?.booking_status === "PRE-TERMINATION") {
+            return new Date(endDate ?? new Date());
+        }
+
+        if (currentBooking?.date_from) {
+            if (new Date(currentBooking.date_from).getTime() > new Date().getTime()) {
+                return new Date();
+            }
+        }
+
+        addDays(new Date(endDate ?? new Date()), 1)
+    }, [currentBooking, endDate])
 
     const onChange = (e: ChangeEvent<HTMLInputElement>) => {
         setBooking((prev) => ({
