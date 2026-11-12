@@ -117,7 +117,7 @@ function AcknowledgementTab({ owner, conforme, setConforme }: TabProps) {
                                 size="sm"
                                 onClick={() => addSignatory("internal_signatory", {
                                     name: `${salesUnitHead?.first_name} ${salesUnitHead?.last_name}`,
-                                    title: "Sales Unit Head",
+                                    title: "Business Unit Head",
                                     signature: undefined
                                 })}
                             >

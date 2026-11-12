@@ -177,7 +177,13 @@ function GenerateConforme() {
                             <p className="text-sm capitalize">{`${user?.first_name} ${user?.last_name}`}</p>
                         </div>
                     </div>
-                    <GenerateConformeButton onGenerate={(options) => generateConforme(data.request_no, conforme, options, user)} hasOfferedRate={conforme.sites.every(item => item.offered_rate !== 0)} areAllDurationsSimilar={areAllDurationSame} />
+                    <GenerateConformeButton
+                        onGenerate={(options) => {
+                            console.log(data.request_no, conforme, options, user);
+                            generateConforme(data.request_no, conforme, options, user);
+                        }}
+                        hasOfferedRate={conforme.sites.every(item => item.offered_rate !== 0)}
+                        areAllDurationsSimilar={areAllDurationSame} />
                 </header>
                 <main className='grid grid-cols-2 print:block w-full gap-4'>
                     <ScrollArea className='h-[80dvh] print:hidden'>

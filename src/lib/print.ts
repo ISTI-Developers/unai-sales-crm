@@ -355,23 +355,31 @@ export async function generateConforme(
   toggleFont(doc);
   doc.setFontSize(7);
   layout.move(2.25);
-  const freeMaterialAddOns: FreeAddOns = conforme.sites.reduce(
-    (acc, item) => {
-      if (item.material.free > 0) {
-        const cost = getSiteMaterial(item.size, item.site_code);
-        acc.free += item.material.free;
-        acc.value += cost;
-      }
 
-      return acc;
-    },
-    {
-      label: "MATERIAL PRINTING",
-      free: 0,
-      value: 0,
-      total: 0,
-    },
+  const freeSiteMaterialAddOns = new Map(
+    conforme.sites
+      .filter((site) => site.material.free > 0)
+      .map((site) => {
+        return [site.site_code, site.material.free];
+      }),
   );
+  // const freeMaterialAddOns: FreeAddOns = conforme.sites.reduce(
+  //   (acc, item) => {
+  //     if (item.material.free > 0) {
+  //       const cost = getSiteMaterial(item.size, item.site_code);
+  //       acc.free += item.material.free;
+  //       acc.value += cost;
+  //     }
+
+  //     return acc;
+  //   },
+  //   {
+  //     label: "MATERIAL PRINTING",
+  //     free: 0,
+  //     value: 0,
+  //     total: 0,
+  //   },
+  // );
   const paidMaterialAddOns: PaidAddOns = conforme.sites.reduce(
     (acc, item) => {
       if (item.material.paid > 0) {
@@ -438,13 +446,13 @@ export async function generateConforme(
       ...conforme.add_ons.map((s) => ({ ...s, type: "ADD_ON" as const })),
     );
   }
-  if (freeMaterialAddOns.free > 0) {
-    const freeMaterial = !options.displayRateCard
-      ? defs.BODY.DEFAULT.FREE_ADD_ON
-      : defs.BODY.WITH_RATE_CARD.FREE_ADD_ON;
-    body.push(freeMaterial);
-    items.push({ ...freeMaterialAddOns, type: "FREE_ADD_ON" as const });
-  }
+  // if (freeMaterialAddOns.free > 0) {
+  //   const freeMaterial = !options.displayRateCard
+  //     ? defs.BODY.DEFAULT.FREE_ADD_ON
+  //     : defs.BODY.WITH_RATE_CARD.FREE_ADD_ON;
+  //   body.push(freeMaterial);
+  //   items.push({ ...freeMaterialAddOns, type: "FREE_ADD_ON" as const });
+  // }
 
   const siteInstallations = getFreeInstallations(conforme);
 
@@ -518,10 +526,16 @@ export async function generateConforme(
           const rowType = rawRow[0] as "SITE" | "LED" | "ADD_ON";
 
           data.cell.styles.minCellHeight =
-            rowType === "SITE" ? 29 : rowType === "LED" ? 27 : 9.5;
+            rowType === "SITE" ? 32 : rowType === "LED" ? 27 : 9.5;
 
           const column = columns[data.column.index];
 
+          if (data.row.index === 0 && column === "site") {
+            const item = items[data.row.index];
+            if (!["SITE", "LED"].includes(item.type)) {
+              data.cell.colSpan = 2;
+            }
+          }
           if (column === "rental cost") {
             if (data.row.index === 0) {
               data.cell.rowSpan = body.length;
@@ -680,6 +694,7 @@ export async function generateConforme(
                   x,
                   y,
                   width,
+                  height,
                   padding,
                 );
               }
@@ -744,7 +759,7 @@ export async function generateConforme(
               ? []
               : doc.splitTextToSize(item.board_facing ?? "", maxWidth);
 
-            let addtValue = `*w/ FREE ${siteInstallations.get(item.site_code)}x INSTALLATION & DISMANTLING`;
+            let addtValue = `FREE Inclusions\n${siteInstallations.get(item.site_code)}x Installation and Dismantling\n${freeSiteMaterialAddOns.get(item.site_code)}x Material Printing`;
 
             if (isLED) {
               const hasPackageRate = item.package_rate > 0;
@@ -1412,7 +1427,7 @@ export async function generateConforme(
     ...conforme.internal_signatory,
     {
       name: "Michael San Mendoza",
-      title: "Sales Department Head",
+      title: "Chief Commercial Officer",
     },
   ];
 
@@ -1632,15 +1647,16 @@ function renderColumnWithImage(
   x: number,
   y: number,
   w: number,
+  h: number,
   p: number,
 ) {
   const imageSize = Math.max(w - p, 22);
-
+  const imageHeight = imageSize * (9 / 16);
   const imageX = x + (w - imageSize) / 2;
-  const imageY = y + p;
+  const imageY = y + (h / 2 - imageHeight / 2) - p / 2;
 
   doc.setFontSize(7);
-  doc.addImage(image, "JPEG", imageX, imageY, imageSize, imageSize * (9 / 16));
+  doc.addImage(image, "JPEG", imageX, imageY, imageSize, imageHeight);
   toggleFont(doc, "black");
   doc.text(site_code, x + w / 2, imageY + imageSize * (9 / 16) + 3, {
     align: "center",
